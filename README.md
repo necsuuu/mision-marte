@@ -276,16 +276,6 @@ También se explican dentro del juego:
 
 ---
 
-## 🤖 Uso de Inteligencia Sintética (IA)
-
-Según las reglas del Space Apps Challenge, declaramos dónde usamos herramientas de IA:
-
-- **Código y textos:** desarrollados con ayuda de **Claude (Anthropic)**; el equipo los revisó, probó y ajustó.
-- **Ilustraciones de personajes y de la cabina:** _(completar: quién las hizo y con qué herramienta)_.
-- No se generó ni modificó ningún elemento de marca de la NASA.
-
----
-
 ## 👥 Créditos
 
 **Equipo Código Cuántico**, NASA Space Apps Challenge 2026, Santiago del Estero, Argentina.

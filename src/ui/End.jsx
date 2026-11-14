@@ -6,6 +6,8 @@ import { fmtDate } from '../data/donki'
 import { t, locEvent, locStorm, outcomeText } from '../i18n/core'
 import { useT } from '../i18n/useT'
 import Console from './Console'
+import Quiz from './Quiz'
+import { QUIZ, quizScore, SKILLS } from '../game/quiz'
 
 export default function End({ onData }) {
   const s = useGame()
@@ -22,6 +24,9 @@ export default function End({ onData }) {
     return d ? locEvent(s.lang, d.ev).fact : f
   })
   const b = s.base
+  const needQuiz = s.quiz.pre && !s.quiz.post
+
+  if (needQuiz) return <Quiz phase="post" onDone={s.finishQuizPost} />
 
   return (
     <motion.div className="screen center end-screen" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
@@ -56,6 +61,9 @@ export default function End({ onData }) {
                   <div className="ok"><b>{good}</b><span>{T('end.good')}</span></div>
                   <div className="ko"><b>{bad}</b><span>{T('end.bad')}</span></div>
                 </div>
+                {s.quiz.post && (
+                  <div className="amber-quiz">🧠 {T('end.quiz', { a: quizScore(s.quiz.pre), b: quizScore(s.quiz.post), n: QUIZ.length })}</div>
+                )}
                 <div className="amber-sub">{T('end.base')}</div>
                 <div className="amber-base">
                   {b.iceMine && <span className="ok">⛏️🧊 +{ICE_MINE_O2} 🫁/sol</span>}
@@ -98,12 +106,19 @@ export default function End({ onData }) {
             )}
 
             {tab === 'learned' && (
+              <>
+              <div className="amber-sub">{T('end.skills')}</div>
+              <ul className="amber-skills">
+                {(SKILLS[s.lang] || SKILLS.es).map(([e, name, d]) => <li key={name}><span>{e}</span><b>{name}</b><small>{d}</small></li>)}
+              </ul>
+              <div className="amber-sub">{T('end.facts')}</div>
               <ul className="amber-list">
                 <li>{T('learn.1')}</li>
                 {storms.length > 0 && <li>{T('learn.2')}</li>}
                 <li>{T('learn.3')}</li>
                 {facts.map((f, i) => <li key={i}>{f}</li>)}
               </ul>
+              </>
             )}
           </div>
         </Console>

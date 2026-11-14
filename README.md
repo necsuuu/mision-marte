@@ -36,7 +36,7 @@ El contenido espacial para chicos suele ser **demasiado abstracto** (pósters, d
 ## 🎮 Cómo se juega
 
 ```
-Comandante → Misión → 🚀 Despegue desde la Tierra → Tutorial → 📦 Carga en la nave (60 s) → 🪂 Aterrizaje en Marte → 12 soles → Resultado
+Comandante → Misión → 🧠 Quiz (4 preguntas) → 🚀 Despegue → Tutorial → 📦 Carga en la nave (60 s) → 🪂 Aterrizaje en Marte → 12 soles → 🧠 Quiz final → Resultado
 ```
 
 ### 1. Elegí tu comandante
@@ -49,14 +49,26 @@ Dos comandantes para elegir. Se escribe el **nombre** y se toca la **edad** (6 a
 
 Estas ayudas son **solo para el modo cadete**: los jugadores de 10 años o más deciden sin pistas. El ayudante reparte la energía y explica por qué con frases cortas: primero el aire, después el escudo si hay tormenta, la comida, las reparaciones, y lo que sobra va a ciencia.
 
+Desde los **10 años** la base consume más aire y comida (27 y 13 por sol, contra 20 y 10 de los cadetes): la energía no alcanza para todo y hay que pensar el reparto. Lo probamos con partidas simuladas: una estrategia fija ("siempre 2⚡ a cada cosa") ya no saca 3 estrellas y, si la carga fue mala, pierde; con buen reparto se gana con 3 estrellas.
+
+**Accesibilidad**
+- 🔊 **Lectura en voz alta** (voz del navegador, sin internet): se prende sola en modo cadete y se puede prender o apagar en cualquier momento con el botón de abajo a la izquierda. Lee los avisos, las decisiones, el plan, los resultados y el quiz.
+- ✋ **Botón de acción en pantalla** (igual que la tecla E) para jugar en tablets o con un solo dedo.
+- ✨/🐢 **Gráficos livianos** para compus viejas: sin sombras y con menos resolución. Además, si el juego anda lento, baja la resolución solo.
+- Textos grandes en todo el juego.
+
 > El nombre y la edad **solo viven en la memoria del navegador** mientras se juega: no se guardan ni se envían a ningún lado.
 
-### 2. Elegí la misión
+### 2. Quiz de antes (opcional)
+Antes de despegar hay **4 preguntas cortas** (radiación, hacia dónde van las tormentas, qué cuidar primero, retraso de los mensajes). Al final de la misión se repiten, y el informe muestra **cuántas sabía antes y cuántas después**. Así se puede ver si el juego enseña. Las respuestas no se guardan ni se envían. Se puede saltear.
+
+### Elegí la misión
 | Modo | Qué tiene |
 |---|---|
 | 🛰️ **Misión real** | Las tormentas solares de los **últimos 60 días**, consultadas en vivo a la NASA |
 | ☢️ **Tormenta 2024** (difícil) | Mayo de 2024: la tormenta solar que llegó a Marte y le dio al rover Curiosity el **mayor pico de radiación** desde que aterrizó |
 | 🎲 **Sorpresa** | Tormentas reales elegidas al azar: cada partida es distinta |
+| 🎬 **Demo rápida** | Salta directo al Sol 1 con una carga lista. También se abre con `?demo` al final de la dirección. Pensado para mostrarle el juego al jurado |
 
 ### 3. Despegue desde la Tierra
 Cuenta regresiva 3, 2, 1: el cohete se enciende y despega entre el humo, atraviesa las nubes, el cielo se pone negro y aparecen las estrellas. Desde el espacio se ve la Tierra y el camino hacia Marte (el viaje dura unos 7 meses). Se puede saltear. **La carga de suministros empieza recién cuando termina el despegue** y un tutorial corto, que también se puede saltear.
@@ -82,7 +94,7 @@ La nave tiene **3 módulos** conectados por puertas: 🏥 **Módulo médico** ·
 | 🫧 Generador MOXIE | 4 | Cada ⚡ en soporte vital rinde 50% más (MOXIE existe: fabricó oxígeno en Marte con el rover Perseverance) |
 | 🥫 Raciones (×2) | 3 c/u | +30 de comida al empezar |
 | 🧪 Tanque de oxígeno | 3 | +30 de oxígeno al empezar |
-| 🥔 Semillas de papa | 1 | ¡Sin semillas el invernadero no produce! |
+| 🥔 Plantines de papa | 1 | Brotes para el invernadero hidropónico. ¡Sin plantines no hay comida nueva! |
 | 💧 Tanques de agua | 4 | El agua frena la radiación: +30% de escudo |
 | 🧰 Kit de reparación | 2 | Arregla una avería sin gastar energía |
 | ⛑️ Kit médico | 2 | Cura a la tripulación una vez |
@@ -95,17 +107,19 @@ La cápsula entra con **paracaídas**, enciende los **retrocohetes**, levanta po
 Cada sol tiene este ciclo:
 
 1. 🌅 **Amanecer**: aparece "SOL N".
-2. ☀️ **Alerta de tormenta solar** (si la hubo ese día, según DONKI).
+2. ☀️ **Alerta de tormenta solar**: solo si DONKI predijo que una CME **llegaba a Marte** ese día. Si salió una CME rápida que no viene hacia Marte, el juego lo cuenta ("¡hoy zafamos!").
 3. 🚨 **Evento**: algo pasa en la base (ver [Decisiones con consecuencias](#-decisiones-con-consecuencias)).
 4. ⚡ **Plan de energía**: repartís la energía del día.
 5. 🌙 **Noche**: la **consola de reporte** (pantalla ámbar) muestra cómo cambiaron los recursos, la radiación, cuánto bloqueó el escudo y qué consecuencia tuvo la decisión del día. El **teléfono** de la consola abre los datos de la NASA y el **botón ✓** pasa al sol siguiente.
+
+**Giro a mitad de misión:** dos soles antes de la tormenta más fuerte llega un **aviso de pronóstico** ("en 2 soles llega una GRAN TORMENTA"), como hace la oficina de clima espacial de la NASA para las misiones a la Luna y Marte. Hay que guardar energía en la batería y preparar el escudo. Si los datos reales no traen ninguna tormenta fuerte, se hace un **simulacro de entrenamiento** con la tormenta real del 14/05/2024, y el juego avisa que es un simulacro.
 
 ### 7. Informe final
 Se gana sobreviviendo los 12 soles. Hay hasta **3 estrellas**: ★ sobrevivir, ★ llegar a 10 puntos de ciencia, ★ recibir poca radiación. El informe aparece en la consola con 3 pestañas:
 
 - **Resumen:** soles, tormentas reales enfrentadas, radiación, ciencia, cuántas decisiones salieron bien y cuántas tuvieron costo, y el **estado final de la base** (mina, muestras, parches, fugas, paneles rotos).
 - **Bitácora:** sol por sol, cada tormenta (con fecha y velocidad real de la CME y cuánto bloqueó el escudo), cada evento con la opción elegida y su consecuencia, y las reparaciones.
-- **Aprendiste:** los datos científicos que vio el jugador. Si se pierde (sin oxígeno, sin comida o demasiada radiación) se explica por qué, sin castigar: la idea es volver a intentar con otra estrategia.
+- **Aprendiste:** las **habilidades de astronauta** que practicó (administrar recursos, leer pronósticos, protegerse de la radiación, decidir en emergencias, trabajar con minutos de retraso) y los datos científicos que vio. Si hizo el quiz, el resumen muestra el antes y después. Si se pierde (sin oxígeno, sin comida o demasiada radiación) se explica por qué, sin castigar: la idea es volver a intentar con otra estrategia.
 
 ### 🌐 Idiomas
 Botón **🇦🇷 ES / 🇬🇧 EN** en la pantalla de inicio, en la selección de personaje y en el panel de datos. Todo el juego está traducido (interfaz, objetos, eventos, glosario) y la elección se recuerda.
@@ -158,8 +172,8 @@ Además hay **alarma roja** en el domo cuando el oxígeno o la salud están bajo
 
 | Dato | Cómo se usa en el juego | Fuente |
 |---|---|---|
-| **DONKI: eyecciones de masa coronal (CME)** | Cada tormenta solar del juego es una CME real, con su **fecha y velocidad**. La velocidad define el nivel: 900+ km/s débil, 1200+ fuerte, 1800+ extrema | [api.nasa.gov](https://api.nasa.gov) · [DONKI](https://kauai.ccmc.gsfc.nasa.gov/DONKI/) |
-| **DONKI: partículas energéticas solares (SEP)** | Si ese día hubo SEP, la tormenta sube de nivel | [api.nasa.gov](https://api.nasa.gov) |
+| **DONKI: eyecciones de masa coronal (CME)** | Cada tormenta del juego es una CME real, con su **fecha y velocidad**. **Solo cuentan las que la simulación WSA-ENLIL de la NASA predijo que llegaban a Marte** (`cmeAnalyses[].enlilList[].impactList[]` con `location: "Mars"`), y caen el **día que llegan** a Marte. Nivel según la velocidad: hasta 999 km/s débil, 1000+ fuerte, 1500+ extrema | [api.nasa.gov](https://api.nasa.gov) · [DONKI](https://kauai.ccmc.gsfc.nasa.gov/DONKI/) |
+| **Partículas medidas en Marte** | El 20/05/2024 el rover Curiosity midió su mayor pico de radiación (≈ 8.100 microgray en un día). Ese evento entra como tormenta extrema en el modo 2024 | [api.nasa.gov](https://api.nasa.gov) |
 | **Curiosity: instrumento RAD** | Dosis base en la superficie de Marte ≈ **0,64 mSv por día** (Hassler et al., *Science*, 2014). El modo 2024 cuenta el pico del **20/05/2024** (≈ 30 radiografías de tórax) | [Misión Curiosity](https://science.nasa.gov/mission/msl-curiosity/) |
 | **OSDR (Open Science Data Repository)** | Base de los eventos de salud: huesos, sistema inmune | [osdr.nasa.gov](https://osdr.nasa.gov/bio/) |
 | **Órbitas de la Tierra y Marte** | Se calcula la **distancia real del día** para el retraso de radio (por ejemplo, ~198 millones de km ≈ 11 minutos) | Elementos orbitales J2000 (`src/data/marsDistance.js`) |
@@ -235,6 +249,8 @@ src/
 │   ├── characters.js       Comandantes, tripulación, fotogramas e ilustraciones
 │   ├── shipLayout.js       Plano de la nave: módulos, muebles, lugares para objetos, obstáculos
 │   ├── pathfinding.js      Grilla + A*: el astronauta rodea los muebles
+│   ├── quiz.js             Preguntas del quiz y habilidades de astronauta
+│   ├── voice.js            Lectura en voz alta (Web Speech API)
 │   └── store.js            Lógica: energía, recursos, radiación, eventos, estado de la base, bitácora
 ├── i18n/
 │   ├── ui.js               Textos de la interfaz (es / en)
@@ -254,6 +270,7 @@ src/
 │   └── noise.js            Ruido para generar terreno y texturas
 └── ui/                     Pantallas: inicio, selección, modo, cinemática, sol, final, panel de datos
     ├── LaunchUI.jsx        Cuenta regresiva y textos del despegue
+    ├── Quiz.jsx            Quiz de 4 preguntas antes y después de la misión
     ├── Terminal.jsx        Terminal CRT de decisiones (pantalla + impresora + botón ✓)
     └── Console.jsx         Consola ámbar del reporte nocturno y final
 tools/
@@ -283,6 +300,7 @@ Probado el 14/11/2026:
 - ❌ `mars-photos` (fotos de rovers) está caída ("No such app") → no se usa.
 - ⚠️ OSDR bloquea llamadas desde el navegador (CORS) → usamos sus hallazgos como datos curiosos; para usarlo en vivo hace falta un backend.
 - ⚠️ `DEMO_KEY` se queda sin cupo enseguida → usar una key propia.
+- ✅ Las CME de DONKI traen las simulaciones **WSA-ENLIL** con la lista de lugares a los que llega cada una (Tierra, Marte, sondas). El juego usa eso para saber si una tormenta llega a Marte, tanto en vivo como en los datos guardados.
 
 ---
 
@@ -290,8 +308,10 @@ Probado el 14/11/2026:
 
 También se explican dentro del juego:
 
-- Asumimos que cada tormenta solar grande **viaja hacia Marte**. En la realidad muchas van en otra dirección.
-- Las **dosis extra** de las tormentas, la energía y los recursos son **números de juego**, pensados para que las decisiones se sientan como las reales. La dosis base (0,64 mSv/día) sí es real.
+- Solo cuentan las tormentas que la simulación de la NASA predijo que llegaban a Marte. La simulación es un pronóstico: puede no coincidir exactamente con lo que pasó.
+- Las **tormentas chicas** tienen más efecto que en la realidad, para que se noten. Las grandes (como mayo 2024, ≈ 8 mGy en un día) son parecidas a lo real. La dosis base (0,64 mSv/día) sí es real. La energía y los recursos son **números de juego**.
+- Los **plantines de papa** ya vienen germinados y crecen en hidroponía mucho más rápido que en la realidad.
+- Si los datos no traen una tormenta fuerte, se usa un **simulacro** con la de mayo 2024, y el juego lo dice.
 - La distancia Tierra–Marte usa órbitas simplificadas (error de unos pocos %).
 - Este proyecto **no es un producto oficial de la NASA** y no usa logos ni elementos de marca de la NASA.
 

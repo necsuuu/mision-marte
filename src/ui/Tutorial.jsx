@@ -5,6 +5,7 @@ import { useGame, capacityFor, loadSecondsFor } from '../game/store'
 import { getCharacter, WALK_SEQUENCE } from '../game/characters'
 import { useT } from '../i18n/useT'
 import { fade } from './common'
+import { useSpeak } from '../game/voice'
 
 const STEP_MS = 4200
 const D = STEP_MS / 1000
@@ -102,6 +103,8 @@ function Scene({ step, frames }) {
 
 const STEPS = ['tut.s1', 'tut.s2', 'tut.s3', 'tut.s4', 'tut.s5']
 
+function Say({ text }) { useSpeak(text); return null }
+
 export default function Tutorial() {
   const T = useT()
   const player = useGame((s) => s.player)
@@ -135,6 +138,7 @@ export default function Tutorial() {
             </motion.div>
           </AnimatePresence>
         </div>
+        <Say text={T(STEPS[step], { s: loadSecondsFor(useGame.getState()), kg: capacityFor(useGame.getState()) })} />
         <AnimatePresence mode="wait">
           <motion.h2 key={step} className="tut-caption" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>{T(STEPS[step], { s: loadSecondsFor(useGame.getState()), kg: capacityFor(useGame.getState()) })}</motion.h2>
         </AnimatePresence>

@@ -23,7 +23,7 @@ export default function DataPanel({ onClose }) {
             {w.source === 'live' && <Tx k="data.live" vars={{ from: fmtDate(w.start, lang), to: fmtDate(w.end, lang) }} />}
             {w.source === 'snapshot' && <Tx k="data.snapshot" vars={{ saved: fmtDate(w.savedAt, lang), from: fmtDate(w.start, lang), to: fmtDate(w.end, lang) }} />}
             {w.source === 'archive' && <Tx k="data.archive" />}
-            {' '}{T('data.count', { n: w.cmes.length })}
+            {' '}<Tx k="data.count" vars={{ n: w.cmes.length, m: w.cmes.filter((c) => c[2]).length + (w.marsSeps?.length || 0) }} />
           </div>
         )}
 

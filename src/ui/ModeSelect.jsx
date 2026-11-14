@@ -11,7 +11,7 @@ const MODES = [
 ]
 
 export default function ModeSelect() {
-  const { player, startLoading, goCharacter } = useGame()
+  const { player, startLoading, goCharacter, quickStart } = useGame()
   const T = useT()
   const ch = getCharacter(player.character)
   return (
@@ -41,7 +41,10 @@ export default function ModeSelect() {
           </motion.button>
         ))}
       </div>
-      <button className="link-btn" onClick={goCharacter}>{T('mode.change')}</button>
+      <div className="mode-foot">
+        <button className="link-btn" onClick={goCharacter}>{T('mode.change')}</button>
+        <button className="link-btn demo" onClick={() => quickStart('may2024')} title={T('mode.demoHint')}>🎬 {T('mode.demo')}</button>
+      </div>
     </motion.div>
   )
 }

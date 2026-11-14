@@ -15,7 +15,7 @@ export const ITEMS = [
   },
   { id: 'rations', name: 'Raciones de comida', emoji: '🥫', mass: 3, max: 2, desc: '+30 de comida al aterrizar.' },
   { id: 'o2tank', name: 'Tanque de oxígeno', emoji: '🧪', mass: 3, desc: '+30 de oxígeno al aterrizar.' },
-  { id: 'seeds', name: 'Semillas de papa', emoji: '🥔', mass: 1, desc: '¡Sin semillas el invernadero no produce comida!' },
+  { id: 'seeds', name: 'Plantines de papa', emoji: '🥔', mass: 1, desc: 'Brotes ya germinados para el invernadero hidropónico. ¡Sin plantines no hay comida nueva!' },
   {
     id: 'water', name: 'Tanques de agua', emoji: '💧', mass: 4,
     desc: 'El agua frena la radiación: tu escudo bloquea un 30% extra.',
@@ -40,6 +40,9 @@ export const BASE = {
   o2Use: 20, // la tripulación respira 20 por sol → necesitás 2 ⚡ en Soporte vital
   foodPerChip: 7,
   foodUse: 10,
+  // Desde los 10 años (modo normal) la base gasta más: hay que pensar el reparto de verdad
+  o2UseHard: 27,
+  foodUseHard: 13,
   scienceGoal: 10,
   maxChipsPerSystem: 4,
   // Radiación (mSv). Dosis base real medida por el instrumento RAD de Curiosity: ~0.64 mSv por día.
@@ -52,8 +55,8 @@ export const BASE = {
 }
 
 export const SYSTEMS = [
-  { id: 'life', name: 'Soporte vital', emoji: '🫁', color: '#5ad1ff', help: 'Hace oxígeno. La tripulación necesita 2 ⚡ por sol para no perder aire.' },
-  { id: 'greenhouse', name: 'Invernadero', emoji: '🌱', color: '#7be07b', help: 'Cultiva papas. Cada ⚡ da comida (si trajiste semillas).' },
+  { id: 'life', name: 'Soporte vital', emoji: '🫁', color: '#5ad1ff', help: 'Hace oxígeno para respirar. Con poca ⚡ el aire baja: mirá el papel.' },
+  { id: 'greenhouse', name: 'Invernadero', emoji: '🌱', color: '#7be07b', help: 'Hidroponía: los plantines crecen con luz y agua, sin tierra. Cada ⚡ da comida.' },
   { id: 'shield', name: 'Escudo', emoji: '🛡️', color: '#c49bff', help: 'Protege de la radiación. Cada ⚡ bloquea 30%.' },
   { id: 'science', name: 'Ciencia', emoji: '🔬', color: '#ffd166', help: 'Experimentos. ¡Para eso vinimos a Marte!' },
 ]

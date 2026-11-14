@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useGame } from '../game/store'
 import { t, locGlossary } from '../i18n/core'
+import { useT } from '../i18n/useT'
+import { voiceSupported, stopSpeaking } from '../game/voice'
 
 export const fade = {
   initial: { opacity: 0, y: 16 },
@@ -39,6 +41,26 @@ export function LangToggle({ className = '' }) {
       {[['es', '🇦🇷 ES'], ['en', '🇬🇧 EN']].map(([l, label]) => (
         <button key={l} className={lang === l ? 'on' : ''} onClick={() => setLang(l)}>{label}</button>
       ))}
+    </div>
+  )
+}
+
+/** Botones fijos: 🔊 leer en voz alta y ⚙️ gráficos livianos. */
+export function Toolbar() {
+  const T = useT()
+  const voiceOn = useGame((s) => s.voice ?? s.easy)
+  const lite = useGame((s) => s.lite)
+  const { toggleVoice, toggleLite } = useGame.getState()
+  return (
+    <div className="toolbar">
+      {voiceSupported() && (
+        <button className={voiceOn ? 'on' : ''} onClick={() => { if (voiceOn) stopSpeaking(); toggleVoice() }} title={T('tool.voice')} aria-label={T('tool.voice')}>
+          {voiceOn ? '🔊' : '🔇'}
+        </button>
+      )}
+      <button className={lite ? 'on' : ''} onClick={toggleLite} title={T('tool.lite')} aria-label={T('tool.lite')}>
+        {lite ? '🐢' : '✨'}
+      </button>
     </div>
   )
 }

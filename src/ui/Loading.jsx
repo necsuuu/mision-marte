@@ -32,6 +32,26 @@ function MiniMap() {
   )
 }
 
+/** Botón grande de acción (lo mismo que la tecla E): sirve en tablets y para los más chicos. */
+function ActionButton() {
+  const focus = useGame((s) => s.roomFocus)
+  const T = useT()
+  if (!focus) return null
+  const type = focus.split(':')[0]
+  const label = { pick: '✋ ' + T('act.pick'), open: '🔓 ' + T('act.open'), drop: '📦 ' + T('act.drop') }[type]
+  return (
+    <motion.button
+      key={focus}
+      className="btn primary act-btn"
+      initial={{ scale: 0.6, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      onPointerDown={(e) => { e.preventDefault(); window.dispatchEvent(new KeyboardEvent('keydown', { key: 'e' })); window.dispatchEvent(new KeyboardEvent('keyup', { key: 'e' })) }}
+    >
+      {label} <kbd className="key-e">E</kbd>
+    </motion.button>
+  )
+}
+
 export default function Loading() {
   const { cargo, launch, weatherLoading, goModes, roomItems, carrying, unload, player, lang, easy } = useGame()
   const CAPACITY = capacityFor({ easy })
@@ -114,6 +134,7 @@ export default function Loading() {
           <MiniMap />
 
           <div className="room-bottom">
+            <ActionButton />
             <div className="hands">
               {Array.from({ length: MAX_CARRY }).map((_, i) => {
                 const k = carrying[i]

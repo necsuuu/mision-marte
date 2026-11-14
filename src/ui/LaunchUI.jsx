@@ -4,6 +4,7 @@ import { useGame } from '../game/store'
 import { launchClock, LAUNCH_END, LIFTOFF, SPACE_CUT } from '../three/Launch'
 import { useT } from '../i18n/useT'
 import { Tx } from './common'
+import { useSpeak } from '../game/voice'
 
 const STEPS = [
   [0, '🌍', 'launch.1'],
@@ -24,6 +25,7 @@ export default function LaunchUI() {
   const step = [...STEPS].reverse().find((s) => t >= s[0]) || STEPS[0]
   // cuenta regresiva 3, 2, 1 antes del despegue
   const count = t > 0.6 && t < LIFTOFF ? Math.max(1, Math.ceil(LIFTOFF - t)) : null
+  useSpeak(T(step[2], { name }))
   const flash = Math.max(0, 1 - Math.abs(t - SPACE_CUT) / 0.45)
   const fadeOut = Math.max(0, Math.min(1, (t - (LAUNCH_END - 0.8)) / 0.8))
 

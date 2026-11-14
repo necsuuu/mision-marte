@@ -4,6 +4,7 @@
 //  · plan de energía
 // En el papel de la derecha se imprime cómo quedarían los recursos con cada decisión.
 import { useEffect, useMemo, useState } from 'react'
+import { useSpeak } from '../game/voice'
 import { motion } from 'framer-motion'
 import { useGame, forecast, forecastChoice, chipsAvailable, shieldFraction, project, recommendChoice } from '../game/store'
 import { BASE, SYSTEMS, ITEMS, LEAK_O2, ICE_MINE_O2 } from '../game/content'
@@ -58,6 +59,12 @@ function Briefing({ s, card }) {
   const ch = getCharacter(s.player.character)
   const st = card.storm
   const lang = s.lang
+  useSpeak([
+    T('brief.header', { n: s.sol }),
+    card.intro ? T('brief.intro') : '',
+    st ? locStorm(lang, st.level).title : T('brief.calm'),
+    card.warn ? T('warn.big', { n: card.warn.in, speed: card.warn.speed }) : '',
+  ].join('. '))
   return (
     <>
       <div className="crt-header"><span className="blink">■</span> {T('brief.header', { n: s.sol })}</div>
@@ -81,12 +88,25 @@ function Briefing({ s, card }) {
             <Tx k="storm.launched" vars={{ date: fmtDate(st.date, lang) }} /> <Term k="cme">{T('storm.cme')}</Term> {T('storm.at')} <b>{st.speed.toLocaleString(lang === 'en' ? 'en-US' : 'es-AR')} km/s</b>
             {st.sep ? <> {T('storm.sep')} <Term k="sep">{T('storm.sepWord')}</Term></> : null}.
           </p>
-          <div className="crt-real">{T('storm.real')} · <Term k="donki">DONKI</Term> · {T('storm.imagine')}</div>
+          {st.rad ? <Tx as="p" className="crt-text" k="storm.rad" /> : st.arrival && <Tx as="p" className="crt-text" k="storm.arrival" vars={{ date: fmtDate(st.arrival.slice(0, 10), lang) }} />}
+          <div className="crt-real">{T('storm.real')} · <Term k="donki">DONKI</Term></div>
+          {st.big && <Tx as="div" className="crt-extra" k="storm.big" />}
+          {st.drill && <Tx as="div" className="crt-extra" k="storm.drill" />}
           {st.date?.startsWith('2024-05-20') && <Tx as="div" className="crt-extra" k="storm.may20" />}
+          {st.level < 3 && <Tx as="div" className="crt-note" k="storm.exag" />}
           <Tx as="div" className="crt-tip" k="storm.tip" />
         </div>
       ) : (
-        <p className="crt-text calm">{T('brief.calm')}</p>
+        <>
+          <p className="crt-text calm">{T('brief.calm')}</p>
+          {card.miss && <Tx as="p" className="crt-text" k="brief.miss" vars={{ speed: card.miss.speed.toLocaleString(lang === 'en' ? 'en-US' : 'es-AR') }} />}
+        </>
+      )}
+      {card.warn && (
+        <div className="crt-warn">
+          <Tx k="warn.big" vars={{ n: card.warn.in, speed: card.warn.speed.toLocaleString(lang === 'en' ? 'en-US' : 'es-AR') }} />
+          {card.warn.drill && <small> {T('warn.drill')}</small>}
+        </div>
       )}
       {(s.base.leak || s.base.brokenPanels > 0 || s.base.iceMine) && (
         <div className="crt-base">
@@ -116,6 +136,7 @@ function BriefPaper({ s, card }) {
       <div className="ticket-sep">- - - - - - - - - -</div>
       <div className="ticket-cost">{T('paper.forecastTitle')}</div>
       <div className="p-tag">{card.storm ? T('paper.stormRisk', { n: shieldNeeded }) : T('paper.calm')}</div>
+      {card.warn && <div className="p-tag ko">{T('warn.bigPaper', { n: card.warn.in })}</div>}
     </>
   )
 }
@@ -128,6 +149,7 @@ function Decision({ s, sel, setSel, options }) {
   // ⭐ Pista: solo para cadetes (9 años o menos); los más grandes deciden solos
   const hint = s.easy
   const best = useMemo(() => recommendChoice(s, options.map((o) => o.value)), [s, options])
+  useSpeak(ev.title + '. ' + ev.text + '. ' + options.map((o, i) => `${i + 1}: ${o.label}`).join('. '))
   return (
     <>
       <div className="crt-header"><span className="blink">■</span> {T('term.alert', { n: s.sol })} · {ev.emoji}</div>
@@ -197,6 +219,7 @@ function Chips({ value, max, color, onSet, disabledFrom }) {
 function Plan({ s }) {
   const T = useT()
   const { setAlloc, autoPlan } = useGame.getState()
+  useSpeak(s.helpReasons ? T('help.title') + ' ' + s.helpReasons.map(([k, v]) => T(k, v)).join('. ') : T('plan.q'))
   const avail = chipsAvailable(s)
   const p = project(s)
   const free = avail - p.used

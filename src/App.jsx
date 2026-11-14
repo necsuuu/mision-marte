@@ -16,6 +16,9 @@ import Loading from './ui/Loading'
 import SolScreen from './ui/SolScreen'
 import End from './ui/End'
 import DataPanel from './ui/DataPanel'
+import Quiz from './ui/Quiz'
+import Quality from './three/Quality'
+import { Toolbar } from './ui/common'
 
 export default function App() {
   const screen = useGame((s) => s.screen)
@@ -23,6 +26,7 @@ export default function App() {
   const onBase = screen === 'sol' || screen === 'end' || screen === 'landing'
   const finishLanding = useGame((s) => s.finishLanding)
   const finishLaunch = useGame((s) => s.finishLaunch)
+  const finishQuizPre = useGame((s) => s.finishQuizPre)
   const inRoom = screen === 'loading' || screen === 'tutorial'
   const planetOffset = screen === 'title' ? [2.4, -0.2, 0] : screen === 'character' ? [4.6, -2.2, -4] : [3.6, -1.6, -3]
 
@@ -34,6 +38,7 @@ export default function App() {
           dpr={[1, 1.75]}
           camera={{ position: [0, 0, 8], fov: 45 }}
         >
+          <Quality />
           <Suspense fallback={null}>{screen === 'launch' ? <Launch onDone={finishLaunch} /> : onBase ? <MarsBase key={screen === 'landing' ? 'cine' : 'base'} cinematic={screen === 'landing'} onCineDone={finishLanding} /> : inRoom ? <Room /> : <Planet offset={planetOffset} />}</Suspense>
         </Canvas>
       </div>
@@ -43,6 +48,7 @@ export default function App() {
           {screen === 'title' && <Title key="title" onData={() => setDataOpen(true)} />}
           {screen === 'character' && <CharacterSelect key="character" />}
           {screen === 'mode' && <ModeSelect key="mode" />}
+          {screen === 'quiz' && <Quiz key="quiz" phase="pre" onDone={finishQuizPre} onSkip={() => finishQuizPre(null)} />}
           {screen === 'launch' && <LaunchUI key="launch" />}
           {screen === 'tutorial' && <Tutorial key="tutorial" />}
           {screen === 'landing' && <LandingUI key="landing" />}
@@ -52,6 +58,7 @@ export default function App() {
         </AnimatePresence>
       </div>
 
+      {screen !== 'title' && <Toolbar />}
       <AnimatePresence>{dataOpen && <DataPanel onClose={() => setDataOpen(false)} />}</AnimatePresence>
     </div>
   )

@@ -34,6 +34,12 @@ export function shieldFraction(s, chips) {
 }
 
 /** Calcula qué va a pasar al terminar el sol con la energía repartida así (la UI lo muestra como pronóstico). */
+/**
+ * Consumo diario según la dificultad: los cadetes respiran y comen menos (más margen);
+ * desde los 10 años la base consume más y la energía no alcanza para todo.
+ */
+export const needs = (s) => (s.easy ? { o2: BASE.o2Use, food: BASE.foodUse } : { o2: BASE.o2UseHard, food: BASE.foodUseHard })
+
 export function project(s, alloc = s.alloc) {
   const used = chipsUsed(alloc)
   const avail = chipsAvailable(s)
@@ -42,9 +48,10 @@ export function project(s, alloc = s.alloc) {
   const o2PerChip = s.inventory.moxie ? BASE.o2PerChipMoxie : BASE.o2PerChip
   const leakLoss = s.base.leak && !alloc.fixLeak ? LEAK_O2 : 0
   const mine = s.base.iceMine ? ICE_MINE_O2 : 0
-  const dO2 = alloc.life * o2PerChip - BASE.o2Use - leakLoss + mine
+  const use = needs(s)
+  const dO2 = alloc.life * o2PerChip - use.o2 - leakLoss + mine
   const foodMade = s.inventory.seeds ? alloc.greenhouse * BASE.foodPerChip : 0
-  const dFood = foodMade - BASE.foodUse
+  const dFood = foodMade - use.food
   const sciMult = s.inventory.science ? 2 : 1
   const dSci = s.today.blockScience ? 0 : alloc.science * sciMult
   const storm = s.plan[s.sol - 1] || { level: 0 }
@@ -65,7 +72,7 @@ export function forecast(s, alloc = s.alloc) {
   let health = s.health
   const warn = []
   if (o2 <= 0) { health -= 30; warn.push('noO2'); o2 = 0 }
-  if (food <= 0) { health -= 15; warn.push('noFood'); food = 0 }
+  if (food <= 0) { health -= 25; warn.push('noFood'); food = 0 }
   const stormHit = p.stormDose > 0 ? Math.round(p.stormDose * 4) : 0
   health -= stormHit
   const dose = s.dose + p.dose
@@ -105,7 +112,7 @@ export function recommendAlloc(s) {
   const leak = s.base.leak ? LEAK_O2 : 0
   const mine = s.base.iceMine ? ICE_MINE_O2 : 0
   // 1) el aire primero
-  let needAir = Math.ceil(Math.max(0, BASE.o2Use + leak - mine) / perChip)
+  let needAir = Math.ceil(Math.max(0, needs(s).o2 + leak - mine) / perChip)
   if (s.o2 < 40) needAir += 1
   a.life = Math.min(BASE.maxChipsPerSystem, take(needAir))
   reasons.push(['help.air', { n: a.life }])
@@ -144,6 +151,9 @@ export function makeRoomItems() {
 }
 export const MAX_CARRY = 2
 
+/** Lo que se conserva al volver a jugar: idioma, jugador y preferencias. */
+const keep = (s) => ({ lang: s.lang, player: s.player, voice: s.voice, lite: s.lite })
+
 // Estado físico de la base: cambia con las decisiones y se ve en 3D
 const freshBase = () => ({
   leak: false, // fuga abierta (castigo que dura)
@@ -155,14 +165,20 @@ const freshBase = () => ({
   uvGlow: 0,
 })
 
+let savedLite = false
+try { savedLite = localStorage.getItem('mm-lite') === '1' } catch { /* sin localStorage */ }
+
 const initialState = {
   lang: savedLang,
+  voice: null, // 🔊 null = automático (prendida en modo cadete); true/false si el jugador la tocó
+  lite: savedLite, // ⚙️ gráficos livianos para compus viejas
+  quiz: { pre: null, post: null }, // respuestas del mini quiz antes y después (solo en memoria)
   layout: {}, // objeto → lugar en la nave (al azar en cada partida)
   roomPlayerX: 0,
   roomFocus: null, // lo que el comandante tiene cerca (para mostrar la info al jugar con teclado)
   decisions: [], // bitácora de decisiones para el informe final
   helpReasons: null, // explicación del ayudante en el plan de energía
-  screen: 'title', // title | character | mode | launch | landing | tutorial | loading | sol | end
+  screen: 'title', // title | character | mode | quiz | launch | tutorial | loading | landing | sol | end
   player: { name: '', age: null, character: null },
   easy: false,
   roomItems: makeRoomItems(),
@@ -206,16 +222,35 @@ export const useGame = create((set, get) => ({
     try { localStorage.setItem('mm-lang', lang) } catch { /* sin almacenamiento */ }
     set({ lang })
   },
-  goTitle: () => set({ ...initialState, lang: get().lang, player: get().player }),
+  goTitle: () => set({ ...initialState, ...keep(get()) }),
   goCharacter: () => set({ screen: 'character' }),
   setPlayer: (patch) => set({ player: { ...get().player, ...patch } }),
-  goModes: () => set({ ...initialState, lang: get().lang, player: get().player, screen: 'mode' }),
+  goModes: () => set({ ...initialState, ...keep(get()), screen: 'mode' }),
 
   // Modo elegido → cinemática de despegue (mientras tanto se consulta a la NASA)
   startLoading: (mode) => {
     const roomItems = makeRoomItems()
-    set({ ...initialState, lang: get().lang, player: get().player, screen: 'launch', mode, easy: isCadet(get().player.age), weatherLoading: true, roomItems, layout: randomLayout(roomItems.map((r) => r.key)) })
+    set({ ...initialState, ...keep(get()), screen: 'quiz', mode, easy: isCadet(get().player.age), weatherLoading: true, roomItems, layout: randomLayout(roomItems.map((r) => r.key)) })
     loadSpaceWeather(mode).then((weather) => set({ weather, weatherLoading: false }))
+  },
+  // Quiz de antes → despegue. Si lo saltea, no se le pregunta al final.
+  finishQuizPre: (answers) => { if (get().screen === 'quiz') set({ screen: 'launch', quiz: { pre: answers || null, post: null } }) },
+  finishQuizPost: (answers) => set({ quiz: { ...get().quiz, post: answers } }),
+  toggleVoice: () => set({ voice: !(get().voice ?? get().easy) }),
+  toggleLite: () => {
+    const lite = !get().lite
+    try { localStorage.setItem('mm-lite', lite ? '1' : '0') } catch { /* nada */ }
+    set({ lite })
+  },
+  /** 🎬 Demo rápida: salta el quiz, el despegue, la carga y el aterrizaje, con una carga razonable. Ideal para mostrar al jurado. */
+  quickStart: async (mode = 'may2024') => {
+    const roomItems = makeRoomItems()
+    set({ ...initialState, ...keep(get()), screen: 'mode', mode, easy: isCadet(get().player.age), weatherLoading: true, roomItems, layout: randomLayout(roomItems.map((r) => r.key)) })
+    const weather = await loadSpaceWeather(mode)
+    set({ weather, weatherLoading: false, cargo: ['seeds', 'moxie', 'battery', 'water', 'repair', 'o2tank'] })
+    get().launch()
+    set({ screen: 'sol' })
+    get().prepareSol()
   },
   // Orden: despegue (Tierra) → tutorial → recolección en la nave → aterrizaje (Marte) → Sol 1
   finishLaunch: () => { if (get().screen === 'launch') set({ screen: 'tutorial' }) },
@@ -300,7 +335,7 @@ export const useGame = create((set, get) => ({
   prepareSol: () => {
     const s = get()
     const storm = s.plan[s.sol - 1]
-    const cards = [{ type: 'briefing', storm: storm && storm.level > 0 ? storm : null, intro: s.sol === 1 }]
+    const cards = [{ type: 'briefing', storm: storm && storm.level > 0 ? storm : null, warn: storm?.warn || null, miss: storm?.miss || null, intro: s.sol === 1 }]
     const eventChance = storm && storm.level > 0 ? (s.easy ? 0.2 : 0.35) : s.sol === 1 ? 0 : s.easy ? 0.55 : 0.8
     let deck = s.eventDeck
     if (Math.random() < eventChance) {

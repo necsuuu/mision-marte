@@ -9,6 +9,7 @@ import { useT } from '../i18n/useT'
 import { Bar, Delta, Term, fade } from './common'
 import DayTerminal from './DayTerminal'
 import Console from './Console'
+import { useSpeak } from '../game/voice'
 
 const DAWN_MS = 2300
 const INCIDENT_MS = 3300
@@ -125,6 +126,7 @@ function Outcome({ s }) {
   const r = s.cardResult
   const { nextCard } = useGame.getState()
   const [ready, setReady] = useState(false)
+  useSpeak(outcomeText(s.lang, raw, r) + '. ' + (ev.fact || ''))
   useEffect(() => {
     const tm = setTimeout(() => setReady(true), 2200)
     return () => clearTimeout(tm)

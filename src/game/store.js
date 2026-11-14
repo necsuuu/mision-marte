@@ -159,6 +159,7 @@ const initialState = {
   lang: savedLang,
   layout: {}, // objeto → lugar en la nave (al azar en cada partida)
   roomPlayerX: 0,
+  roomFocus: null, // lo que el comandante tiene cerca (para mostrar la info al jugar con teclado)
   decisions: [], // bitácora de decisiones para el informe final
   helpReasons: null, // explicación del ayudante en el plan de energía
   screen: 'title', // title | character | mode | launch | landing | tutorial | loading | sol | end
@@ -356,7 +357,7 @@ export const useGame = create((set, get) => ({
 
   autoPlan: () => {
     const s = get()
-    if (s.phase !== 'plan') return
+    if (s.phase !== 'plan' || !s.easy) return // ayuda solo para cadetes
     const r = recommendAlloc(s)
     set({ alloc: r.alloc, helpReasons: r.reasons })
   },

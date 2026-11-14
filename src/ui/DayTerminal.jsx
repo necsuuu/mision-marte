@@ -125,8 +125,8 @@ function Decision({ s, sel, setSel, options }) {
   const T = useT()
   const ev = locEvent(s.lang, s.cards[0].event)
   const d = earthMarsDistance(new Date())
-  // 💡 Pista: en modo cadete se muestra sola; si no, con un botón
-  const [hint, setHint] = useState(s.easy)
+  // ⭐ Pista: solo para cadetes (9 años o menos); los más grandes deciden solos
+  const hint = s.easy
   const best = useMemo(() => recommendChoice(s, options.map((o) => o.value)), [s, options])
   return (
     <>
@@ -144,7 +144,6 @@ function Decision({ s, sel, setSel, options }) {
         ))}
       </div>
       <div className="crt-foot">
-        {!hint && <button className="crt-help" onClick={() => setHint(true)}>💡 {T('hint.btn')}</button>}
         <span>{T('term.keys')}</span>
       </div>
     </>
@@ -219,7 +218,7 @@ function Plan({ s }) {
           {Array.from({ length: avail }).map((_, i) => <span key={i} className={i < p.used ? 'used' : ''}>⚡</span>)}
           <small>{avail === 0 ? T('plan.none') : free === 1 ? T('plan.free1') : T('plan.free', { n: free })}</small>
         </div>
-        <button className={'crt-help big' + (s.easy && !s.helpReasons && p.used === 0 ? ' pulse' : '')} onClick={autoPlan}>🤖 {T('help.btn')}</button>
+        {s.easy && <button className={'crt-help big' + (!s.helpReasons && p.used === 0 ? ' pulse' : '')} onClick={autoPlan}>🤖 {T('help.btn')}</button>}
       </div>
       {s.helpReasons && (
         <div className="crt-helpbox">

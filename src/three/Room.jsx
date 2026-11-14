@@ -204,9 +204,27 @@ function CabinDecor() {
 }
 
 // ---------- Muebles ----------
+/** Caja hueca (abierta adelante) para que los objetos de adentro se vean al abrir la puerta. */
+function Hollow({ w, h, d, body, inner, shelves = [], open }) {
+  const t = 0.06
+  const innerMat = <meshStandardMaterial color={inner} emissive="#fff3c4" emissiveIntensity={open ? 0.35 : 0} roughness={0.8} />
+  return (
+    <group>
+      <mesh position={[0, 0, -d / 2 + t / 2]}><boxGeometry args={[w, h, t]} />{innerMat}</mesh>
+      <mesh position={[-w / 2 + t / 2, 0, 0]}><boxGeometry args={[t, h, d]} />{body}</mesh>
+      <mesh position={[w / 2 - t / 2, 0, 0]}><boxGeometry args={[t, h, d]} />{body}</mesh>
+      <mesh position={[0, h / 2 - t / 2, 0]}><boxGeometry args={[w, t, d]} />{body}</mesh>
+      <mesh position={[0, -h / 2 + t / 2, 0]}><boxGeometry args={[w, t, d]} />{body}</mesh>
+      {shelves.map((y) => <mesh key={y} position={[0, y, 0]}><boxGeometry args={[w - t * 2, t, d - t]} />{innerMat}</mesh>)}
+    </group>
+  )
+}
+
 function Furniture({ id, f, open, empty }) {
   const door = useRef()
-  const [hover, setHover] = useState(false)
+  const [mouseHover, setHover] = useState(false)
+  const focused = useGame((s) => s.roomFocus === 'open:' + id)
+  const hover = mouseHover || focused
   const closedKind = CLOSED_KINDS.has(f.kind)
   useFrame((_, dt) => {
     const d = door.current
@@ -242,8 +260,7 @@ function Furniture({ id, f, open, empty }) {
     case 'wallcab':
       content = (
         <group position={[x, 1.9, z + 0.35]} {...handlers}>
-          <mesh><boxGeometry args={[1.7, 1.5, 0.7]} />{body('#d9d4c6')}</mesh>
-          <mesh position={[0, 0, 0.36]}><boxGeometry args={[1.5, 1.3, 0.02]} /><meshStandardMaterial color="#2a2a2a" /></mesh>
+          <Hollow w={1.7} h={1.5} d={0.7} body={body('#d9d4c6')} inner="#f1efe6" open={open} />
           <group ref={door} position={[-0.85, 0, 0.37]}>
             <mesh position={[0.85, 0, 0]}><boxGeometry args={[1.7, 1.5, 0.06]} />{body('#ecebe4')}</mesh>
             <mesh position={[0.85, 0, 0.04]}><boxGeometry args={[0.7, 0.2, 0.02]} /><meshStandardMaterial color="#2fbf5a" emissive="#1d8f3d" emissiveIntensity={0.6} /></mesh>
@@ -255,8 +272,9 @@ function Furniture({ id, f, open, empty }) {
     case 'locker':
       content = (
         <group position={[x, 0, z]} {...handlers}>
-          <mesh position={[0, 1.6, 0]}><boxGeometry args={[1.5, 3.2, 1]} />{body(f.color || '#6f7a63')}</mesh>
-          <mesh position={[0, 1.6, 0.51]}><boxGeometry args={[1.3, 3, 0.02]} /><meshStandardMaterial color="#1f221b" /></mesh>
+          <group position={[0, 1.6, 0]}>
+            <Hollow w={1.5} h={3.2} d={1} body={body(f.color || '#6f7a63')} inner="#dcdccf" shelves={[-0.46, 0.7]} open={open} />
+          </group>
           <group ref={door} position={[-0.75, 1.6, 0.53]}>
             <mesh position={[0.75, 0, 0]}><boxGeometry args={[1.5, 3.2, 0.06]} />{body(f.color ? new THREE.Color(f.color).offsetHSL(0, 0, 0.05) : '#7f8b71')}</mesh>
             {[0.9, 1.1, 1.3].map((y) => <mesh key={y} position={[0.75, y, 0.04]}><boxGeometry args={[0.9, 0.06, 0.02]} /><meshStandardMaterial color="#3b4234" /></mesh>)}
@@ -268,8 +286,9 @@ function Furniture({ id, f, open, empty }) {
     case 'glasscase':
       content = (
         <group position={[x, 0, z]} {...handlers}>
-          <mesh position={[0, 1.5, 0]}><boxGeometry args={[2, 3, 0.8]} />{body('#3d4236')}</mesh>
-          <mesh position={[0, 1.5, 0.41]}><boxGeometry args={[1.8, 2.8, 0.02]} /><meshStandardMaterial color="#14160f" /></mesh>
+          <group position={[0, 1.5, 0]}>
+            <Hollow w={2} h={3} d={0.8} body={body('#3d4236')} inner="#cfd8c8" shelves={[-0.47, 0.5]} open />
+          </group>
           <mesh position={[0, 3.05, 0.42]}><boxGeometry args={[2, 0.12, 0.02]} /><meshStandardMaterial color="#ffd166" /></mesh>
           <group ref={door} position={[-1, 1.5, 0.44]}>
             <mesh position={[1, 0, 0]}><boxGeometry args={[2, 3, 0.04]} /><meshStandardMaterial color="#bfe7ff" transparent opacity={0.25} emissive="#ffd166" emissiveIntensity={hl} /></mesh>
@@ -337,7 +356,7 @@ function Furniture({ id, f, open, empty }) {
       {content}
       {showQ && (
         <Html pointerEvents="none" position={[x, tagY, z + 0.6]} center zIndexRange={[10, 0]} style={{ pointerEvents: 'none' }}>
-          <div className={'furn-tag' + (hover ? ' hover' : '')}>❓</div>
+          <div className={'furn-tag' + (hover ? ' hover' : '')}>❓{focused && <kbd className="key-e">E</kbd>}</div>
         </Html>
       )}
       {open && closedKind && empty && (
@@ -368,7 +387,9 @@ function useHitbox(modelRef) {
 }
 
 function RoomItem({ entry, playerRef }) {
-  const [hover, setHover] = useState(false)
+  const [mouseHover, setHover] = useState(false)
+  const focused = useGame((s) => s.roomFocus === 'pick:' + entry.key)
+  const hover = mouseHover || focused
   const group = useRef()
   const modelRef = useRef()
   const hit = useHitbox(modelRef)
@@ -432,6 +453,7 @@ function RoomItem({ entry, playerRef }) {
           <div className={'item-tag' + (hover ? ' hover' : '')}>
             <span>{item.emoji}</span>
             {hover && <><b>{item.name}</b><small>⚖️ {item.mass}</small></>}
+            {focused && <kbd className="key-e">E</kbd>}
           </div>
         </Html>
       )}
@@ -610,7 +632,12 @@ function Player({ playerRef }) {
     moving.current = mv
     const s = useGame.getState()
     if (s.carrying.length && Math.hypot(p.x - HATCH.x, p.z - HATCH.z) < HATCH.r) s.depositAll()
-    if (st.clock.elapsedTime - lastPub.current > 0.25) { lastPub.current = st.clock.elapsedTime; useGame.setState({ roomPlayerX: p.x }) }
+    if (st.clock.elapsedTime - lastPub.current > 0.15) {
+      lastPub.current = st.clock.elapsedTime
+      const a = s.screen === 'loading' ? nearestAction(p) : null
+      const focus = a ? (a.type === 'pick' ? 'pick:' + a.key : a.type === 'open' ? 'open:' + a.id : 'drop') : null
+      useGame.setState(focus === s.roomFocus ? { roomPlayerX: p.x } : { roomPlayerX: p.x, roomFocus: focus })
+    }
 
     if (group.current) group.current.position.set(p.x, 0, p.z)
     if (body.current) body.current.position.y = mv ? Math.abs(Math.sin(st.clock.elapsedTime * 9)) * 0.08 : 0
@@ -638,6 +665,7 @@ function Player({ playerRef }) {
 
 // Compuerta hacia la base (en la pared del fondo de la cabina)
 function Hatch({ carrying }) {
+  const dropFocus = useGame((s) => s.roomFocus === 'drop')
   const glow = useRef()
   useFrame((st) => {
     if (glow.current) glow.current.material.opacity = carrying ? 0.35 + Math.sin(st.clock.elapsedTime * 5) * 0.25 : 0.12
@@ -657,7 +685,7 @@ function Hatch({ carrying }) {
         <meshBasicMaterial color="#ffd166" />
       </mesh>
       <Html pointerEvents="none" position={[HATCH.x, 4.9, -6.6]} center zIndexRange={[10, 0]} style={{ pointerEvents: 'none' }}>
-        <div className="room-sign">🏠</div>
+        <div className="room-sign">🏠{dropFocus && <kbd className="key-e">E</kbd>}</div>
       </Html>
       <pointLight position={[HATCH.x, 3, -5]} color="#ffb347" intensity={carrying ? 30 : 12} distance={9} />
     </group>

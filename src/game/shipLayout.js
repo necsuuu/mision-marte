@@ -8,22 +8,23 @@ export const SECTORS = [
 ]
 export const sectorAt = (x) => SECTORS.find((s) => x >= s.x0 && x < s.x1) || SECTORS[1]
 
+// front: dónde se para el comandante. En lockers y vitrinas queda al costado, para no tapar lo que hay adentro.
 // kind: shelf/console/bench/rack = abiertos · wallcab/locker/glasscase/drawers/crate/fridge = hay que abrirlos
 export const FURN = {
   // --- Cabina principal ---
   pantry: { pos: [-8, 0, -6.3], front: [-8, 0, -4.5], kind: 'shelf', icon: '🗄️' },
   console: { pos: [0.5, 0, -0.2], front: [0.5, 0, 1.6], kind: 'console', icon: '🖥️' },
-  cabLocker: { pos: [2.4, 0, -6.35], front: [2.4, 0, -4.5], kind: 'locker', icon: '🔒' },
+  cabLocker: { pos: [2.4, 0, -6.35], front: [3.8, 0, -4.7], kind: 'locker', icon: '🔒' },
   // --- Módulo médico ---
-  medcab: { pos: [-15.5, 0, -6.75], front: [-15.5, 0, -4.5], kind: 'wallcab', icon: '➕' },
-  medLocker: { pos: [-19.5, 0, -6.35], front: [-19.5, 0, -4.5], kind: 'locker', color: '#e9eef2', icon: '🔒' },
-  fridge: { pos: [-29.5, 0, -6.35], front: [-29.5, 0, -4.5], kind: 'locker', color: '#cfe8f5', icon: '❄️' },
+  medcab: { pos: [-15.5, 0, -6.75], front: [-14.1, 0, -4.7], kind: 'wallcab', icon: '➕' },
+  medLocker: { pos: [-19.5, 0, -6.35], front: [-18.1, 0, -4.7], kind: 'locker', color: '#e9eef2', icon: '🔒' },
+  fridge: { pos: [-29.5, 0, -6.35], front: [-28.1, 0, -4.7], kind: 'locker', color: '#cfe8f5', icon: '❄️' },
   medBench: { pos: [-19.5, 0, 3.6], front: [-19.5, 0, 1.8], kind: 'bench', icon: '🛠️' },
   supplyCrate: { pos: [-30.5, 0, 3], front: [-28.6, 0, 3], kind: 'crate', color: '#8a6a3f', icon: '📦' },
   // --- Módulo de ingeniería ---
-  glasscase: { pos: [15.5, 0, -6.45], front: [15.5, 0, -4.5], kind: 'glasscase', icon: '🧪' },
+  glasscase: { pos: [15.5, 0, -6.45], front: [17, 0, -4.7], kind: 'glasscase', icon: '🧪' },
   drawers: { pos: [20.5, 0, -6.15], front: [20.5, 0, -4.2], kind: 'drawers', icon: '🗃️' },
-  engLocker: { pos: [25, 0, -6.35], front: [25, 0, -4.5], kind: 'locker', color: '#8a7f63', icon: '🔒' },
+  engLocker: { pos: [25, 0, -6.35], front: [26.4, 0, -4.7], kind: 'locker', color: '#8a7f63', icon: '🔒' },
   workbench: { pos: [26.5, 0, 3.8], front: [26.5, 0, 2], kind: 'bench', icon: '🛠️' },
   engCrate: { pos: [16.5, 0, 3.6], front: [16.5, 0, 1.8], kind: 'crate', color: '#4f7d3b', icon: '📦' },
   tankRack: { pos: [31.5, 0, 3.2], front: [31.5, 0, 1.6], kind: 'rack', icon: '🧱' },
@@ -35,15 +36,15 @@ export const SLOTS = [
   { id: 'pantry-a', furn: 'pantry', at: [-8.6, 1.22, -6.2], s: 0.8 },
   { id: 'pantry-b', furn: 'pantry', at: [-7.4, 2.12, -6.2], s: 0.8 },
   { id: 'console', furn: 'console', at: [1.7, 1.02, -0.2], s: 0.8 },
-  { id: 'cabLocker', furn: 'cabLocker', at: [2.4, 0.25, -6.25], s: 0.9 },
-  { id: 'medcab', furn: 'medcab', at: [-15.5, 1.55, -6.45], s: 0.6 },
-  { id: 'medLocker', furn: 'medLocker', at: [-19.5, 0.25, -6.25], s: 0.9 },
-  { id: 'fridge', furn: 'fridge', at: [-29.5, 0.25, -6.25], s: 0.9 },
+  { id: 'cabLocker', furn: 'cabLocker', at: [2.4, 1.2, -6.3], s: 0.9 },
+  { id: 'medcab', furn: 'medcab', at: [-15.5, 1.24, -6.4], s: 0.6 },
+  { id: 'medLocker', furn: 'medLocker', at: [-19.5, 1.2, -6.3], s: 0.9 },
+  { id: 'fridge', furn: 'fridge', at: [-29.5, 1.2, -6.3], s: 0.9 },
   { id: 'medBench', furn: 'medBench', at: [-19.5, 1.02, 3.6], s: 0.85 },
   { id: 'supplyCrate', furn: 'supplyCrate', at: [-30.5, 0.55, 3], s: 0.85 },
-  { id: 'glasscase', furn: 'glasscase', at: [15.5, 0.75, -6.3], s: 0.9 },
+  { id: 'glasscase', furn: 'glasscase', at: [15.5, 1.06, -6.4], s: 0.9 },
   { id: 'drawers', furn: 'drawers', at: [20.5, 1.18, -5.25], s: 0.6 },
-  { id: 'engLocker', furn: 'engLocker', at: [25, 0.25, -6.25], s: 0.9 },
+  { id: 'engLocker', furn: 'engLocker', at: [25, 1.2, -6.3], s: 0.9 },
   { id: 'workbench-a', furn: 'workbench', at: [25.8, 1.02, 3.8], s: 0.8 },
   { id: 'workbench-b', furn: 'workbench', at: [27.3, 1.02, 3.8], s: 0.8 },
   { id: 'engCrate', furn: 'engCrate', at: [16.5, 0.55, 3.6], s: 0.85 },

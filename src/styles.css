@@ -590,3 +590,7 @@ p { margin: 0 0 0.8em; line-height: 1.5; }
 .crt-helpbox { display: grid; gap: 0.4cqw; font-size: 1.3cqw; line-height: 1.35; color: #ffe39a; border: 1px dashed rgba(255, 209, 102, 0.6); padding: 0.8cqw 1.2cqw; border-radius: 0.6cqw; text-shadow: 0 0 0.5cqw rgba(255, 209, 102, 0.5); }
 .crt-helpbox b { color: #ffd166; }
 .tut-caption { font-size: clamp(1.4rem, 2.6vw, 2rem); }
+
+.key-e { display: inline-grid; place-items: center; min-width: 1.5em; height: 1.5em; margin-left: 6px; padding: 0 4px; border-radius: 6px; background: var(--gold); color: #1a1205; font: 700 0.85rem 'Space Mono', monospace; box-shadow: 0 2px 0 #9a6f00; animation: float 0.8s ease-in-out infinite alternate; }
+.furn-tag:has(.key-e) { width: auto; padding: 0 10px; border-radius: 999px; }
+.room-sign .key-e { font-size: 1rem; }

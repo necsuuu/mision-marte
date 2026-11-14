@@ -47,7 +47,7 @@ Dos comandantes para elegir. Se escribe el **nombre** y se toca la **edad** (6 a
 - En cada decisión aparece sola la **⭐ opción que elegiría la tripulación**.
 - El botón **🤖 Ayudame** del plan de energía brilla para que lo usen.
 
-Cualquier jugador puede usar **💡 Pista** en las decisiones y **🤖 Ayudame** en el plan de energía. El ayudante reparte la energía y explica por qué con frases cortas: primero el aire, después el escudo si hay tormenta, la comida, las reparaciones, y lo que sobra va a ciencia.
+Estas ayudas son **solo para el modo cadete**: los jugadores de 10 años o más deciden sin pistas. El ayudante reparte la energía y explica por qué con frases cortas: primero el aire, después el escudo si hay tormenta, la comida, las reparaciones, y lo que sobra va a ciencia.
 
 > El nombre y la edad **solo viven en la memoria del navegador** mientras se juega: no se guardan ni se envían a ningún lado.
 

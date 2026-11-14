@@ -19,11 +19,9 @@ Las **tormentas solares del juego son reales**: salen de la base de datos **DONK
 7. [Cómo correrlo en tu computadora](#-cómo-correrlo-en-tu-computadora)
 8. [Estructura del proyecto](#-estructura-del-proyecto)
 9. [Cómo modificar el juego](#%EF%B8%8F-cómo-modificar-el-juego)
-10. [Publicarlo en internet](#-publicarlo-en-internet)
-11. [Notas técnicas de las APIs](#-notas-técnicas-de-las-apis)
-12. [Simplificaciones honestas](#-simplificaciones-honestas)
-13. [Uso de Inteligencia Sintética (IA)](#-uso-de-inteligencia-sintética-ia)
-14. [Créditos](#-créditos)
+10. [Notas técnicas de las APIs](#-notas-técnicas-de-las-apis)
+11. [Simplificaciones honestas](#-simplificaciones-honestas)
+12. [Créditos](#-créditos)
 
 ---
 

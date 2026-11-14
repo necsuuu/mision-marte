@@ -50,9 +50,11 @@ export function Toolbar() {
   const T = useT()
   const voiceOn = useGame((s) => s.voice ?? s.easy)
   const lite = useGame((s) => s.lite)
-  const { toggleVoice, toggleLite } = useGame.getState()
+  const canPause = useGame((s) => ['quiz', 'launch', 'tutorial', 'loading', 'landing', 'sol'].includes(s.screen))
+  const { toggleVoice, toggleLite, setPaused } = useGame.getState()
   return (
     <div className="toolbar">
+      {canPause && <button onClick={() => setPaused(true)} title={T('pause.title') + ' (Esc)'} aria-label={T('pause.title')}>⏸️</button>}
       {voiceSupported() && (
         <button className={voiceOn ? 'on' : ''} onClick={() => { if (voiceOn) stopSpeaking(); toggleVoice() }} title={T('tool.voice')} aria-label={T('tool.voice')}>
           {voiceOn ? '🔊' : '🔇'}

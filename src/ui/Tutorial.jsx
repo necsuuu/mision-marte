@@ -112,16 +112,12 @@ export default function Tutorial() {
   const frames = getCharacter(player.character).walk
   const [step, setStep] = useState(0)
   const [auto, setAuto] = useState(true)
+  const paused = useGame((s) => s.paused)
   useEffect(() => {
-    if (!auto) return
+    if (!auto || paused) return
     const tm = setTimeout(() => setStep((s) => (s < STEPS.length - 1 ? s + 1 : s)), STEP_MS * 1.6)
     return () => clearTimeout(tm)
-  }, [step, auto])
-  useEffect(() => {
-    const onKey = (e) => { if (e.key === 'Escape') finish() }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [finish])
+  }, [step, auto, paused])
   const last = step === STEPS.length - 1
   return (
     <motion.div className="screen center tutorial" {...fade}>

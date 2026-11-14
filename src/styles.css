@@ -623,3 +623,16 @@ p { margin: 0 0 0.8em; line-height: 1.5; }
 .link-btn.demo { color: var(--gold); }
 .act-btn { font-size: 1.35rem; padding: 14px 22px; display: inline-flex; align-items: center; gap: 6px; }
 .room-screen .room-bottom { margin-left: 112px; }
+
+/* ---------- v0.7.1: menú de pausa ---------- */
+.pause-overlay { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; background: rgba(4, 6, 14, 0.72); backdrop-filter: blur(6px); }
+.pause-card { width: min(460px, 92vw); background: rgba(14, 16, 28, 0.95); border: 2px solid rgba(255, 209, 102, 0.45); border-radius: 22px; padding: 26px 28px 18px; text-align: center; box-shadow: 0 24px 70px rgba(0, 0, 0, 0.6); display: grid; gap: 14px; justify-items: center; }
+.pause-icon { font-size: 3rem; line-height: 1; }
+.pause-card h2 { margin: 0; font: 700 1.9rem 'Fredoka', sans-serif; }
+.pause-btns { display: grid; gap: 10px; width: 100%; }
+.pause-btns .btn { width: 100%; font-size: 1.2rem; padding: 14px; }
+.pause-confirm p { font-size: 1.15rem; line-height: 1.4; margin: 0 0 12px; }
+.pause-row { display: flex; gap: 10px; justify-content: center; }
+.pause-row .btn { min-width: 120px; font-size: 1.15rem; }
+.pause-lang { position: static; }
+.pause-hint { opacity: 0.6; }

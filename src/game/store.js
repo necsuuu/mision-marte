@@ -172,6 +172,7 @@ const initialState = {
   lang: savedLang,
   voice: null, // 🔊 null = automático (prendida en modo cadete); true/false si el jugador la tocó
   lite: savedLite, // ⚙️ gráficos livianos para compus viejas
+  paused: false, // ⏸️ menú de pausa (tecla Esc)
   quiz: { pre: null, post: null }, // respuestas del mini quiz antes y después (solo en memoria)
   layout: {}, // objeto → lugar en la nave (al azar en cada partida)
   roomPlayerX: 0,
@@ -236,6 +237,14 @@ export const useGame = create((set, get) => ({
   // Quiz de antes → despegue. Si lo saltea, no se le pregunta al final.
   finishQuizPre: (answers) => { if (get().screen === 'quiz') set({ screen: 'launch', quiz: { pre: answers || null, post: null } }) },
   finishQuizPost: (answers) => set({ quiz: { ...get().quiz, post: answers } }),
+  // ⏸️ Pausa: se puede pausar durante la misión (no en los menús)
+  setPaused: (paused) => {
+    const PAUSABLE = ['quiz', 'launch', 'tutorial', 'loading', 'landing', 'sol']
+    if (paused && !PAUSABLE.includes(get().screen)) return
+    set({ paused })
+  },
+  /** Reiniciar la misión desde cero, con el mismo comandante y el mismo modo. */
+  restartMission: () => get().startLoading(get().mode || 'recent'),
   toggleVoice: () => set({ voice: !(get().voice ?? get().easy) }),
   toggleLite: () => {
     const lite = !get().lite

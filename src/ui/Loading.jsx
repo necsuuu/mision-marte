@@ -67,15 +67,16 @@ export default function Loading() {
     useGame.setState({ roomLeft: started ? left : null })
   }, [left, started])
 
+  const paused = useGame((s) => s.paused)
   useEffect(() => {
-    if (!started) return
+    if (!started || paused) return // ⏸️ el reloj se frena en pausa
     if (left <= 0) {
       if (!weatherLoading) launch()
       return
     }
     const t = setTimeout(() => setLeft((l) => l - 1), 1000)
     return () => clearTimeout(t)
-  }, [left, started, weatherLoading, launch])
+  }, [left, started, weatherLoading, launch, paused])
 
   const loaded = roomItems.filter((r) => r.state === 'loaded')
   const urgent = left <= 10

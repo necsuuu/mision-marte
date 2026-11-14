@@ -90,10 +90,12 @@ function Hud({ s, onData }) {
 function Dawn({ s }) {
   const T = useT()
   const afterDawn = useGame((st) => st.afterDawn)
+  const paused = useGame((st) => st.paused)
   useEffect(() => {
+    if (paused) return
     const tm = setTimeout(afterDawn, DAWN_MS)
     return () => clearTimeout(tm)
-  }, [afterDawn])
+  }, [afterDawn, paused])
   return (
     <motion.div className="dawn-card" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.2 }} transition={{ duration: 0.5 }}>
       <span>🌅</span>
@@ -107,10 +109,12 @@ function Dawn({ s }) {
 function Incident({ s }) {
   const ev = locEvent(s.lang, s.cards[0].event)
   const toDecision = useGame((st) => st.toDecision)
+  const paused = useGame((st) => st.paused)
   useEffect(() => {
+    if (paused) return
     const tm = setTimeout(toDecision, INCIDENT_MS)
     return () => clearTimeout(tm)
-  }, [toDecision])
+  }, [toDecision, paused])
   return (
     <motion.div className="incident-caption" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
       <span className="pulse-dot" /> {ev.emoji} {ev.title}

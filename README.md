@@ -79,6 +79,7 @@ Cuenta regresiva 3, 2, 1: el cohete se enciende y despega entre el humo, atravie
 La nave tiene **3 módulos** conectados por puertas: 🏥 **Módulo médico** · 🛰️ **Cabina** · 🔧 **Ingeniería**. La cámara sigue al comandante y un **mini mapa** muestra en qué módulo está y cuántos objetos quedan en cada uno.
 
 - **Controles:** 🖱️ clic en el piso para caminar y clic en un objeto para agarrarlo, o ⌨️ **WASD / flechas** para moverse y **E** (o Espacio) para abrir / agarrar / dejar.
+- **⏸️ Pausa:** con **Esc** (o el botón ⏸️ de abajo a la izquierda) se frena todo el juego: la escena, la cuenta regresiva y la voz. Desde ahí se puede seguir, **reiniciar la misión desde cero** o **salir al menú principal** (las dos últimas piden confirmación). Funciona en el quiz, el despegue, el tutorial, la nave, el aterrizaje y los soles.
 - El astronauta **rodea los muebles** (búsqueda de caminos A*), no los atraviesa, y tiene **animación de caminata**.
 - **Los objetos aparecen en lugares distintos en cada partida.** Hay 16 lugares posibles (casilleros, heladera, vitrina, cajonera, cajones, estantes, mesas) para 11 objetos, así que algunos muebles están vacíos. 🕸️
 - Los muebles cerrados tienen ❓ y hay que abrirlos primero.

@@ -580,6 +580,7 @@ function Player({ playerRef }) {
     }
     const down = (e) => {
       if (e.target?.tagName === 'INPUT') return
+      if (useGame.getState().paused) return
       if (useGame.getState().screen !== 'loading') return // durante el tutorial la nave está de fondo, sin control
       const k = e.key.toLowerCase()
       keys.current[k] = true

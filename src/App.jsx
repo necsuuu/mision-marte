@@ -18,6 +18,8 @@ import End from './ui/End'
 import DataPanel from './ui/DataPanel'
 import Quiz from './ui/Quiz'
 import Quality from './three/Quality'
+import PauseClock from './three/PauseClock'
+import PauseMenu from './ui/PauseMenu'
 import { Toolbar } from './ui/common'
 
 export default function App() {
@@ -27,6 +29,7 @@ export default function App() {
   const finishLanding = useGame((s) => s.finishLanding)
   const finishLaunch = useGame((s) => s.finishLaunch)
   const finishQuizPre = useGame((s) => s.finishQuizPre)
+  const paused = useGame((s) => s.paused)
   const inRoom = screen === 'loading' || screen === 'tutorial'
   const planetOffset = screen === 'title' ? [2.4, -0.2, 0] : screen === 'character' ? [4.6, -2.2, -4] : [3.6, -1.6, -3]
 
@@ -35,10 +38,12 @@ export default function App() {
       <div className="canvas-wrap">
         <Canvas
           shadows
+          frameloop={paused ? 'never' : 'always'}
           dpr={[1, 1.75]}
           camera={{ position: [0, 0, 8], fov: 45 }}
         >
           <Quality />
+          <PauseClock />
           <Suspense fallback={null}>{screen === 'launch' ? <Launch onDone={finishLaunch} /> : onBase ? <MarsBase key={screen === 'landing' ? 'cine' : 'base'} cinematic={screen === 'landing'} onCineDone={finishLanding} /> : inRoom ? <Room /> : <Planet offset={planetOffset} />}</Suspense>
         </Canvas>
       </div>
@@ -59,6 +64,7 @@ export default function App() {
       </div>
 
       {screen !== 'title' && <Toolbar />}
+      <PauseMenu />
       <AnimatePresence>{dataOpen && <DataPanel onClose={() => setDataOpen(false)} />}</AnimatePresence>
     </div>
   )

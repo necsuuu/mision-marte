@@ -329,6 +329,7 @@ export default function DayTerminal({ s }) {
   // teclado: números/flechas para elegir, Enter para confirmar
   useEffect(() => {
     const onKey = (e) => {
+      if (useGame.getState().paused) return
       if (mode === 'decision') {
         const n = parseInt(e.key, 10)
         if (n >= 1 && n <= options.length) setSel(n - 1)

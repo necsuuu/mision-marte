@@ -51,6 +51,9 @@ Dos comandantes para elegir. Se escribe el **nombre** y se toca la **edad** (6 a
 | ☢️ **Tormenta 2024** (difícil) | Mayo de 2024: la tormenta solar que llegó a Marte y le dio al rover Curiosity el **mayor pico de radiación** desde que aterrizó |
 | 🎲 **Sorpresa** | Tormentas reales elegidas al azar: cada partida es distinta |
 
+### 2b. Tutorial animado
+Antes de aterrizar aparece un **tutorial tipo video** que muestra cómo moverse (W A S D / flechas o clic en el piso), cómo abrir muebles y agarrar con clic o la tecla **E**, y cómo llevar 2 objetos a la base. Se puede **saltar** con el botón o con Escape.
+
 ### 3. Cinemática de aterrizaje
 La cápsula entra con **paracaídas**, enciende los **retrocohetes**, levanta polvo y aterriza. Después se **despliega la base**: se infla el domo, sale el invernadero, se abren los paneles solares uno por uno, sube la antena, el rover sale de la nave y aparece la tripulación. Se puede saltear.
 
@@ -81,13 +84,15 @@ La nave tiene **3 módulos** conectados por puertas: 🏥 **Módulo médico** ·
 | 🔬 Instrumentos científicos | 3 | Duplica los puntos de ciencia |
 
 ### 5. Los 12 soles
-Cada sol tiene este ciclo:
+Cada sol tiene este ciclo, y **todas las decisiones se toman en la computadora de la nave** (la terminal "Expedición a Marte"):
 
-1. 🌅 **Amanecer**: aparece "SOL N".
-2. ☀️ **Alerta de tormenta solar** (si la hubo ese día, según DONKI).
-3. 🚨 **Evento**: algo pasa en la base (ver [Decisiones con consecuencias](#-decisiones-con-consecuencias)).
-4. ⚡ **Plan de energía**: repartís la energía del día.
-5. 🌙 **Noche**: la **consola de reporte** (pantalla ámbar) muestra cómo cambiaron los recursos, la radiación, cuánto bloqueó el escudo y qué consecuencia tuvo la decisión del día. El **teléfono** de la consola abre los datos de la NASA y el **botón ✓** pasa al sol siguiente.
+1. 🌅 **Amanecer**: aparece "SOL N" y el cielo pasa de noche a día.
+2. 🖥️ **Informe del día** en la computadora: bienvenida y sistemas de la base (sol 1), **alerta de tormenta solar real** de DONKI (si la hubo ese día) y el estado de la base. El papel imprime el estado actual y el pronóstico.
+3. 🚨 **Evento** (si pasa algo): se ve el problema en 3D, se vuelve a la computadora para decidir, y la cámara recorre la base mostrando la consecuencia.
+4. ⚡ **Plan de energía** en la computadora: se reparten las fichas de energía (y se pagan reparaciones).
+5. 🌙 **Noche**: la **consola de reporte** (pantalla ámbar) muestra cómo cambiaron los recursos, cuánto bloqueó el escudo y qué consecuencia tuvo la decisión del día. El **teléfono** abre los datos de la NASA y el **botón ✓** pasa al sol siguiente.
+
+**🧾 El papel de la impresora muestra el futuro:** al elegir una opción de un evento, imprime cómo quedarían 🫁 🥔 ❤️ ☢️ 🔬 (y los efectos que duran, como una fuga o una mina de hielo); si la opción es de suerte, muestra los dos resultados posibles. En el plan de energía, el papel se actualiza en vivo con cómo terminarían los recursos al final del sol, y avisa si te quedás sin aire o si la tormenta te va a dañar.
 
 ### 6. Informe final
 Se gana sobreviviendo los 12 soles. Hay hasta **3 estrellas**: ★ sobrevivir, ★ llegar a 10 puntos de ciencia, ★ recibir poca radiación. El informe aparece en la consola con 3 pestañas:

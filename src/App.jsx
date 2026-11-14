@@ -8,6 +8,7 @@ import Room from './three/Room'
 import CharacterSelect from './ui/CharacterSelect'
 import ModeSelect from './ui/ModeSelect'
 import LandingUI from './ui/LandingUI'
+import Tutorial from './ui/Tutorial'
 import Title from './ui/Title'
 import Loading from './ui/Loading'
 import SolScreen from './ui/SolScreen'
@@ -39,6 +40,7 @@ export default function App() {
           {screen === 'title' && <Title key="title" onData={() => setDataOpen(true)} />}
           {screen === 'character' && <CharacterSelect key="character" />}
           {screen === 'mode' && <ModeSelect key="mode" />}
+          {screen === 'tutorial' && <Tutorial key="tutorial" />}
           {screen === 'landing' && <LandingUI key="landing" />}
           {screen === 'loading' && <Loading key="loading" />}
           {screen === 'sol' && <SolScreen key="sol" onData={() => setDataOpen(true)} />}

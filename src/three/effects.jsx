@@ -21,7 +21,7 @@ export function dotTexture() {
 
 export function Shield() {
   const s = useGame()
-  const showing = s.screen === 'sol' && (s.phase === 'plan' || s.phase === 'report' || s.cards[0]?.type === 'storm')
+  const showing = s.screen === 'sol' && (s.phase === 'plan' || s.phase === 'report' || (s.cards[0]?.type === 'briefing' && !!s.cards[0].storm))
   const frac = shieldFraction(s, s.alloc.shield)
   const mat = useMemo(
     () =>

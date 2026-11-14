@@ -51,6 +51,40 @@ export function project(s, alloc = s.alloc) {
   }
 }
 
+/** Cómo quedarían los recursos al terminar el sol con esta energía (lo muestra el papel de la terminal). */
+export function forecast(s, alloc = s.alloc) {
+  const p = project(s, alloc)
+  let o2 = clamp(s.o2 + p.dO2, -50, 100)
+  let food = clamp(s.food + p.dFood, -50, 100)
+  let health = s.health
+  const warn = []
+  if (o2 <= 0) { health -= 30; warn.push('noO2'); o2 = 0 }
+  if (food <= 0) { health -= 15; warn.push('noFood'); food = 0 }
+  const stormHit = p.stormDose > 0 ? Math.round(p.stormDose * 4) : 0
+  health -= stormHit
+  const dose = s.dose + p.dose
+  if (dose > BASE.doseLimit) { health -= 10; warn.push('limit') }
+  health = clamp(health, 0, 100)
+  return { o2, food, health, dose, science: s.science + p.dSci, battery: p.saved, stormHit, warn, p }
+}
+
+/** Cómo quedarían los recursos si se elige esta opción de un evento. */
+export function forecastChoice(s, choice) {
+  const one = (eff = {}) => ({
+    o2: clamp(s.o2 + (eff.o2 || 0), 0, 100),
+    food: clamp(s.food + (eff.food || 0), 0, 100),
+    health: clamp(s.health + (eff.health || 0), 0, 100),
+    science: s.science + (eff.science || 0),
+    dose: s.dose + (eff.dose || 0),
+    chips: eff.chipsPenalty || 0,
+    leak: !!eff.leak, mine: !!eff.iceMine, panel: !!eff.breakPanel, dust: eff.dust || null,
+    noSci: !!eff.blockScience, item: eff.useItem || null, sample: !!eff.sample,
+  })
+  const e = choice.effects
+  if (e.chance !== undefined) return { chance: e.chance, success: one(e.success), fail: one(e.fail) }
+  return one(e)
+}
+
 // Objetos de la nave (las raciones aparecen 2 veces)
 export function makeRoomItems() {
   const list = []
@@ -77,7 +111,7 @@ const initialState = {
   layout: {}, // objeto → lugar en la nave (al azar en cada partida)
   roomPlayerX: 0,
   decisions: [], // bitácora de decisiones para el informe final
-  screen: 'title', // title | character | mode | landing | loading | sol | end
+  screen: 'title', // title | character | mode | tutorial | landing | loading | sol | end
   player: { name: '', age: null, character: null },
   easy: false,
   roomItems: makeRoomItems(),
@@ -129,9 +163,10 @@ export const useGame = create((set, get) => ({
   // Modo elegido → cinemática de aterrizaje (mientras tanto se consulta a la NASA)
   startLoading: (mode) => {
     const roomItems = makeRoomItems()
-    set({ ...initialState, lang: get().lang, player: get().player, screen: 'landing', mode, weatherLoading: true, roomItems, layout: randomLayout(roomItems.map((r) => r.key)) })
+    set({ ...initialState, lang: get().lang, player: get().player, screen: 'tutorial', mode, weatherLoading: true, roomItems, layout: randomLayout(roomItems.map((r) => r.key)) })
     loadSpaceWeather(mode).then((weather) => set({ weather, weatherLoading: false }))
   },
+  finishTutorial: () => set({ screen: 'landing' }),
   finishLanding: () => set({ screen: 'loading' }),
 
   // ---- Nave: abrir muebles, agarrar y llevar objetos ----
@@ -210,8 +245,7 @@ export const useGame = create((set, get) => ({
   prepareSol: () => {
     const s = get()
     const storm = s.plan[s.sol - 1]
-    const cards = []
-    if (storm && storm.level > 0) cards.push({ type: 'storm', storm })
+    const cards = [{ type: 'briefing', storm: storm && storm.level > 0 ? storm : null, intro: s.sol === 1 }]
     const eventChance = storm && storm.level > 0 ? 0.35 : s.sol === 1 ? 0 : 0.8
     let deck = s.eventDeck
     if (Math.random() < eventChance) {
@@ -223,7 +257,6 @@ export const useGame = create((set, get) => ({
       cards.push({ type: 'event', event: ev })
       deck = deck.filter((_, i) => i !== idx)
     }
-    if (s.sol === 1) cards.unshift({ type: 'intro' })
     set({
       cards, eventDeck: deck, cardResult: null,
       phase: 'dawn',
@@ -238,6 +271,7 @@ export const useGame = create((set, get) => ({
 
   choose: (choice) => {
     const s = get()
+    if (s.phase !== 'decision') return // evita doble click mientras se cierra la computadora
     const card = s.cards[0]
     const choiceIdx = card.event.choices.indexOf(choice)
     let eff = choice.effects
@@ -257,10 +291,11 @@ export const useGame = create((set, get) => ({
 
   nextCard: () => {
     const s = get()
+    if (s.phase !== 'event' && s.phase !== 'outcome') return
     const rest = s.cards.slice(1)
     let learned = s.learned
     const card = s.cards[0]
-    if (card?.type === 'storm' && !learned.includes('storm')) learned = [...learned, 'storm']
+    if (card?.type === 'briefing' && card.storm && !learned.includes('storm')) learned = [...learned, 'storm']
     set({ cards: rest, cardResult: null, learned, phase: phaseFor(rest[0]) })
   },
 
@@ -274,10 +309,9 @@ export const useGame = create((set, get) => ({
 
   endSol: () => {
     const s = get()
-    const p = project(s)
-    let o2 = clamp(s.o2 + p.dO2, -50, 100)
-    let food = clamp(s.food + p.dFood, -50, 100)
-    let health = s.health
+    if (s.phase !== 'plan') return
+    const f = forecast(s)
+    const p = f.p
     const notes = []
     const base = { ...s.base }
     let panels = s.panels
@@ -285,25 +319,19 @@ export const useGame = create((set, get) => ({
     if (s.alloc.fixPanel && base.brokenPanels > 0) { base.brokenPanels -= 1; panels += 1; notes.push(['n.panelFixed']) }
     if (p.leakLoss) notes.push(['n.leakLoss', { n: p.leakLoss }])
     if (p.mine) notes.push(['n.mine', { n: p.mine }])
-    if (o2 <= 0) { health -= 30; notes.push(['n.noO2']); o2 = 0 }
-    if (food <= 0) { health -= 15; notes.push(['n.noFood']); food = 0 }
-    if (p.stormDose > 0) {
-      const dmg = Math.round(p.stormDose * 4)
-      health -= dmg
-      notes.push(['n.storm', { d: p.stormDose.toFixed(1), h: dmg }])
-    }
-    const dose = s.dose + p.dose
-    if (dose > BASE.doseLimit) { health -= 10; notes.push(['n.limit']) }
-    health = clamp(health, 0, 100)
-    const science = s.science + p.dSci
+    if (f.warn.includes('noO2')) notes.push(['n.noO2'])
+    if (f.warn.includes('noFood')) notes.push(['n.noFood'])
+    if (f.stormHit) notes.push(['n.storm', { d: p.stormDose.toFixed(1), h: f.stormHit }])
+    if (f.warn.includes('limit')) notes.push(['n.limit'])
     const dust = s.dust.sols > 0 ? { ...s.dust, sols: s.dust.sols - 1 } : s.dust
     const report = { ...p, notes, o2Before: s.o2, foodBefore: s.food, healthBefore: s.health }
-    const log = [...s.log, { sol: s.sol, storm: p.storm, alloc: s.alloc, dose: p.dose, stormDose: p.stormDose, blocked: p.blocked, health, fixedLeak: !!(s.alloc.fixLeak && s.base.leak), fixedPanel: !!(s.alloc.fixPanel && s.base.brokenPanels > 0) }]
-    set({ o2, food, health, dose, science, battery: p.saved, dust, base, panels, report, log, phase: 'report' })
+    const log = [...s.log, { sol: s.sol, storm: p.storm, alloc: s.alloc, dose: p.dose, stormDose: p.stormDose, blocked: p.blocked, health: f.health, fixedLeak: !!(s.alloc.fixLeak && s.base.leak), fixedPanel: !!(s.alloc.fixPanel && s.base.brokenPanels > 0) }]
+    set({ o2: f.o2, food: f.food, health: f.health, dose: f.dose, science: f.science, battery: f.battery, dust, base, panels, report, log, phase: 'report' })
   },
 
   nextSol: () => {
     const s = get()
+    if (s.phase !== 'report') return
     if (s.health <= 0) {
       const reason = s.o2 <= 0 ? 'oxygen' : s.food <= 0 ? 'food' : s.dose > BASE.doseLimit ? 'radiation' : 'health'
       return set({ screen: 'end', outcome: 'lose', loseReason: reason })

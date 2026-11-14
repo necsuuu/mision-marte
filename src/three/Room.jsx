@@ -1,6 +1,6 @@
 // Interior de la nave: 3 módulos (médico · cabina · ingeniería). El comandante camina (click o WASD),
 // abre muebles, agarra objetos (que en cada partida están en lugares distintos) y los lleva a la base.
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { Html } from '@react-three/drei'
 import * as THREE from 'three'
@@ -89,7 +89,7 @@ function Bulkhead({ x }) {
 function SectorSign({ sector, lang }) {
   const cx = (sector.x0 + sector.x1) / 2
   return (
-    <Html position={[cx, 5.4, -6.8]} center zIndexRange={[10, 0]} style={{ pointerEvents: 'none' }}>
+    <Html pointerEvents="none" position={[cx, 5.4, -6.8]} center zIndexRange={[10, 0]} style={{ pointerEvents: 'none' }}>
       <div className="sector-sign" style={{ '--c': sector.color }}>{sector.emoji} {t(lang, 'sector.' + sector.id)}</div>
     </Html>
   )
@@ -132,7 +132,7 @@ function Ship({ dustRef }) {
       ))}
       <pointLight ref={alarm} position={[0, 5, -5]} color="#ff2a2a" intensity={0} distance={40} />
       {SECTORS.map((sec) => <SectorSign key={sec.id} sector={sec} lang={lang} />)}
-      <Html position={[9.4, 4.6, -6.8]} center zIndexRange={[10, 0]} style={{ pointerEvents: 'none' }}>
+      <Html pointerEvents="none" position={[9.4, 4.6, -6.8]} center zIndexRange={[10, 0]} style={{ pointerEvents: 'none' }}>
         <div className="flip-counter">{String(left ?? 60).padStart(3, '0')}</div>
       </Html>
       <MedicalDecor />
@@ -336,12 +336,12 @@ function Furniture({ id, f, open, empty }) {
     <>
       {content}
       {showQ && (
-        <Html position={[x, tagY, z + 0.6]} center zIndexRange={[10, 0]} style={{ pointerEvents: 'none' }}>
+        <Html pointerEvents="none" position={[x, tagY, z + 0.6]} center zIndexRange={[10, 0]} style={{ pointerEvents: 'none' }}>
           <div className={'furn-tag' + (hover ? ' hover' : '')}>❓</div>
         </Html>
       )}
       {open && closedKind && empty && (
-        <Html position={[x, tagY - 0.6, z + 0.8]} center zIndexRange={[10, 0]} style={{ pointerEvents: 'none' }}>
+        <Html pointerEvents="none" position={[x, tagY - 0.6, z + 0.8]} center zIndexRange={[10, 0]} style={{ pointerEvents: 'none' }}>
           <div className="furn-tag">🕸️</div>
         </Html>
       )}
@@ -350,9 +350,28 @@ function Furniture({ id, f, open, empty }) {
 }
 
 // ---------- Objetos ----------
+// Área de clic = caja exacta del modelo (un poco más grande para que sea fácil tocar)
+function useHitbox(modelRef) {
+  const [hit, setHit] = useState(null)
+  useLayoutEffect(() => {
+    const m = modelRef.current
+    if (!m) return
+    m.updateWorldMatrix(true, true)
+    const box = new THREE.Box3().setFromObject(m)
+    const min = m.worldToLocal(box.min.clone())
+    const max = m.worldToLocal(box.max.clone())
+    const size = max.clone().sub(min)
+    const center = min.clone().add(max).multiplyScalar(0.5)
+    setHit({ size: [size.x * 1.15 + 0.25, size.y * 1.1 + 0.2, size.z * 1.15 + 0.25], center: [center.x, center.y, center.z] })
+  }, [modelRef])
+  return hit
+}
+
 function RoomItem({ entry, playerRef }) {
   const [hover, setHover] = useState(false)
   const group = useRef()
+  const modelRef = useRef()
+  const hit = useHitbox(modelRef)
   const lang = useGame((s) => s.lang)
   const slot = slotById(useGame((s) => s.layout[entry.key]))
   const item = locItem(lang, itemById(entry.id))
@@ -377,8 +396,7 @@ function RoomItem({ entry, playerRef }) {
     } else {
       ;[tx, ty, tz] = slot.at
       if (f.kind === 'drawers' && open) tz += 0.9
-      if (hover && accessible) ty += 0.15 + Math.sin(st.clock.elapsedTime * 6) * 0.05
-      ts = (slot.s || 1) * (hover && accessible ? 1.15 : 1)
+      ts = (slot.s || 1) * (hover && accessible ? 1.12 : 1)
     }
     const k = Math.min(1, dt * 12)
     g.position.x += (tx - g.position.x) * k
@@ -401,11 +419,16 @@ function RoomItem({ entry, playerRef }) {
         onPointerOver={(e) => { e.stopPropagation(); setHover(true); setCursor('pointer') }}
         onPointerOut={() => { setHover(false); setCursor('default') }}
       >
-        <Model />
-        <mesh position={[0, 0.6, 0]} visible={false}><boxGeometry args={[1.3, 1.3, 1.3]} /></mesh>
+        <group ref={modelRef}><Model /></group>
+        {hit && (
+          <mesh position={hit.center} userData={{ itemKey: entry.key }}>
+            <boxGeometry args={hit.size} />
+            <meshBasicMaterial transparent opacity={0} depthWrite={false} colorWrite={false} />
+          </mesh>
+        )}
       </group>
       {entry.state === 'shelf' && accessible && (
-        <Html position={[0, 1.6, 0]} center zIndexRange={[10, 0]} style={{ pointerEvents: 'none' }}>
+        <Html pointerEvents="none" position={[0, 1.6, 0]} center zIndexRange={[10, 0]} style={{ pointerEvents: 'none' }}>
           <div className={'item-tag' + (hover ? ' hover' : '')}>
             <span>{item.emoji}</span>
             {hover && <><b>{item.name}</b><small>⚖️ {item.mass}</small></>}
@@ -455,7 +478,7 @@ function CrewMember({ crew, position, hintOffset = 0, urgentRef, hints, lang }) 
       <group ref={ref}>
         <Suspense fallback={null}><CharacterSprite src={crew.sprite} height={2.7} tilt={0.5} /></Suspense>
       </group>
-      <Html position={[0, 3.2, -1.4]} center zIndexRange={[10, 0]} style={{ pointerEvents: 'none' }}>
+      <Html pointerEvents="none" position={[0, 3.2, -1.4]} center zIndexRange={[10, 0]} style={{ pointerEvents: 'none' }}>
         {bubble ? <div className="bubble small">{bubble}</div> : <div className="role-tag">{crew.emoji}</div>}
       </Html>
     </group>
@@ -535,6 +558,7 @@ function Player({ playerRef }) {
     }
     const down = (e) => {
       if (e.target?.tagName === 'INPUT') return
+      if (useGame.getState().screen !== 'loading') return // durante el tutorial la nave está de fondo, sin control
       const k = e.key.toLowerCase()
       keys.current[k] = true
       if (k === 'e' || k === ' ' || k === 'enter') {
@@ -600,7 +624,7 @@ function Player({ playerRef }) {
         <group ref={body}>
           <Suspense fallback={null}><CharacterSprite frames={ch.walk} movingRef={movingRef} height={3.1} flip={flip} tilt={0.55} /></Suspense>
         </group>
-        <Html position={[0, 3.4, -1.6]} center zIndexRange={[10, 0]} style={{ pointerEvents: 'none' }}>
+        <Html pointerEvents="none" position={[0, 3.4, -1.6]} center zIndexRange={[10, 0]} style={{ pointerEvents: 'none' }}>
           {bubble ? <div className="bubble">{bubble}</div> : player.name ? <div className="name-tag">⭐ {player.name}</div> : null}
         </Html>
       </group>
@@ -632,7 +656,7 @@ function Hatch({ carrying }) {
         <ringGeometry args={[HATCH.r - 0.12, HATCH.r, 48]} />
         <meshBasicMaterial color="#ffd166" />
       </mesh>
-      <Html position={[HATCH.x, 4.9, -6.6]} center zIndexRange={[10, 0]} style={{ pointerEvents: 'none' }}>
+      <Html pointerEvents="none" position={[HATCH.x, 4.9, -6.6]} center zIndexRange={[10, 0]} style={{ pointerEvents: 'none' }}>
         <div className="room-sign">🏠</div>
       </Html>
       <pointLight position={[HATCH.x, 3, -5]} color="#ffb347" intensity={carrying ? 30 : 12} distance={9} />
@@ -642,7 +666,8 @@ function Hatch({ carrying }) {
 
 // La cámara sigue al comandante por la nave
 function CamRig({ playerRef }) {
-  const { camera, size } = useThree()
+  const { camera, size, scene } = useThree()
+  useEffect(() => { window.__room = { camera, scene } }, [camera, scene]) // para pruebas automáticas
   const k = useRef(1)
   const cx = useRef(0)
   useEffect(() => {

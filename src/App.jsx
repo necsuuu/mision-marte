@@ -5,6 +5,8 @@ import { useGame } from './game/store'
 import Planet from './three/Planet'
 import MarsBase from './three/MarsBase'
 import Room from './three/Room'
+import Launch from './three/Launch'
+import LaunchUI from './ui/LaunchUI'
 import CharacterSelect from './ui/CharacterSelect'
 import ModeSelect from './ui/ModeSelect'
 import LandingUI from './ui/LandingUI'
@@ -20,7 +22,8 @@ export default function App() {
   const [dataOpen, setDataOpen] = useState(false)
   const onBase = screen === 'sol' || screen === 'end' || screen === 'landing'
   const finishLanding = useGame((s) => s.finishLanding)
-  const inRoom = screen === 'loading'
+  const finishLaunch = useGame((s) => s.finishLaunch)
+  const inRoom = screen === 'loading' || screen === 'tutorial'
   const planetOffset = screen === 'title' ? [2.4, -0.2, 0] : screen === 'character' ? [4.6, -2.2, -4] : [3.6, -1.6, -3]
 
   return (
@@ -31,7 +34,7 @@ export default function App() {
           dpr={[1, 1.75]}
           camera={{ position: [0, 0, 8], fov: 45 }}
         >
-          <Suspense fallback={null}>{onBase ? <MarsBase key={screen === 'landing' ? 'cine' : 'base'} cinematic={screen === 'landing'} onCineDone={finishLanding} /> : inRoom ? <Room /> : <Planet offset={planetOffset} />}</Suspense>
+          <Suspense fallback={null}>{screen === 'launch' ? <Launch onDone={finishLaunch} /> : onBase ? <MarsBase key={screen === 'landing' ? 'cine' : 'base'} cinematic={screen === 'landing'} onCineDone={finishLanding} /> : inRoom ? <Room /> : <Planet offset={planetOffset} />}</Suspense>
         </Canvas>
       </div>
 
@@ -40,6 +43,7 @@ export default function App() {
           {screen === 'title' && <Title key="title" onData={() => setDataOpen(true)} />}
           {screen === 'character' && <CharacterSelect key="character" />}
           {screen === 'mode' && <ModeSelect key="mode" />}
+          {screen === 'launch' && <LaunchUI key="launch" />}
           {screen === 'tutorial' && <Tutorial key="tutorial" />}
           {screen === 'landing' && <LandingUI key="landing" />}
           {screen === 'loading' && <Loading key="loading" />}

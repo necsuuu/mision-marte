@@ -5,7 +5,7 @@
 // En el papel de la derecha se imprime cómo quedarían los recursos con cada decisión.
 import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { useGame, forecast, forecastChoice, chipsAvailable, shieldFraction, project } from '../game/store'
+import { useGame, forecast, forecastChoice, chipsAvailable, shieldFraction, project, recommendChoice } from '../game/store'
 import { BASE, SYSTEMS, ITEMS, LEAK_O2, ICE_MINE_O2 } from '../game/content'
 import { fmtDate } from '../data/donki'
 import { earthMarsDistance } from '../data/marsDistance'
@@ -125,6 +125,9 @@ function Decision({ s, sel, setSel, options }) {
   const T = useT()
   const ev = locEvent(s.lang, s.cards[0].event)
   const d = earthMarsDistance(new Date())
+  // 💡 Pista: en modo cadete se muestra sola; si no, con un botón
+  const [hint, setHint] = useState(s.easy)
+  const best = useMemo(() => recommendChoice(s, options.map((o) => o.value)), [s, options])
   return (
     <>
       <div className="crt-header"><span className="blink">■</span> {T('term.alert', { n: s.sol })} · {ev.emoji}</div>
@@ -133,13 +136,17 @@ function Decision({ s, sel, setSel, options }) {
       {ev.delayFact && <div className="crt-extra">{T('term.delay', { km: Math.round(d.km / 1e6), min: Math.round(d.minutes) })}</div>}
       <div className="crt-options">
         {options.map((o, i) => (
-          <button key={i} className={'crt-opt' + (sel === i ? ' on' : '')} onClick={() => setSel(i)}>
+          <button key={i} className={'crt-opt' + (sel === i ? ' on' : '') + (hint && best === i ? ' hint' : '')} onClick={() => setSel(i)}>
             <span className="crt-num">{sel === i ? '▶' : i + 1}</span>
             <span>{o.label}</span>
+            {hint && best === i && <span className="crt-star">⭐ {T('hint.crew')}</span>}
           </button>
         ))}
       </div>
-      <div className="crt-foot">{T('term.keys')}</div>
+      <div className="crt-foot">
+        {!hint && <button className="crt-help" onClick={() => setHint(true)}>💡 {T('hint.btn')}</button>}
+        <span>{T('term.keys')}</span>
+      </div>
     </>
   )
 }
@@ -190,7 +197,7 @@ function Chips({ value, max, color, onSet, disabledFrom }) {
 
 function Plan({ s }) {
   const T = useT()
-  const { setAlloc } = useGame.getState()
+  const { setAlloc, autoPlan } = useGame.getState()
   const avail = chipsAvailable(s)
   const p = project(s)
   const free = avail - p.used
@@ -212,7 +219,14 @@ function Plan({ s }) {
           {Array.from({ length: avail }).map((_, i) => <span key={i} className={i < p.used ? 'used' : ''}>⚡</span>)}
           <small>{avail === 0 ? T('plan.none') : free === 1 ? T('plan.free1') : T('plan.free', { n: free })}</small>
         </div>
+        <button className={'crt-help big' + (s.easy && !s.helpReasons && p.used === 0 ? ' pulse' : '')} onClick={autoPlan}>🤖 {T('help.btn')}</button>
       </div>
+      {s.helpReasons && (
+        <div className="crt-helpbox">
+          <b>🤖 {T('help.title')}</b>
+          {s.helpReasons.map(([k, v], i) => <span key={i}>{T(k, v)}</span>)}
+        </div>
+      )}
       {notes.length > 0 && <div className="crt-notes">{notes.map((n, i) => <span key={i}>{n}</span>)}</div>}
       {repairs.length > 0 && (
         <div className="crt-repairs">

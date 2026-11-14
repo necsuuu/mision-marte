@@ -36,11 +36,18 @@ El contenido espacial para chicos suele ser **demasiado abstracto** (pósters, d
 ## 🎮 Cómo se juega
 
 ```
-Selección del comandante → Elegir misión → Cinemática de aterrizaje → Interior de la nave (60 s) → 12 soles en Marte → Resultado
+Comandante → Misión → 🚀 Despegue desde la Tierra → Tutorial → 📦 Carga en la nave (60 s) → 🪂 Aterrizaje en Marte → 12 soles → Resultado
 ```
 
 ### 1. Elegí tu comandante
-Dos comandantes para elegir. Se escribe el **nombre** y se toca la **edad** (6 a 13+). Si el jugador tiene 8 años o menos, se activa el **modo cadete**: empieza con más oxígeno y comida, y las tormentas hacen menos daño.
+Dos comandantes para elegir. Se escribe el **nombre** y se toca la **edad** (6 a 13+). Si el jugador tiene **9 años o menos**, se activa el **⭐ modo cadete**, pensado para los más chicos:
+
+- 90 segundos en vez de 60 para cargar la nave, y lugar para 22 unidades de masa en vez de 18.
+- Empieza con más oxígeno y comida, hay menos eventos y las tormentas hacen la mitad de daño.
+- En cada decisión aparece sola la **⭐ opción que elegiría la tripulación**.
+- El botón **🤖 Ayudame** del plan de energía brilla para que lo usen.
+
+Cualquier jugador puede usar **💡 Pista** en las decisiones y **🤖 Ayudame** en el plan de energía. El ayudante reparte la energía y explica por qué con frases cortas: primero el aire, después el escudo si hay tormenta, la comida, las reparaciones, y lo que sobra va a ciencia.
 
 > El nombre y la edad **solo viven en la memoria del navegador** mientras se juega: no se guardan ni se envían a ningún lado.
 
@@ -51,14 +58,11 @@ Dos comandantes para elegir. Se escribe el **nombre** y se toca la **edad** (6 a
 | ☢️ **Tormenta 2024** (difícil) | Mayo de 2024: la tormenta solar que llegó a Marte y le dio al rover Curiosity el **mayor pico de radiación** desde que aterrizó |
 | 🎲 **Sorpresa** | Tormentas reales elegidas al azar: cada partida es distinta |
 
-### 2b. Tutorial animado
-Antes de aterrizar aparece un **tutorial tipo video** que muestra cómo moverse (W A S D / flechas o clic en el piso), cómo abrir muebles y agarrar con clic o la tecla **E**, y cómo llevar 2 objetos a la base. Se puede **saltar** con el botón o con Escape.
-
-### 3. Cinemática de aterrizaje
-La cápsula entra con **paracaídas**, enciende los **retrocohetes**, levanta polvo y aterriza. Después se **despliega la base**: se infla el domo, sale el invernadero, se abren los paneles solares uno por uno, sube la antena, el rover sale de la nave y aparece la tripulación. Se puede saltear.
+### 3. Despegue desde la Tierra
+Cuenta regresiva 3, 2, 1: el cohete se enciende y despega entre el humo, atraviesa las nubes, el cielo se pone negro y aparecen las estrellas. Desde el espacio se ve la Tierra y el camino hacia Marte (el viaje dura unos 7 meses). Se puede saltear. **La carga de suministros empieza recién cuando termina el despegue** y un tutorial corto, que también se puede saltear.
 
 ### 4. Interior de la nave: 60 segundos
-¡Se acerca una tormenta de polvo! Hay que pasar los suministros de la nave a la base.
+¡Ya casi llegamos a Marte! Hay que cargar la cápsula de aterrizaje con lo que va a necesitar la base.
 
 La nave tiene **3 módulos** conectados por puertas: 🏥 **Módulo médico** · 🛰️ **Cabina** · 🔧 **Ingeniería**. La cámara sigue al comandante y un **mini mapa** muestra en qué módulo está y cuántos objetos quedan en cada uno.
 
@@ -66,6 +70,7 @@ La nave tiene **3 módulos** conectados por puertas: 🏥 **Módulo médico** ·
 - El astronauta **rodea los muebles** (búsqueda de caminos A*), no los atraviesa, y tiene **animación de caminata**.
 - **Los objetos aparecen en lugares distintos en cada partida.** Hay 16 lugares posibles (casilleros, heladera, vitrina, cajonera, cajones, estantes, mesas) para 11 objetos, así que algunos muebles están vacíos. 🕸️
 - Los muebles cerrados tienen ❓ y hay que abrirlos primero.
+- El área de clic de cada objeto se calcula con el tamaño real del modelo 3D, y las etiquetas flotantes no tapan los clics: se agarra tocándolo en cualquier parte, desde cualquier ángulo.
 - Se llevan **2 objetos a la vez** ✋✋ y hay que volver a la compuerta 🏠 (en la cabina) para dejarlos.
 - El depósito de la base aguanta **18 unidades de masa**, y todo junto pesa casi el doble: hay que elegir.
 - La **tripulación de fondo** da pistas según dónde quedaron los objetos en esta partida (🥔 → 🏥📦). Por las escotillas se ve la tormenta acercándose; en los últimos segundos suena la alarma y la nave tiembla.
@@ -83,18 +88,19 @@ La nave tiene **3 módulos** conectados por puertas: 🏥 **Módulo médico** ·
 | ⛑️ Kit médico | 2 | Cura a la tripulación una vez |
 | 🔬 Instrumentos científicos | 3 | Duplica los puntos de ciencia |
 
-### 5. Los 12 soles
-Cada sol tiene este ciclo, y **todas las decisiones se toman en la computadora de la nave** (la terminal "Expedición a Marte"):
+### 5. Aterrizaje en Marte
+La cápsula entra con **paracaídas**, enciende los **retrocohetes**, levanta polvo y aterriza. Después se **despliega la base**: se infla el domo, sale el invernadero, se abren los paneles solares uno por uno, sube la antena, el rover sale de la nave y aparece la tripulación. Se puede saltear.
 
-1. 🌅 **Amanecer**: aparece "SOL N" y el cielo pasa de noche a día.
-2. 🖥️ **Informe del día** en la computadora: bienvenida y sistemas de la base (sol 1), **alerta de tormenta solar real** de DONKI (si la hubo ese día) y el estado de la base. El papel imprime el estado actual y el pronóstico.
-3. 🚨 **Evento** (si pasa algo): se ve el problema en 3D, se vuelve a la computadora para decidir, y la cámara recorre la base mostrando la consecuencia.
-4. ⚡ **Plan de energía** en la computadora: se reparten las fichas de energía (y se pagan reparaciones).
-5. 🌙 **Noche**: la **consola de reporte** (pantalla ámbar) muestra cómo cambiaron los recursos, cuánto bloqueó el escudo y qué consecuencia tuvo la decisión del día. El **teléfono** abre los datos de la NASA y el **botón ✓** pasa al sol siguiente.
+### 6. Los 12 soles
+Cada sol tiene este ciclo:
 
-**🧾 El papel de la impresora muestra el futuro:** al elegir una opción de un evento, imprime cómo quedarían 🫁 🥔 ❤️ ☢️ 🔬 (y los efectos que duran, como una fuga o una mina de hielo); si la opción es de suerte, muestra los dos resultados posibles. En el plan de energía, el papel se actualiza en vivo con cómo terminarían los recursos al final del sol, y avisa si te quedás sin aire o si la tormenta te va a dañar.
+1. 🌅 **Amanecer**: aparece "SOL N".
+2. ☀️ **Alerta de tormenta solar** (si la hubo ese día, según DONKI).
+3. 🚨 **Evento**: algo pasa en la base (ver [Decisiones con consecuencias](#-decisiones-con-consecuencias)).
+4. ⚡ **Plan de energía**: repartís la energía del día.
+5. 🌙 **Noche**: la **consola de reporte** (pantalla ámbar) muestra cómo cambiaron los recursos, la radiación, cuánto bloqueó el escudo y qué consecuencia tuvo la decisión del día. El **teléfono** de la consola abre los datos de la NASA y el **botón ✓** pasa al sol siguiente.
 
-### 6. Informe final
+### 7. Informe final
 Se gana sobreviviendo los 12 soles. Hay hasta **3 estrellas**: ★ sobrevivir, ★ llegar a 10 puntos de ciencia, ★ recibir poca radiación. El informe aparece en la consola con 3 pestañas:
 
 - **Resumen:** soles, tormentas reales enfrentadas, radiación, ciencia, cuántas decisiones salieron bien y cuántas tuvieron costo, y el **estado final de la base** (mina, muestras, parches, fugas, paneles rotos).
@@ -236,6 +242,7 @@ src/
 │   └── core.js, useT.js    Funciones para traducir
 ├── three/
 │   ├── Planet.jsx          Marte girando (pantallas de inicio)
+│   ├── Launch.jsx          Cinemática de despegue: plataforma, cuenta regresiva, nubes, espacio y la Tierra
 │   ├── MarsBase.jsx        Escena de la base: cielo, día/noche, director de cámara, cinemática
 │   ├── baseParts.jsx       Domo, invernadero, paneles, antena, rover, nave, mina, tripulación
 │   ├── effects.jsx         Partículas: polvo, tormenta solar, fuga de aire, meteorito, alarma, fuego
@@ -246,6 +253,7 @@ src/
 │   ├── terrain.jsx         Terreno y rocas de Marte
 │   └── noise.js            Ruido para generar terreno y texturas
 └── ui/                     Pantallas: inicio, selección, modo, cinemática, sol, final, panel de datos
+    ├── LaunchUI.jsx        Cuenta regresiva y textos del despegue
     ├── Terminal.jsx        Terminal CRT de decisiones (pantalla + impresora + botón ✓)
     └── Console.jsx         Consola ámbar del reporte nocturno y final
 tools/

@@ -1,7 +1,7 @@
 // Tutorial animado (tipo video) de cómo moverse y juntar objetos en la nave. Se puede saltar.
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useGame } from '../game/store'
+import { useGame, capacityFor, loadSecondsFor } from '../game/store'
 import { getCharacter, WALK_SEQUENCE } from '../game/characters'
 import { useT } from '../i18n/useT'
 import { fade } from './common'
@@ -136,7 +136,7 @@ export default function Tutorial() {
           </AnimatePresence>
         </div>
         <AnimatePresence mode="wait">
-          <motion.h2 key={step} className="tut-caption" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>{T(STEPS[step])}</motion.h2>
+          <motion.h2 key={step} className="tut-caption" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>{T(STEPS[step], { s: loadSecondsFor(useGame.getState()), kg: capacityFor(useGame.getState()) })}</motion.h2>
         </AnimatePresence>
         <div className="tut-foot">
           <div className="tut-dots">

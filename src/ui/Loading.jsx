@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useGame, cargoMass, MAX_CARRY } from '../game/store'
-import { ITEMS, CAPACITY, LOAD_SECONDS } from '../game/content'
+import { useGame, cargoMass, MAX_CARRY, capacityFor, loadSecondsFor } from '../game/store'
+import { ITEMS } from '../game/content'
 import { getCharacter } from '../game/characters'
 import { SECTORS, slotById, FURN } from '../game/shipLayout'
 import { locItem } from '../i18n/core'
@@ -33,7 +33,9 @@ function MiniMap() {
 }
 
 export default function Loading() {
-  const { cargo, launch, weatherLoading, goModes, roomItems, carrying, unload, player, lang } = useGame()
+  const { cargo, launch, weatherLoading, goModes, roomItems, carrying, unload, player, lang, easy } = useGame()
+  const CAPACITY = capacityFor({ easy })
+  const LOAD_SECONDS = loadSecondsFor({ easy })
   const T = useT()
   const [left, setLeft] = useState(LOAD_SECONDS)
   const [started, setStarted] = useState(false)
@@ -76,6 +78,7 @@ export default function Loading() {
               <div className="how-limits">
                 <span>⏱️ {LOAD_SECONDS}s</span>
                 <span>⚖️ {T('room.max', { n: CAPACITY })}</span>
+                {easy && <span className="cadet-badge">{T('room.cadet')}</span>}
                 <span>{T('room.controls')}</span>
               </div>
               <div className="row center-row">

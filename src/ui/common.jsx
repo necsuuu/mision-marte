@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { GLOSSARY } from '../game/content'
+import { useGame } from '../game/store'
+import { t, locGlossary } from '../i18n/core'
 
 export const fade = {
   initial: { opacity: 0, y: 16 },
@@ -8,14 +9,37 @@ export const fade = {
   exit: { opacity: 0, y: -10, transition: { duration: 0.2 } },
 }
 
+const esc = (v) => String(v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])
+
+/** Texto traducido que puede tener <b>, <i>. Las variables se escapan (el nombre lo escribe el jugador). */
+export function Tx({ k, vars, as: Tag = 'span', className }) {
+  const lang = useGame((s) => s.lang)
+  const safe = vars ? Object.fromEntries(Object.entries(vars).map(([a, b]) => [a, esc(b)])) : undefined
+  return <Tag className={className} dangerouslySetInnerHTML={{ __html: t(lang, k, safe) }} />
+}
+
 /** Palabra con explicación: tocás y aparece qué significa. */
 export function Term({ k, children }) {
+  const lang = useGame((s) => s.lang)
   const [open, setOpen] = useState(false)
   return (
     <span className="term" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)} onClick={() => setOpen((o) => !o)}>
       {children}
-      {open && <span className="term-pop">{GLOSSARY[k]}</span>}
+      {open && <span className="term-pop">{locGlossary(lang, k)}</span>}
     </span>
+  )
+}
+
+/** Selector de idioma ES / EN */
+export function LangToggle({ className = '' }) {
+  const lang = useGame((s) => s.lang)
+  const setLang = useGame((s) => s.setLang)
+  return (
+    <div className={'lang-toggle ' + className} role="group" aria-label="Idioma / Language">
+      {[['es', '🇦🇷 ES'], ['en', '🇬🇧 EN']].map(([l, label]) => (
+        <button key={l} className={lang === l ? 'on' : ''} onClick={() => setLang(l)}>{label}</button>
+      ))}
+    </div>
   )
 }
 

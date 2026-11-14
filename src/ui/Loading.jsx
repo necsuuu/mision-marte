@@ -3,12 +3,38 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useGame, cargoMass, MAX_CARRY } from '../game/store'
 import { ITEMS, CAPACITY, LOAD_SECONDS } from '../game/content'
 import { getCharacter } from '../game/characters'
+import { SECTORS, slotById, FURN } from '../game/shipLayout'
+import { locItem } from '../i18n/core'
+import { useT } from '../i18n/useT'
 import { fade } from './common'
 
 const byId = (id) => ITEMS.find((i) => i.id === id)
 
+// Mini mapa: los 3 módulos, dónde está el comandante y cuántos objetos quedan en cada uno
+function MiniMap() {
+  const T = useT()
+  const x = useGame((s) => s.roomPlayerX)
+  const roomItems = useGame((s) => s.roomItems)
+  const layout = useGame((s) => s.layout)
+  const left = (id) => roomItems.filter((r) => r.state === 'shelf' && (() => { const f = FURN[slotById(layout[r.key])?.furn]; return f && f.pos[0] >= SECTORS.find((s) => s.id === id).x0 && f.pos[0] < SECTORS.find((s) => s.id === id).x1 })()).length
+  const pct = ((x + 34) / 68) * 100
+  return (
+    <div className="minimap" aria-label="mapa">
+      {SECTORS.map((s) => (
+        <div key={s.id} className="mm-sector" style={{ '--c': s.color }}>
+          <span>{s.emoji}</span>
+          <small>{T('sector.' + s.id)}</small>
+          <b>{'•'.repeat(left(s.id)) || '✓'}</b>
+        </div>
+      ))}
+      <motion.div className="mm-dot" animate={{ left: pct + '%' }} transition={{ type: 'tween', duration: 0.25 }} />
+    </div>
+  )
+}
+
 export default function Loading() {
-  const { cargo, launch, weatherLoading, goModes, roomItems, carrying, unload, player } = useGame()
+  const { cargo, launch, weatherLoading, goModes, roomItems, carrying, unload, player, lang } = useGame()
+  const T = useT()
   const [left, setLeft] = useState(LOAD_SECONDS)
   const [started, setStarted] = useState(false)
   const mass = cargoMass(cargo)
@@ -38,22 +64,23 @@ export default function Loading() {
         {!started && (
           <motion.div className="room-intro" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, scale: 1.05 }}>
             <div className="panel intro-card">
-              <div className="storm-warn">🌪️ ¡Se acerca una tormenta de polvo!</div>
+              <div className="storm-warn">{T('room.storm')}</div>
               <img className="avatar-lg" src={ch.sprite} alt="" />
               <div className="how">
-                <div><span>❓</span><small>Abrí muebles</small></div>
+                <div><span>❓</span><small>{T('room.open')}</small></div>
                 <div className="arrow">→</div>
-                <div><span>✋✋</span><small>Llevás {MAX_CARRY}</small></div>
+                <div><span>✋✋</span><small>{T('room.carry', { n: MAX_CARRY })}</small></div>
                 <div className="arrow">→</div>
-                <div><span>🏠</span><small>A la base</small></div>
+                <div><span>🏠</span><small>{T('room.toBase')}</small></div>
               </div>
               <div className="how-limits">
                 <span>⏱️ {LOAD_SECONDS}s</span>
-                <span>⚖️ máx {CAPACITY}</span>
+                <span>⚖️ {T('room.max', { n: CAPACITY })}</span>
+                <span>{T('room.controls')}</span>
               </div>
               <div className="row center-row">
                 <button className="btn ghost" onClick={goModes}>←</button>
-                <motion.button className="btn primary play-btn" onClick={() => setStarted(true)} whileTap={{ scale: 0.95 }}>¡YA! ⏱️</motion.button>
+                <motion.button className="btn primary play-btn" onClick={() => setStarted(true)} whileTap={{ scale: 0.95 }}>{T('room.go')}</motion.button>
               </div>
             </div>
           </motion.div>
@@ -77,9 +104,11 @@ export default function Loading() {
               </div>
             </div>
             <motion.button className="btn primary launch" disabled={weatherLoading} onClick={launch} whileTap={{ scale: 0.95 }}>
-              {weatherLoading ? '📡…' : '🔒 ¡Cerrar la base!'}
+              {weatherLoading ? '📡…' : T('room.close')}
             </motion.button>
           </div>
+
+          <MiniMap />
 
           <div className="room-bottom">
             <div className="hands">
@@ -93,9 +122,9 @@ export default function Loading() {
               <span className="tray-label">🏠</span>
               <AnimatePresence>
                 {loaded.map((r) => {
-                  const it = byId(r.id)
+                  const it = locItem(lang, byId(r.id))
                   return (
-                    <motion.button key={r.key} className="tray-item" onClick={() => unload(r.key)} title={`${it.name} (tocá para sacar)`}
+                    <motion.button key={r.key} className="tray-item" onClick={() => unload(r.key)} title={`${it.name} (${T('b.unload')})`}
                       initial={{ scale: 0, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0 }} whileHover={{ y: -4 }}>
                       {it.emoji}
                       <small>{it.mass}</small>

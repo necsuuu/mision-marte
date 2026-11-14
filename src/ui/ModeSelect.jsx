@@ -1,24 +1,26 @@
 import { motion } from 'framer-motion'
 import { useGame } from '../game/store'
 import { getCharacter } from '../game/characters'
+import { useT } from '../i18n/useT'
 import { fade } from './common'
 
 const MODES = [
-  { id: 'recent', emoji: '🛰️', title: 'Misión real', sub: 'Tormentas solares de los últimos 60 días' },
-  { id: 'may2024', emoji: '☢️', title: 'Tormenta 2024', sub: 'La más fuerte que llegó a Marte', hard: true },
-  { id: 'random', emoji: '🎲', title: 'Sorpresa', sub: 'Cada partida es distinta' },
+  { id: 'recent', emoji: '🛰️' },
+  { id: 'may2024', emoji: '☢️', hard: true },
+  { id: 'random', emoji: '🎲' },
 ]
 
 export default function ModeSelect() {
   const { player, startLoading, goCharacter } = useGame()
+  const T = useT()
   const ch = getCharacter(player.character)
   return (
     <motion.div className="screen center" {...fade}>
       <div className="mode-head">
         <img className="avatar-lg" src={ch.select} alt="" />
         <div>
-          <div className="kicker">{ch.title}</div>
-          <h2>{player.name} · elegí tu misión</h2>
+          <div className="kicker">{T('commander')}</div>
+          <h2>{T('mode.choose', { name: player.name })}</h2>
         </div>
       </div>
       <div className="mode-tiles">
@@ -33,13 +35,13 @@ export default function ModeSelect() {
             whileTap={{ scale: 0.96 }}
           >
             <span className="tile-emoji">{m.emoji}</span>
-            <b>{m.title}</b>
-            <small>{m.sub}</small>
-            {m.hard && <em className="badge">🔥 Difícil</em>}
+            <b>{T('mode.' + m.id)}</b>
+            <small>{T('mode.' + m.id + '.sub')}</small>
+            {m.hard && <em className="badge">{T('hard')}</em>}
           </motion.button>
         ))}
       </div>
-      <button className="link-btn" onClick={goCharacter}>← Cambiar personaje</button>
+      <button className="link-btn" onClick={goCharacter}>{T('mode.change')}</button>
     </motion.div>
   )
 }

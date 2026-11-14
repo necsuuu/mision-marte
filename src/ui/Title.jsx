@@ -1,18 +1,21 @@
 import { motion } from 'framer-motion'
 import { useGame } from '../game/store'
-import { fade } from './common'
+import { useT } from '../i18n/useT'
+import { fade, LangToggle } from './common'
 
 export default function Title({ onData }) {
   const goCharacter = useGame((s) => s.goCharacter)
+  const T = useT()
   return (
     <motion.div className="screen title-screen" {...fade}>
+      <LangToggle className="corner" />
       <div className="title-col">
-        <div className="kicker">Entrenador de Astronautas Junior</div>
+        <div className="kicker">{T('title.kicker')}</div>
         <h1 className="logo">
-          Misión <span>Marte</span>
+          {T('title.mission')} <span>{T('title.mars')}</span>
         </h1>
         <p className="lead big-icons">🚀 → 🔴 → 🏠 → ☀️🛡️ → 🏆</p>
-        <p className="lead">¿Podés mantener viva tu base en Marte por 12 días?</p>
+        <p className="lead">{T('title.question')}</p>
         <motion.button
           className="btn primary play-btn"
           onClick={goCharacter}
@@ -21,9 +24,9 @@ export default function Title({ onData }) {
           animate={{ boxShadow: ['0 8px 24px rgba(226,104,58,.4)', '0 8px 44px rgba(226,104,58,.8)', '0 8px 24px rgba(226,104,58,.4)'] }}
           transition={{ repeat: Infinity, duration: 2 }}
         >
-          ▶ JUGAR
+          {T('play')}
         </motion.button>
-        <button className="link-btn" onClick={onData}>🔎 Datos reales de la NASA</button>
+        <button className="link-btn" onClick={onData}>{T('nasaData')}</button>
       </div>
     </motion.div>
   )

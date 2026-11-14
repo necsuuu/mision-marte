@@ -1,4 +1,5 @@
-// Interior de la nave: el comandante recorre la cabina, abre muebles y lleva los suministros a la base.
+// Interior de la nave: 3 módulos (médico · cabina · ingeniería). El comandante camina (click o WASD),
+// abre muebles, agarra objetos (que en cada partida están en lugares distintos) y los lleva a la base.
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { Html } from '@react-three/drei'
@@ -6,48 +7,18 @@ import * as THREE from 'three'
 import { useGame } from '../game/store'
 import { ITEMS } from '../game/content'
 import { getCharacter, CREW } from '../game/characters'
+import { FURN, CLOSED_KINDS, slotById, HATCH, START, SECTORS, sectorAt } from '../game/shipLayout'
+import { findPath, walkable } from '../game/pathfinding'
+import { t, locItem } from '../i18n/core'
 import { ITEM_MODELS } from './items3d'
 import CharacterSprite from './CharacterSprite'
 
-// ---------- Muebles ----------
-// kind: shelf/console/rack/bench/leaning = abiertos · wallcab/locker/glasscase/drawers/crate = hay que abrirlos
-export const FURN = {
-  pantry: { pos: [-8.2, 0, -6.3], front: [-8.2, 0, -4.4], kind: 'shelf' },
-  medcab: { pos: [-4.6, 0, -6.75], front: [-4.6, 0, -4.6], kind: 'wallcab' },
-  locker: { pos: [-1.6, 0, -6.35], front: [-1.6, 0, -4.4], kind: 'locker' },
-  decoy: { pos: [0.4, 0, -6.35], front: [0.4, 0, -4.4], kind: 'locker', empty: true },
-  moxiebay: { pos: [7.2, 0, -6.45], front: [7.2, 0, -4.4], kind: 'glasscase' },
-  drawers: { pos: [-10.7, 0, -1.4], front: [-8.8, 0, -1.4], kind: 'drawers' },
-  crate: { pos: [-9.4, 0, 3.2], front: [-7.7, 0, 3.2], kind: 'crate' },
-  console: { pos: [0.6, 0, -0.2], front: [0.6, 0, 1.7], kind: 'console' },
-  tankrack: { pos: [-5, 0, 4.9], front: [-5, 0, 3.3], kind: 'rack' },
-  bench: { pos: [4.6, 0, 4.8], front: [4.6, 0, 3.2], kind: 'bench' },
-  panelwall: { pos: [9.6, 0, 4.4], front: [8.2, 0, 3.6], kind: 'leaning' },
-}
-const CLOSED_KINDS = new Set(['wallcab', 'locker', 'glasscase', 'drawers', 'crate'])
-
-// Dónde está cada objeto
-export const SPOTS = {
-  'rations-0': { furn: 'pantry', at: [-8.8, 1.22, -6.2], s: 0.8 },
-  'rations-1': { furn: 'pantry', at: [-7.6, 2.12, -6.2], s: 0.8 },
-  'medkit-0': { furn: 'medcab', at: [-4.6, 1.75, -6.45], s: 0.8 },
-  'o2tank-0': { furn: 'locker', at: [-1.6, 0.25, -6.25] },
-  'moxie-0': { furn: 'moxiebay', at: [7.2, 0.75, -6.3] },
-  'repair-0': { furn: 'drawers', at: [-9.6, 1.12, -1.4], s: 0.75 },
-  'seeds-0': { furn: 'crate', at: [-9.4, 0.55, 3.2] },
-  'battery-0': { furn: 'console', at: [1.8, 1.02, -0.2], s: 0.8 },
-  'water-0': { furn: 'tankrack', at: [-5, 0.32, 4.9] },
-  'science-0': { furn: 'bench', at: [4.6, 1.02, 4.8] },
-  'panel-0': { furn: 'panelwall', at: [9.6, 0, 4.4] },
-}
-
-const HATCH = new THREE.Vector3(9.6, 0, -1)
-const DROP_RADIUS = 2.3
-const BOUNDS = { x: [-10.2, 9.8], z: [-5.4, 5.6] }
 const SPEED = 6.5
+const REACH = 2.1
 const itemById = (id) => ITEMS.find((i) => i.id === id)
 const setCursor = (c) => (document.body.style.cursor = c)
 const go = (detail) => window.dispatchEvent(new CustomEvent('room-go', { detail }))
+const isOpen = (furnId) => !CLOSED_KINDS.has(FURN[furnId].kind) || useGame.getState().openFurn.includes(furnId)
 
 // ---------- Texturas ----------
 function useTileTexture(base, line, repeat) {
@@ -59,15 +30,14 @@ function useTileTexture(base, line, repeat) {
     g.fillStyle = base; g.fillRect(8, 8, 240, 240)
     g.fillStyle = line
     ;[[24, 24], [232, 24], [24, 232], [232, 232]].forEach(([x, y]) => { g.beginPath(); g.arc(x, y, 5, 0, 7); g.fill() })
-    const t = new THREE.CanvasTexture(c)
-    t.wrapS = t.wrapT = THREE.RepeatWrapping
-    t.repeat.set(...repeat)
-    t.colorSpace = THREE.SRGBColorSpace
-    return t
+    const tx = new THREE.CanvasTexture(c)
+    tx.wrapS = tx.wrapT = THREE.RepeatWrapping
+    tx.repeat.set(...repeat)
+    tx.colorSpace = THREE.SRGBColorSpace
+    return tx
   }, [base, line, repeat])
 }
 
-// Vista de Marte por la escotilla (con la tormenta de polvo acercándose)
 function usePortholeTexture() {
   return useMemo(() => {
     const c = document.createElement('canvas')
@@ -81,64 +51,160 @@ function usePortholeTexture() {
     for (let x = 0; x <= 512; x += 32) g.lineTo(x, 300 + Math.sin(x * 0.03) * 25 + Math.sin(x * 0.11) * 10)
     g.lineTo(512, 512); g.lineTo(0, 512); g.fill()
     g.fillStyle = '#b5612f'; g.fillRect(0, 400, 512, 112)
-    g.fillStyle = '#ece6dc'; g.beginPath(); g.arc(300, 400, 46, Math.PI, 0); g.fill() // el domo de la base
+    g.fillStyle = '#ece6dc'; g.beginPath(); g.arc(300, 400, 46, Math.PI, 0); g.fill()
     g.fillStyle = '#1d3b8f'; g.fillRect(380, 390, 50, 8); g.fillRect(440, 385, 50, 8)
-    const t = new THREE.CanvasTexture(c)
-    t.colorSpace = THREE.SRGBColorSpace
-    return t
+    const tx = new THREE.CanvasTexture(c)
+    tx.colorSpace = THREE.SRGBColorSpace
+    return tx
   }, [])
 }
 
-// ---------- Escenografía de la cabina ----------
-function Cabin({ dustRef }) {
-  const left = useGame((s) => s.roomLeft)
-  const wallTex = useTileTexture('#5f6652', '#4a5040', [8, 2])
-  const port = usePortholeTexture()
-  const dustDisc = useRef()
-  const alarm = useRef()
-  useFrame((st) => {
-    const d = dustRef()
-    if (dustDisc.current) dustDisc.current.material.opacity = Math.min(0.92, d)
-    if (alarm.current) alarm.current.intensity = d > 0.8 ? 18 + Math.sin(st.clock.elapsedTime * 10) * 16 : 0
-  })
+// ---------- Estructura de la nave ----------
+function Porthole({ x, tex, dustRef }) {
+  const dust = useRef()
+  useFrame(() => { if (dust.current) dust.current.material.opacity = Math.min(0.92, dustRef()) })
   return (
-    <group>
-      {/* pared del fondo */}
-      <mesh position={[0, 3, -7]} receiveShadow><boxGeometry args={[23, 6, 0.3]} /><meshStandardMaterial map={wallTex} roughness={0.9} /></mesh>
-      {/* escotilla redonda */}
-      <group position={[3.4, 3.4, -6.8]}>
-        <mesh><torusGeometry args={[1.25, 0.22, 16, 48]} /><meshStandardMaterial color="#2f3428" metalness={0.5} /></mesh>
-        <mesh><circleGeometry args={[1.2, 48]} /><meshBasicMaterial map={port} toneMapped={false} /></mesh>
-        <mesh ref={dustDisc} position={[0, 0, 0.01]}><circleGeometry args={[1.2, 48]} /><meshBasicMaterial color="#7a4a2a" transparent opacity={0} /></mesh>
-      </group>
-      {/* paredes laterales */}
-      <mesh position={[-11.5, 3, -0.5]} receiveShadow><boxGeometry args={[0.3, 6, 13.5]} /><meshStandardMaterial map={wallTex} roughness={0.9} /></mesh>
-      <mesh position={[11.5, 3, -5]}><boxGeometry args={[0.3, 6, 4.4]} /><meshStandardMaterial map={wallTex} /></mesh>
-      <mesh position={[11.5, 3, 3.6]}><boxGeometry args={[0.3, 6, 4.8]} /><meshStandardMaterial map={wallTex} /></mesh>
-      <mesh position={[11.5, 5.2, -1]}><boxGeometry args={[0.3, 1.6, 4.4]} /><meshStandardMaterial map={wallTex} /></mesh>
-      {/* caños y cables */}
-      <mesh position={[0, 5.6, -6.7]} rotation={[0, 0, Math.PI / 2]}><cylinderGeometry args={[0.12, 0.12, 22, 8]} /><meshStandardMaterial color="#7d7f70" metalness={0.5} /></mesh>
-      <mesh position={[0, 5.25, -6.7]} rotation={[0, 0, Math.PI / 2]}><cylinderGeometry args={[0.06, 0.06, 22, 8]} /><meshStandardMaterial color="#b0573a" /></mesh>
-      {/* lamparitas cálidas como en la ilustración */}
-      {[[-6, 5.3, -6.5], [6, 5.3, -6.5], [-10.9, 5, 2]].map((p, i) => (
-        <group key={i} position={p}>
-          <mesh><sphereGeometry args={[0.18, 12, 12]} /><meshBasicMaterial color="#ffe9a8" toneMapped={false} /></mesh>
-          <pointLight color="#ffd27a" intensity={14} distance={9} />
-        </group>
-      ))}
-      {/* luz de alarma (tormenta cerca) */}
-      <mesh position={[9.5, 5.4, -6.6]}><sphereGeometry args={[0.25, 12, 12]} /><meshStandardMaterial color="#ff2a2a" emissive="#ff0000" emissiveIntensity={1.5} /></mesh>
-      <pointLight ref={alarm} position={[9.5, 5, -6]} color="#ff2a2a" intensity={0} distance={16} />
-      {/* contador de días en la pared (como el 004 del dibujo) */}
-      <Html position={[10.2, 4.6, -6.8]} center zIndexRange={[10, 0]} style={{ pointerEvents: 'none' }}>
-        <div className="flip-counter">{String(left ?? 60).padStart(3, '0')}</div>
-      </Html>
+    <group position={[x, 3.4, -6.8]}>
+      <mesh><torusGeometry args={[1.25, 0.22, 16, 48]} /><meshStandardMaterial color="#2f3428" metalness={0.5} /></mesh>
+      <mesh><circleGeometry args={[1.2, 48]} /><meshBasicMaterial map={tex} toneMapped={false} /></mesh>
+      <mesh ref={dust} position={[0, 0, 0.01]}><circleGeometry args={[1.2, 48]} /><meshBasicMaterial color="#7a4a2a" transparent opacity={0} /></mesh>
     </group>
   )
 }
 
-// ---------- Mueble genérico ----------
-function Furniture({ id, f, open, hasItems }) {
+function Bulkhead({ x }) {
+  // pared entre módulos con su puerta (marco amarillo y negro)
+  return (
+    <group position={[x, 0, 0]}>
+      <mesh position={[0, 3, -4.2]}><boxGeometry args={[0.5, 6, 5.6]} /><meshStandardMaterial color="#555c4a" /></mesh>
+      <mesh position={[0, 0.7, 4.6]}><boxGeometry args={[0.5, 1.4, 4]} /><meshStandardMaterial color="#555c4a" /></mesh>
+      <mesh position={[0, 4.6, 0.6]}><boxGeometry args={[0.6, 0.35, 4]} /><meshStandardMaterial color="#ffd166" /></mesh>
+      {[-1.4, 2.6].map((z) => (
+        <mesh key={z} position={[0, 2.3, z]}><boxGeometry args={[0.6, 4.6, 0.25]} /><meshStandardMaterial color="#2b2b2b" /></mesh>
+      ))}
+    </group>
+  )
+}
+
+function SectorSign({ sector, lang }) {
+  const cx = (sector.x0 + sector.x1) / 2
+  return (
+    <Html position={[cx, 5.4, -6.8]} center zIndexRange={[10, 0]} style={{ pointerEvents: 'none' }}>
+      <div className="sector-sign" style={{ '--c': sector.color }}>{sector.emoji} {t(lang, 'sector.' + sector.id)}</div>
+    </Html>
+  )
+}
+
+function Ship({ dustRef }) {
+  const lang = useGame((s) => s.lang)
+  const left = useGame((s) => s.roomLeft)
+  const wallTex = useTileTexture('#5f6652', '#4a5040', [24, 2])
+  const medWall = useTileTexture('#cfd8d6', '#a9b5b2', [8, 2])
+  const engWall = useTileTexture('#5c5248', '#463d35', [8, 2])
+  const port = usePortholeTexture()
+  const alarm = useRef()
+  useFrame((st) => {
+    const d = dustRef()
+    if (alarm.current) alarm.current.intensity = d > 0.8 ? 30 + Math.sin(st.clock.elapsedTime * 10) * 25 : 0
+  })
+  return (
+    <group>
+      {/* paredes del fondo: un color por módulo */}
+      <mesh position={[-22.75, 3, -7]}><boxGeometry args={[22.5, 6, 0.3]} /><meshStandardMaterial map={medWall} roughness={0.9} /></mesh>
+      <mesh position={[0, 3, -7]}><boxGeometry args={[23, 6, 0.3]} /><meshStandardMaterial map={wallTex} roughness={0.9} /></mesh>
+      <mesh position={[22.75, 3, -7]}><boxGeometry args={[22.5, 6, 0.3]} /><meshStandardMaterial map={engWall} roughness={0.9} /></mesh>
+      {/* paredes de las puntas */}
+      <mesh position={[-34.2, 3, -0.4]}><boxGeometry args={[0.4, 6, 13.4]} /><meshStandardMaterial map={medWall} /></mesh>
+      <mesh position={[34.2, 3, -0.4]}><boxGeometry args={[0.4, 6, 13.4]} /><meshStandardMaterial map={engWall} /></mesh>
+      <Bulkhead x={-11.5} />
+      <Bulkhead x={11.5} />
+      <Porthole x={-3.6} tex={port} dustRef={dustRef} />
+      <Porthole x={-25} tex={port} dustRef={dustRef} />
+      {/* caños */}
+      <mesh position={[0, 5.6, -6.7]} rotation={[0, 0, Math.PI / 2]}><cylinderGeometry args={[0.12, 0.12, 68, 8]} /><meshStandardMaterial color="#7d7f70" metalness={0.5} /></mesh>
+      <mesh position={[0, 5.25, -6.7]} rotation={[0, 0, Math.PI / 2]}><cylinderGeometry args={[0.06, 0.06, 68, 8]} /><meshStandardMaterial color="#b0573a" /></mesh>
+      {/* lámparas (pocas luces para que ande en compus modestas) */}
+      {[[-22, 5, -3, '#e8f6ff'], [-4, 5, -3, '#ffd27a'], [6, 5, -3, '#ffd27a'], [23, 5, -3, '#ffb36b']].map(([x, y, z, c], i) => (
+        <group key={i} position={[x, y, z]}>
+          <mesh><sphereGeometry args={[0.18, 12, 12]} /><meshBasicMaterial color={c} toneMapped={false} /></mesh>
+          <pointLight color={c} intensity={30} distance={16} />
+        </group>
+      ))}
+      <pointLight ref={alarm} position={[0, 5, -5]} color="#ff2a2a" intensity={0} distance={40} />
+      {SECTORS.map((sec) => <SectorSign key={sec.id} sector={sec} lang={lang} />)}
+      <Html position={[9.4, 4.6, -6.8]} center zIndexRange={[10, 0]} style={{ pointerEvents: 'none' }}>
+        <div className="flip-counter">{String(left ?? 60).padStart(3, '0')}</div>
+      </Html>
+      <MedicalDecor />
+      <EngineeringDecor />
+      <CabinDecor />
+    </group>
+  )
+}
+
+function MedicalDecor() {
+  return (
+    <group>
+      {/* camilla */}
+      <group position={[-24.2, 0, -5.6]}>
+        <mesh position={[0, 0.55, 0]}><boxGeometry args={[4.4, 0.25, 1.8]} /><meshStandardMaterial color="#e9eef2" /></mesh>
+        <mesh position={[0, 0.75, 0]}><boxGeometry args={[4.2, 0.18, 1.6]} /><meshStandardMaterial color="#6fb4d8" /></mesh>
+        <mesh position={[-1.7, 0.95, 0]}><boxGeometry args={[0.7, 0.2, 1.2]} /><meshStandardMaterial color="#ffffff" /></mesh>
+        {[-2, 2].map((x) => <mesh key={x} position={[x, 0.25, 0]}><boxGeometry args={[0.15, 0.5, 1.6]} /><meshStandardMaterial color="#9aa5ab" /></mesh>)}
+      </group>
+      {/* suero */}
+      <group position={[-21.5, 0, -5]}>
+        <mesh position={[0, 1.3, 0]}><cylinderGeometry args={[0.04, 0.04, 2.6, 6]} /><meshStandardMaterial color="#bbb" metalness={0.7} /></mesh>
+        <mesh position={[0.2, 2.3, 0]}><boxGeometry args={[0.25, 0.4, 0.1]} /><meshStandardMaterial color="#cfefff" transparent opacity={0.8} /></mesh>
+      </group>
+      {/* cruz verde grande */}
+      <group position={[-12.8, 3.6, -6.8]}>
+        <mesh><boxGeometry args={[1.4, 0.4, 0.05]} /><meshStandardMaterial color="#2fbf5a" emissive="#1d8f3d" emissiveIntensity={0.8} /></mesh>
+        <mesh><boxGeometry args={[0.4, 1.4, 0.05]} /><meshStandardMaterial color="#2fbf5a" emissive="#1d8f3d" emissiveIntensity={0.8} /></mesh>
+      </group>
+    </group>
+  )
+}
+
+function EngineeringDecor() {
+  const core = useRef()
+  useFrame((st) => { if (core.current) core.current.material.emissiveIntensity = 1.2 + Math.sin(st.clock.elapsedTime * 3) * 0.5 })
+  return (
+    <group>
+      {/* reactor */}
+      <group position={[29, 0, -5.1]}>
+        <mesh position={[0, 1.6, 0]}><cylinderGeometry args={[1.2, 1.3, 3.2, 20]} /><meshStandardMaterial color="#4a4f55" metalness={0.6} /></mesh>
+        <mesh ref={core} position={[0, 1.6, 0]}><cylinderGeometry args={[0.6, 0.6, 3.3, 16]} /><meshStandardMaterial color="#7fe9ff" emissive="#2ab5ff" emissiveIntensity={1.2} transparent opacity={0.85} /></mesh>
+        {[0.5, 1.6, 2.7].map((y) => <mesh key={y} position={[0, y, 0]} rotation={[Math.PI / 2, 0, 0]}><torusGeometry args={[1.32, 0.08, 8, 32]} /><meshStandardMaterial color="#ffd166" /></mesh>)}
+      </group>
+      {/* franjas de peligro en el piso */}
+      {[[18, 1], [30, 0]].map(([x], i) => (
+        <mesh key={i} rotation={[-Math.PI / 2, 0, 0]} position={[x, 0.02, -2.9]}>
+          <planeGeometry args={[3, 0.4]} />
+          <meshBasicMaterial color={i ? '#ffd166' : '#ffd166'} />
+        </mesh>
+      ))}
+    </group>
+  )
+}
+
+function CabinDecor() {
+  // asientos naranjas como en la ilustración
+  return (
+    <group>
+      {[[-4, 2.5, 0.3], [4.6, 2.8, -0.3]].map(([x, z, r], i) => (
+        <group key={i} position={[x, 0, z]} rotation={[0, r, 0]}>
+          <mesh position={[0, 0.55, 0]}><boxGeometry args={[1.2, 0.3, 1.1]} /><meshStandardMaterial color="#e89a2c" /></mesh>
+          <mesh position={[0, 1.2, -0.45]}><boxGeometry args={[1.2, 1.2, 0.25]} /><meshStandardMaterial color="#e89a2c" /></mesh>
+          <mesh position={[0, 0.2, 0]}><cylinderGeometry args={[0.12, 0.2, 0.4, 8]} /><meshStandardMaterial color="#555" /></mesh>
+        </group>
+      ))}
+    </group>
+  )
+}
+
+// ---------- Muebles ----------
+function Furniture({ id, f, open, empty }) {
   const door = useRef()
   const [hover, setHover] = useState(false)
   const closedKind = CLOSED_KINDS.has(f.kind)
@@ -146,7 +212,7 @@ function Furniture({ id, f, open, hasItems }) {
     const d = door.current
     if (!d) return
     const k = Math.min(1, dt * 7)
-    if (f.kind === 'drawers') d.position.x += ((open ? 1 : 0) - d.position.x) * k
+    if (f.kind === 'drawers') d.position.z += ((open ? 0.9 : 0) - d.position.z) * k
     else if (f.kind === 'crate') d.rotation.x += ((open ? -1.9 : 0) - d.rotation.x) * k
     else d.rotation.y += ((open ? -1.9 : 0) - d.rotation.y) * k
   })
@@ -169,17 +235,14 @@ function Furniture({ id, f, open, hasItems }) {
         <group position={[x, 0, z]}>
           {[0.15, 1.05, 1.95, 2.85].map((y) => <mesh key={y} position={[0, y, 0]}><boxGeometry args={[2.6, 0.08, 0.7]} /><meshStandardMaterial color="#8a7d6a" /></mesh>)}
           {[-1.3, 1.3].map((sx) => <mesh key={sx} position={[sx, 1.5, 0]}><boxGeometry args={[0.08, 3, 0.7]} /><meshStandardMaterial color="#6d6252" /></mesh>)}
-          {/* latas de decoración en el estante de arriba */}
-          {[-0.8, -0.3, 0.2].map((cx) => (
-            <mesh key={cx} position={[cx, 3.1, 0]}><cylinderGeometry args={[0.17, 0.17, 0.4, 12]} /><meshStandardMaterial color="#d94a3d" /></mesh>
-          ))}
+          {[-0.8, -0.3, 0.2].map((cx) => <mesh key={cx} position={[cx, 3.1, 0]}><cylinderGeometry args={[0.17, 0.17, 0.4, 12]} /><meshStandardMaterial color="#d94a3d" /></mesh>)}
         </group>
       )
       break
     case 'wallcab':
       content = (
         <group position={[x, 1.9, z + 0.35]} {...handlers}>
-          <mesh>{<boxGeometry args={[1.7, 1.5, 0.7]} />}{body('#d9d4c6')}</mesh>
+          <mesh><boxGeometry args={[1.7, 1.5, 0.7]} />{body('#d9d4c6')}</mesh>
           <mesh position={[0, 0, 0.36]}><boxGeometry args={[1.5, 1.3, 0.02]} /><meshStandardMaterial color="#2a2a2a" /></mesh>
           <group ref={door} position={[-0.85, 0, 0.37]}>
             <mesh position={[0.85, 0, 0]}><boxGeometry args={[1.7, 1.5, 0.06]} />{body('#ecebe4')}</mesh>
@@ -192,10 +255,10 @@ function Furniture({ id, f, open, hasItems }) {
     case 'locker':
       content = (
         <group position={[x, 0, z]} {...handlers}>
-          <mesh position={[0, 1.6, 0]}><boxGeometry args={[1.5, 3.2, 1]} />{body('#6f7a63')}</mesh>
+          <mesh position={[0, 1.6, 0]}><boxGeometry args={[1.5, 3.2, 1]} />{body(f.color || '#6f7a63')}</mesh>
           <mesh position={[0, 1.6, 0.51]}><boxGeometry args={[1.3, 3, 0.02]} /><meshStandardMaterial color="#1f221b" /></mesh>
           <group ref={door} position={[-0.75, 1.6, 0.53]}>
-            <mesh position={[0.75, 0, 0]}><boxGeometry args={[1.5, 3.2, 0.06]} />{body('#7f8b71')}</mesh>
+            <mesh position={[0.75, 0, 0]}><boxGeometry args={[1.5, 3.2, 0.06]} />{body(f.color ? new THREE.Color(f.color).offsetHSL(0, 0, 0.05) : '#7f8b71')}</mesh>
             {[0.9, 1.1, 1.3].map((y) => <mesh key={y} position={[0.75, y, 0.04]}><boxGeometry args={[0.9, 0.06, 0.02]} /><meshStandardMaterial color="#3b4234" /></mesh>)}
             <mesh position={[1.3, 0, 0.06]}><boxGeometry args={[0.08, 0.4, 0.06]} /><meshStandardMaterial color="#c9c9c9" metalness={0.8} /></mesh>
           </group>
@@ -207,23 +270,21 @@ function Furniture({ id, f, open, hasItems }) {
         <group position={[x, 0, z]} {...handlers}>
           <mesh position={[0, 1.5, 0]}><boxGeometry args={[2, 3, 0.8]} />{body('#3d4236')}</mesh>
           <mesh position={[0, 1.5, 0.41]}><boxGeometry args={[1.8, 2.8, 0.02]} /><meshStandardMaterial color="#14160f" /></mesh>
-          {/* franjas de peligro */}
           <mesh position={[0, 3.05, 0.42]}><boxGeometry args={[2, 0.12, 0.02]} /><meshStandardMaterial color="#ffd166" /></mesh>
           <group ref={door} position={[-1, 1.5, 0.44]}>
             <mesh position={[1, 0, 0]}><boxGeometry args={[2, 3, 0.04]} /><meshStandardMaterial color="#bfe7ff" transparent opacity={0.25} emissive="#ffd166" emissiveIntensity={hl} /></mesh>
           </group>
-          <pointLight position={[0, 2.6, 0.2]} color="#9fe3ff" intensity={4} distance={3} />
         </group>
       )
       break
     case 'drawers':
       content = (
         <group position={[x, 0, z]} {...handlers}>
-          <mesh position={[0, 0.8, 0]}><boxGeometry args={[1.2, 1.6, 1.8]} />{body('#b0573a')}</mesh>
-          {[0.35, 0.8].map((y) => <mesh key={y} position={[0.61, y, 0]}><boxGeometry args={[0.02, 0.38, 1.6]} /><meshStandardMaterial color="#8a3f28" /></mesh>)}
+          <mesh position={[0, 0.8, 0]}><boxGeometry args={[1.8, 1.6, 1.2]} />{body('#b0573a')}</mesh>
+          {[0.35, 0.8].map((y) => <mesh key={y} position={[0, y, 0.61]}><boxGeometry args={[1.6, 0.38, 0.02]} /><meshStandardMaterial color="#8a3f28" /></mesh>)}
           <group ref={door}>
-            <mesh position={[0.25, 1.27, 0]}><boxGeometry args={[0.9, 0.36, 1.6]} />{body('#c9653f')}</mesh>
-            <mesh position={[0.72, 1.27, 0]}><boxGeometry args={[0.06, 0.08, 0.5]} /><meshStandardMaterial color="#ddd" metalness={0.8} /></mesh>
+            <mesh position={[0, 1.27, 0.25]}><boxGeometry args={[1.6, 0.36, 0.9]} />{body('#c9653f')}</mesh>
+            <mesh position={[0, 1.27, 0.72]}><boxGeometry args={[0.5, 0.08, 0.06]} /><meshStandardMaterial color="#ddd" metalness={0.8} /></mesh>
           </group>
         </group>
       )
@@ -231,10 +292,10 @@ function Furniture({ id, f, open, hasItems }) {
     case 'crate':
       content = (
         <group position={[x, 0, z]} {...handlers}>
-          <mesh position={[0, 0.45, 0]}><boxGeometry args={[1.3, 0.9, 1.4]} />{body('#4f7d3b')}</mesh>
-          <mesh position={[0, 0.46, 0.71]}><boxGeometry args={[0.4, 0.4, 0.02]} /><meshStandardMaterial color="#9be07b" emissive="#3d8f2a" emissiveIntensity={0.6} /></mesh>
+          <mesh position={[0, 0.45, 0]}><boxGeometry args={[1.3, 0.9, 1.4]} />{body(f.color || '#4f7d3b')}</mesh>
+          <mesh position={[0, 0.46, 0.71]}><boxGeometry args={[0.4, 0.4, 0.02]} /><meshStandardMaterial color="#ffd166" emissive="#b68200" emissiveIntensity={0.5} /></mesh>
           <group ref={door} position={[0, 0.92, -0.7]}>
-            <mesh position={[0, 0, 0.7]}><boxGeometry args={[1.36, 0.1, 1.44]} />{body('#5f9147')}</mesh>
+            <mesh position={[0, 0, 0.7]}><boxGeometry args={[1.36, 0.1, 1.44]} />{body(f.color ? new THREE.Color(f.color).offsetHSL(0, 0, 0.06) : '#5f9147')}</mesh>
           </group>
         </group>
       )
@@ -263,7 +324,6 @@ function Furniture({ id, f, open, hasItems }) {
         <group position={[x, 0, z]}>
           <mesh position={[0, 0.95, 0]}><boxGeometry args={[2.4, 0.1, 1.2]} /><meshStandardMaterial color="#ddd8c4" /></mesh>
           {[[-1.1, -0.5], [1.1, -0.5], [-1.1, 0.5], [1.1, 0.5]].map(([lx, lz], i) => <mesh key={i} position={[lx, 0.47, lz]}><boxGeometry args={[0.08, 0.95, 0.08]} /><meshStandardMaterial color="#555" /></mesh>)}
-          <mesh position={[-0.7, 1.15, 0.2]}><cylinderGeometry args={[0.12, 0.15, 0.3, 12]} /><meshStandardMaterial color="#9fe3ff" transparent opacity={0.7} /></mesh>
         </group>
       )
       break
@@ -271,20 +331,20 @@ function Furniture({ id, f, open, hasItems }) {
       content = null
   }
   const showQ = closedKind && !open
+  const tagY = f.kind === 'wallcab' ? 3.1 : f.kind === 'crate' || f.kind === 'drawers' ? 2.1 : 3.6
   return (
     <>
       {content}
       {showQ && (
-        <Html position={[x, f.kind === 'wallcab' ? 3.1 : f.kind === 'crate' || f.kind === 'drawers' ? 2.1 : 3.6, z + 0.6]} center zIndexRange={[10, 0]} style={{ pointerEvents: 'none' }}>
+        <Html position={[x, tagY, z + 0.6]} center zIndexRange={[10, 0]} style={{ pointerEvents: 'none' }}>
           <div className={'furn-tag' + (hover ? ' hover' : '')}>❓</div>
         </Html>
       )}
-      {open && f.empty && (
-        <Html position={[x, 2.4, z + 0.8]} center zIndexRange={[10, 0]} style={{ pointerEvents: 'none' }}>
+      {open && closedKind && empty && (
+        <Html position={[x, tagY - 0.6, z + 0.8]} center zIndexRange={[10, 0]} style={{ pointerEvents: 'none' }}>
           <div className="furn-tag">🕸️</div>
         </Html>
       )}
-      {open && !f.empty && !hasItems && null}
     </>
   )
 }
@@ -293,11 +353,12 @@ function Furniture({ id, f, open, hasItems }) {
 function RoomItem({ entry, playerRef }) {
   const [hover, setHover] = useState(false)
   const group = useRef()
-  const item = itemById(entry.id)
+  const lang = useGame((s) => s.lang)
+  const slot = slotById(useGame((s) => s.layout[entry.key]))
+  const item = locItem(lang, itemById(entry.id))
   const Model = ITEM_MODELS[entry.id]
-  const spot = SPOTS[entry.key]
-  const f = FURN[spot.furn]
-  const open = useGame((s) => s.openFurn.includes(spot.furn))
+  const f = FURN[slot.furn]
+  const open = useGame((s) => s.openFurn.includes(slot.furn))
   const accessible = !CLOSED_KINDS.has(f.kind) || open
   const carrying = useGame((s) => s.carrying)
   const loadedKeys = useGame((s) => s.roomItems.filter((r) => r.state === 'loaded').map((r) => r.key).join(','))
@@ -312,31 +373,29 @@ function RoomItem({ entry, playerRef }) {
       tx = p.x + (idx ? 0.6 : -0.6); ty = 1.2; tz = p.z + 0.5; ts = 0.7
     } else if (entry.state === 'loaded') {
       const idx = loadedKeys.split(',').indexOf(entry.key)
-      tx = 10.3 + (idx % 2) * 0.7 - 0.35; tz = -2.3 + Math.floor(idx / 2) * 0.65; ty = 0.15; ts = 0.5
+      tx = HATCH.x - 1.6 + (idx % 4) * 0.8; tz = -6.2 + Math.floor(idx / 4) * 0.6; ty = 0.1; ts = 0.5
     } else {
-      const s = spot.s || 1
-      ;[tx, ty, tz] = spot.at
+      ;[tx, ty, tz] = slot.at
+      if (f.kind === 'drawers' && open) tz += 0.9
       if (hover && accessible) ty += 0.15 + Math.sin(st.clock.elapsedTime * 6) * 0.05
-      ts = accessible ? (hover ? s * 1.15 : s) : s
+      ts = (slot.s || 1) * (hover && accessible ? 1.15 : 1)
     }
     const k = Math.min(1, dt * 12)
     g.position.x += (tx - g.position.x) * k
     g.position.y += (ty - g.position.y) * k
     g.position.z += (tz - g.position.z) * k
-    const sc = g.scale.x + (ts - g.scale.x) * k
-    g.scale.setScalar(sc)
+    g.scale.setScalar(g.scale.x + (ts - g.scale.x) * k)
   })
 
   const onDown = (e) => {
     e.stopPropagation()
     if (entry.state === 'shelf' && accessible) go({ type: 'pick', key: entry.key })
-    else if (entry.state === 'shelf' && !accessible) go({ type: 'open', id: spot.furn })
+    else if (entry.state === 'shelf') go({ type: 'open', id: slot.furn })
     if (entry.state === 'loaded') useGame.getState().unload(entry.key)
   }
-  // Dentro de un mueble cerrado no se ve (salvo la vitrina, que es de vidrio)
   const hidden = entry.state === 'shelf' && !accessible && f.kind !== 'glasscase'
   return (
-    <group ref={group} position={spot.at} visible={!hidden}>
+    <group ref={group} position={slot.at} visible={!hidden}>
       <group
         onPointerDown={onDown}
         onPointerOver={(e) => { e.stopPropagation(); setHover(true); setCursor('pointer') }}
@@ -357,26 +416,37 @@ function RoomItem({ entry, playerRef }) {
   )
 }
 
-// ---------- Tripulación de fondo (dan pistas) ----------
-const HINTS = {
-  engineer: ['🧰 → 🗄️', '🫧 → 🔒', '⚡🔋!'],
-  botanist: ['🥔 → 📦🟩', '💧🛡️', '⛑️ → ➕'],
+// ---------- Tripulación de fondo: pistas según dónde quedaron los objetos en esta partida ----------
+function useHints() {
+  const layout = useGame((s) => s.layout)
+  return useMemo(() => {
+    const out = []
+    Object.entries(layout).forEach(([key, slotId]) => {
+      const slot = slotById(slotId)
+      const f = FURN[slot.furn]
+      if (!CLOSED_KINDS.has(f.kind)) return
+      const it = itemById(key.split('-')[0])
+      const sec = sectorAt(f.pos[0])
+      out.push(`${it.emoji} → ${sec.emoji}${f.icon}`)
+    })
+    return out.sort(() => Math.random() - 0.5)
+  }, [layout])
 }
-function CrewMember({ crew, position, hintOffset = 0, urgentRef }) {
+
+function CrewMember({ crew, position, hintOffset = 0, urgentRef, hints, lang }) {
   const [bubble, setBubble] = useState(null)
   const ref = useRef()
   useEffect(() => {
-    let i = 0
+    let i = hintOffset ? 1 : 0
     let hideT
     const show = () => {
-      const urgent = urgentRef()
-      setBubble(urgent ? '🌪️ ¡Rápido!' : HINTS[crew.id][i++ % HINTS[crew.id].length])
-      hideT = setTimeout(() => setBubble(null), 2600)
+      setBubble(urgentRef() ? t(lang, 'b.hurry') : hints[(i += 2) % Math.max(1, hints.length)] || null)
+      hideT = setTimeout(() => setBubble(null), 2800)
     }
-    const first = setTimeout(show, 1500 + hintOffset)
-    const iv = setInterval(show, 7000)
+    const first = setTimeout(show, 1200 + hintOffset)
+    const iv = setInterval(show, 6500)
     return () => { clearTimeout(first); clearInterval(iv); clearTimeout(hideT) }
-  }, [crew.id, hintOffset, urgentRef])
+  }, [hintOffset, urgentRef, hints, lang])
   useFrame((st) => {
     if (ref.current) ref.current.position.y = Math.abs(Math.sin(st.clock.elapsedTime * 1.6 + hintOffset)) * 0.06
   })
@@ -393,100 +463,148 @@ function CrewMember({ crew, position, hintOffset = 0, urgentRef }) {
 }
 
 // ---------- Jugador ----------
-const BUBBLES = {
-  heavy: '🚫⚖️ ¡Muy pesado!',
-  hands: '✋✋ ¡Manos llenas! → 🏠',
-  loaded: '✅ ¡A la base!',
-  empty: '🕸️ Vacío…',
+const BUBBLE_KEYS = { heavy: 'b.heavy', hands: 'b.hands', loaded: 'b.loaded', empty: 'b.empty' }
+
+/** Lo que el comandante tiene más cerca para interactuar con la tecla E. */
+function nearestAction(p) {
+  const s = useGame.getState()
+  if (s.carrying.length && Math.hypot(p.x - HATCH.x, p.z - HATCH.z) < HATCH.r + 1.2) return { type: 'drop' }
+  let best = null, bd = REACH
+  s.roomItems.forEach((r) => {
+    if (r.state !== 'shelf') return
+    const slot = slotById(s.layout[r.key])
+    if (!isOpen(slot.furn)) return
+    const d = Math.hypot(p.x - slot.at[0], p.z - slot.at[2])
+    if (d < bd + 0.6) { bd = d - 0.6; best = { type: 'pick', key: r.key } }
+  })
+  if (best) return best
+  bd = REACH
+  Object.entries(FURN).forEach(([id, f]) => {
+    if (!CLOSED_KINDS.has(f.kind) || s.openFurn.includes(id)) return
+    const d = Math.hypot(p.x - f.front[0], p.z - f.front[2])
+    if (d < bd) { bd = d; best = { type: 'open', id } }
+  })
+  return best
 }
 
 function Player({ playerRef }) {
   const player = useGame((s) => s.player)
+  const lang = useGame((s) => s.lang)
   const ch = getCharacter(player.character)
   const msg = useGame((s) => s.roomMsg)
   const group = useRef()
   const body = useRef()
-  const target = useRef(new THREE.Vector3(0, 0, 2.6))
+  const path = useRef([])
   const pending = useRef(null)
   const marker = useRef()
+  const keys = useRef({})
+  const moving = useRef(false)
+  const lastPub = useRef(0)
   const [flip, setFlip] = useState(false)
   const [bubble, setBubble] = useState(null)
 
   useEffect(() => {
-    if (!msg || !BUBBLES[msg.type]) return
-    setBubble(BUBBLES[msg.type])
-    const t = setTimeout(() => setBubble(null), 1500)
-    return () => clearTimeout(t)
-  }, [msg])
+    if (!msg || !BUBBLE_KEYS[msg.type]) return
+    setBubble(t(lang, BUBBLE_KEYS[msg.type]))
+    const tm = setTimeout(() => setBubble(null), 1500)
+    return () => clearTimeout(tm)
+  }, [msg, lang])
+
+  const walkTo = (x, z, action) => {
+    const p = playerRef.current
+    path.current = findPath([p.x, p.z], [x, z])
+    pending.current = action || null
+    const last = path.current[path.current.length - 1]
+    if (marker.current && last) { marker.current.position.set(last[0], 0.05, last[1]); marker.current.material.opacity = 1 }
+  }
+
+  const act = (a) => {
+    const s = useGame.getState()
+    if (a.type === 'pick') s.pickItem(a.key)
+    if (a.type === 'drop') s.depositAll()
+    if (a.type === 'open') { s.openFurniture(a.id); if (!s.roomItems.some((r) => r.state === 'shelf' && slotById(s.layout[r.key]).furn === a.id)) s.say('empty') }
+  }
 
   useEffect(() => {
     const onGo = (ev) => {
       const d = ev.detail
-      if (d.type === 'pick') {
-        target.current.set(...FURN[SPOTS[d.key].furn].front)
-        pending.current = d
-      } else if (d.type === 'open') {
-        target.current.set(...FURN[d.id].front)
-        pending.current = d
-      } else if (d.type === 'drop') {
-        target.current.set(HATCH.x - 1, 0, HATCH.z)
-        pending.current = d
-      } else if (d.type === 'walk') {
-        target.current.set(d.x, 0, d.z)
-        pending.current = null
-      }
-      clampTarget(target.current)
-      if (marker.current) { marker.current.position.set(target.current.x, 0.05, target.current.z); marker.current.material.opacity = 1 }
+      if (d.type === 'pick') { const f = FURN[slotById(useGame.getState().layout[d.key]).furn]; walkTo(f.front[0], f.front[2], d) }
+      else if (d.type === 'open') walkTo(FURN[d.id].front[0], FURN[d.id].front[2], d)
+      else if (d.type === 'drop') walkTo(HATCH.x, HATCH.z, d)
+      else if (d.type === 'walk') walkTo(d.x, d.z, null)
     }
+    const down = (e) => {
+      if (e.target?.tagName === 'INPUT') return
+      const k = e.key.toLowerCase()
+      keys.current[k] = true
+      if (k === 'e' || k === ' ' || k === 'enter') {
+        const a = nearestAction(playerRef.current)
+        if (a) act(a)
+        e.preventDefault()
+      }
+    }
+    const up = (e) => { keys.current[e.key.toLowerCase()] = false }
     window.addEventListener('room-go', onGo)
-    return () => window.removeEventListener('room-go', onGo)
+    window.addEventListener('keydown', down)
+    window.addEventListener('keyup', up)
+    return () => { window.removeEventListener('room-go', onGo); window.removeEventListener('keydown', down); window.removeEventListener('keyup', up) }
   }, [playerRef])
 
   useFrame((st, dt) => {
     const p = playerRef.current
-    const t = target.current
-    const dx = t.x - p.x, dz = t.z - p.z
-    const dist = Math.hypot(dx, dz)
-    const moving = dist > 0.06
-    if (moving) {
+    const k = keys.current
+    const kx = (k.d || k.arrowright ? 1 : 0) - (k.a || k.arrowleft ? 1 : 0)
+    const kz = (k.s || k.arrowdown ? 1 : 0) - (k.w || k.arrowup ? 1 : 0)
+    let mv = false
+    if (kx || kz) {
+      // Teclado: movimiento directo con choque contra muebles (se desliza por las paredes)
+      path.current = []
+      pending.current = null
+      const len = Math.hypot(kx, kz)
+      const step = SPEED * dt
+      const nx = p.x + (kx / len) * step, nz = p.z + (kz / len) * step
+      if (walkable(nx, p.z)) p.x = nx
+      if (walkable(p.x, nz)) p.z = nz
+      if (kx) { const f = kx < 0; if (f !== flip) setFlip(f) }
+      mv = true
+    } else if (path.current.length) {
+      const [tx, tz] = path.current[0]
+      const dx = tx - p.x, dz = tz - p.z
+      const dist = Math.hypot(dx, dz)
       const step = Math.min(dist, SPEED * dt)
-      p.x += (dx / dist) * step
-      p.z += (dz / dist) * step
-      if (Math.abs(dx) > 0.05) { const f = dx < 0; if (f !== flip) setFlip(f) }
+      if (dist > 0.04) {
+        p.x += (dx / dist) * step
+        p.z += (dz / dist) * step
+        if (Math.abs(dx) > 0.05) { const f = dx < 0; if (f !== flip) setFlip(f) }
+        mv = true
+      } else path.current.shift()
     } else if (pending.current) {
       const a = pending.current
       pending.current = null
-      const s = useGame.getState()
-      if (a.type === 'pick') s.pickItem(a.key)
-      if (a.type === 'drop') s.depositAll()
-      if (a.type === 'open') {
-        s.openFurniture(a.id)
-        if (FURN[a.id].empty) s.say('empty')
-      }
+      act(a)
     }
+    moving.current = mv
     const s = useGame.getState()
-    if (s.carrying.length && Math.hypot(p.x - HATCH.x, p.z - HATCH.z) < DROP_RADIUS) s.depositAll()
+    if (s.carrying.length && Math.hypot(p.x - HATCH.x, p.z - HATCH.z) < HATCH.r) s.depositAll()
+    if (st.clock.elapsedTime - lastPub.current > 0.25) { lastPub.current = st.clock.elapsedTime; useGame.setState({ roomPlayerX: p.x }) }
 
     if (group.current) group.current.position.set(p.x, 0, p.z)
-    if (body.current) {
-      const time = st.clock.elapsedTime
-      body.current.position.y = moving ? Math.abs(Math.sin(time * 11)) * 0.14 : 0
-      body.current.rotation.z = moving ? Math.sin(time * 11) * 0.05 : 0
-    }
+    if (body.current) body.current.position.y = mv ? Math.abs(Math.sin(st.clock.elapsedTime * 9)) * 0.08 : 0
     if (marker.current) marker.current.material.opacity = Math.max(0, marker.current.material.opacity - dt * 1.5)
   })
 
+  const movingRef = useMemo(() => () => moving.current, [])
   return (
     <>
-      <group ref={group}>
+      <group ref={group} position={START}>
         <group ref={body}>
-          <Suspense fallback={null}><CharacterSprite src={ch.sprite} height={3.1} flip={flip} tilt={0.55} /></Suspense>
+          <Suspense fallback={null}><CharacterSprite frames={ch.walk} movingRef={movingRef} height={3.1} flip={flip} tilt={0.55} /></Suspense>
         </group>
         <Html position={[0, 3.4, -1.6]} center zIndexRange={[10, 0]} style={{ pointerEvents: 'none' }}>
           {bubble ? <div className="bubble">{bubble}</div> : player.name ? <div className="name-tag">⭐ {player.name}</div> : null}
         </Html>
       </group>
-      <mesh ref={marker} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.05, 2.6]}>
+      <mesh ref={marker} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.05, 2.4]}>
         <ringGeometry args={[0.3, 0.45, 32]} />
         <meshBasicMaterial color="#ffd166" transparent opacity={0} depthWrite={false} />
       </mesh>
@@ -494,13 +612,7 @@ function Player({ playerRef }) {
   )
 }
 
-function clampTarget(v) {
-  v.x = THREE.MathUtils.clamp(v.x, BOUNDS.x[0], BOUNDS.x[1])
-  v.z = THREE.MathUtils.clamp(v.z, BOUNDS.z[0], BOUNDS.z[1])
-  return v
-}
-
-// Compuerta hacia la base
+// Compuerta hacia la base (en la pared del fondo de la cabina)
 function Hatch({ carrying }) {
   const glow = useRef()
   useFrame((st) => {
@@ -508,43 +620,45 @@ function Hatch({ carrying }) {
   })
   return (
     <group>
-      <mesh position={[11.35, 2.2, -1]}><boxGeometry args={[0.2, 4.4, 4.4]} /><meshStandardMaterial color="#ffb347" emissive="#ff7a1a" emissiveIntensity={1.2} /></mesh>
-      <mesh position={[11.3, 2.2, -1]}><boxGeometry args={[0.25, 4, 3.6]} /><meshBasicMaterial color="#ffd8a8" /></mesh>
+      <mesh position={[HATCH.x, 2.2, -6.75]}><boxGeometry args={[3.6, 4.4, 0.2]} /><meshStandardMaterial color="#ffb347" emissive="#ff7a1a" emissiveIntensity={1.2} /></mesh>
+      <mesh position={[HATCH.x, 2.1, -6.6]}><boxGeometry args={[2.9, 3.8, 0.1]} /><meshBasicMaterial color="#ffd8a8" /></mesh>
       <mesh ref={glow} position={[HATCH.x, 0.03, HATCH.z]} rotation={[-Math.PI / 2, 0, 0]}
         onPointerDown={(e) => { e.stopPropagation(); go({ type: 'drop' }) }}
         onPointerOver={() => setCursor('pointer')} onPointerOut={() => setCursor('default')}>
-        <circleGeometry args={[DROP_RADIUS, 40]} />
+        <circleGeometry args={[HATCH.r, 40]} />
         <meshBasicMaterial color="#ffb347" transparent opacity={0.15} depthWrite={false} />
       </mesh>
       <mesh position={[HATCH.x, 0.04, HATCH.z]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[DROP_RADIUS - 0.12, DROP_RADIUS, 48]} />
+        <ringGeometry args={[HATCH.r - 0.12, HATCH.r, 48]} />
         <meshBasicMaterial color="#ffd166" />
       </mesh>
-      <Html position={[10.6, 4.9, -1]} center zIndexRange={[10, 0]} style={{ pointerEvents: 'none' }}>
+      <Html position={[HATCH.x, 4.9, -6.6]} center zIndexRange={[10, 0]} style={{ pointerEvents: 'none' }}>
         <div className="room-sign">🏠</div>
       </Html>
-      <pointLight position={[9.5, 3, -1]} color="#ffb347" intensity={carrying ? 30 : 12} distance={8} />
+      <pointLight position={[HATCH.x, 3, -5]} color="#ffb347" intensity={carrying ? 30 : 12} distance={9} />
     </group>
   )
 }
 
-function CamRig() {
+// La cámara sigue al comandante por la nave
+function CamRig({ playerRef }) {
   const { camera, size } = useThree()
-  const base = useRef(new THREE.Vector3())
+  const k = useRef(1)
+  const cx = useRef(0)
   useEffect(() => {
     const aspect = size.width / size.height
-    const k = aspect < 1.3 ? 1.3 / aspect : 1
-    base.current.set(0, 13 * k, 13 * k)
-    camera.position.copy(base.current)
-    camera.lookAt(0, 0, -2.2)
+    k.current = aspect < 1.3 ? 1.3 / aspect : 1
     camera.clearViewOffset?.()
     camera.updateProjectionMatrix()
   }, [camera, size])
-  // la nave tiembla cuando la tormenta está muy cerca
-  useFrame(() => {
+  useFrame((_, dt) => {
+    const half = 34 - 12.5 / k.current
+    const target = Math.max(-half, Math.min(half, playerRef.current.x))
+    cx.current += (target - cx.current) * Math.min(1, dt * 3)
     const left = useGame.getState().roomLeft
     const shake = left !== null && left <= 6 ? 0.08 : 0
-    camera.position.set(base.current.x + (Math.random() - 0.5) * shake, base.current.y + (Math.random() - 0.5) * shake, base.current.z)
+    camera.position.set(cx.current + (Math.random() - 0.5) * shake, 13 * k.current + (Math.random() - 0.5) * shake, 13 * k.current)
+    camera.lookAt(cx.current, 0, -2.2)
   })
   return null
 }
@@ -552,9 +666,12 @@ function CamRig() {
 export default function Room() {
   const roomItems = useGame((s) => s.roomItems)
   const openFurn = useGame((s) => s.openFurn)
+  const layout = useGame((s) => s.layout)
+  const lang = useGame((s) => s.lang)
   const carrying = useGame((s) => s.carrying.length > 0)
-  const floorTex = useTileTexture('#4f5546', '#3a3f33', [11, 7])
-  const playerRef = useRef(new THREE.Vector3(0, 0, 2.6))
+  const floorTex = useTileTexture('#4f5546', '#3a3f33', [34, 7])
+  const playerRef = useRef(new THREE.Vector3(...START))
+  const hints = useHints()
   const dustRef = useMemo(() => () => {
     const left = useGame.getState().roomLeft
     return left === null ? 0 : 1 - left / 60
@@ -563,29 +680,29 @@ export default function Room() {
     const left = useGame.getState().roomLeft
     return left !== null && left <= 12
   }, [])
+  const usedFurn = useMemo(() => new Set(Object.values(layout).map((id) => slotById(id)?.furn)), [layout])
   const onFloor = (e) => {
     e.stopPropagation()
     go({ type: 'walk', x: e.point.x, z: e.point.z })
   }
   return (
     <>
-      <CamRig />
+      <CamRig playerRef={playerRef} />
       <color attach="background" args={['#14161f']} />
-      <ambientLight intensity={0.5} />
-      <hemisphereLight args={['#f1e6c8', '#3a2f2a', 0.55]} />
-      <directionalLight position={[6, 14, 8]} intensity={1.2} castShadow shadow-mapSize={[1024, 1024]}
-        shadow-camera-left={-14} shadow-camera-right={14} shadow-camera-top={10} shadow-camera-bottom={-10} />
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-0.3, 0, -0.6]} receiveShadow onPointerDown={onFloor}>
-        <planeGeometry args={[23, 13.4]} />
+      <ambientLight intensity={0.55} />
+      <hemisphereLight args={['#f1e6c8', '#3a2f2a', 0.6]} />
+      <directionalLight position={[6, 14, 8]} intensity={1.1} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, -0.4]} onPointerDown={onFloor}>
+        <planeGeometry args={[68.4, 13.4]} />
         <meshStandardMaterial map={floorTex} roughness={0.85} />
       </mesh>
-      <Cabin dustRef={dustRef} />
+      <Ship dustRef={dustRef} />
       {Object.entries(FURN).map(([id, f]) => (
-        <Furniture key={id} id={id} f={f} open={openFurn.includes(id)} hasItems={roomItems.some((r) => SPOTS[r.key].furn === id && r.state === 'shelf')} />
+        <Furniture key={id} id={id} f={f} open={openFurn.includes(id)} empty={!usedFurn.has(id) || !roomItems.some((r) => r.state === 'shelf' && slotById(layout[r.key])?.furn === id)} />
       ))}
       <Hatch carrying={carrying} />
-      <CrewMember crew={CREW[0]} position={[3.6, 0, -3.4]} hintOffset={0} urgentRef={urgentRef} />
-      <CrewMember crew={CREW[1]} position={[-6.4, 0, -3.6]} hintOffset={3500} urgentRef={urgentRef} />
+      <CrewMember crew={CREW[0]} position={[22, 0, -3.6]} hintOffset={0} urgentRef={urgentRef} hints={hints} lang={lang} />
+      <CrewMember crew={CREW[1]} position={[-16.5, 0, -3.4]} hintOffset={3000} urgentRef={urgentRef} hints={hints} lang={lang} />
       {roomItems.map((r) => <RoomItem key={r.key} entry={r} playerRef={playerRef} />)}
       <Player playerRef={playerRef} />
     </>

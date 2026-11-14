@@ -3,39 +3,41 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useGame } from '../game/store'
 import { cine } from '../three/cine'
 import { CINE_END } from '../three/MarsBase'
+import { useT } from '../i18n/useT'
+import { Tx } from './common'
 
 const STEPS = [
-  [0, '🪂', 'Entrando a la atmósfera de Marte…'],
-  [4.5, '🔥', '¡Retrocohetes encendidos!'],
-  [7.6, '✅', '¡Aterrizamos!'],
-  [9, '🏗️', 'Desplegando la base…'],
-  [14, '👩‍🚀', null],
+  [0, '🪂', 'cine.1'],
+  [4.5, '🔥', 'cine.2'],
+  [7.6, '✅', 'cine.3'],
+  [9, '🏗️', 'cine.4'],
+  [14, '👩‍🚀', 'cine.ready'],
 ]
 
 export default function LandingUI() {
   const name = useGame((s) => s.player.name)
+  const T = useT()
   const [t, setT] = useState(0)
   useEffect(() => {
     const iv = setInterval(() => setT(cine.t), 150)
     return () => clearInterval(iv)
   }, [])
   const step = [...STEPS].reverse().find((s) => t >= s[0]) || STEPS[0]
-  const text = step[2] || `¡Base lista, Comandante ${name}!`
   return (
     <motion.div className="screen cine-screen" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
       <div className="letterbox top" />
       <div className="letterbox bottom" />
       <AnimatePresence mode="wait">
         <motion.div key={step[0]} className="cine-caption" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-          <span>{step[1]}</span> {text}
+          <span>{step[1]}</span> {T(step[2], { name })}
         </motion.div>
       </AnimatePresence>
       {t > 1 && t < 7 && (
         <motion.div className="cine-fact" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          💡 La atmósfera de Marte es muy finita: para frenar hacen falta paracaídas <b>y</b> cohetes.
+          <Tx k="cine.fact" />
         </motion.div>
       )}
-      <button className="btn ghost skip" onClick={() => (cine.t = CINE_END)}>⏭️ Saltar</button>
+      <button className="btn ghost skip" onClick={() => (cine.t = CINE_END)}>{T('skip')}</button>
     </motion.div>
   )
 }

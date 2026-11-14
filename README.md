@@ -57,11 +57,15 @@ La cápsula entra con **paracaídas**, enciende los **retrocohetes**, levanta po
 ### 4. Interior de la nave: 60 segundos
 ¡Se acerca una tormenta de polvo! Hay que pasar los suministros de la nave a la base.
 
-- **Hacé clic en el piso** para caminar y **en un objeto** para agarrarlo.
-- Algunos objetos están **dentro de muebles** marcados con ❓ (armario médico, casilleros, cajones, cajón de semillas, vitrina). Hay que abrirlos primero. Uno de los casilleros está vacío. 🕸️
-- Se llevan **2 objetos a la vez** ✋✋ y hay que volver a la compuerta 🏠 para dejarlos.
+La nave tiene **3 módulos** conectados por puertas: 🏥 **Módulo médico** · 🛰️ **Cabina** · 🔧 **Ingeniería**. La cámara sigue al comandante y un **mini mapa** muestra en qué módulo está y cuántos objetos quedan en cada uno.
+
+- **Controles:** 🖱️ clic en el piso para caminar y clic en un objeto para agarrarlo, o ⌨️ **WASD / flechas** para moverse y **E** (o Espacio) para abrir / agarrar / dejar.
+- El astronauta **rodea los muebles** (búsqueda de caminos A*), no los atraviesa, y tiene **animación de caminata**.
+- **Los objetos aparecen en lugares distintos en cada partida.** Hay 16 lugares posibles (casilleros, heladera, vitrina, cajonera, cajones, estantes, mesas) para 11 objetos, así que algunos muebles están vacíos. 🕸️
+- Los muebles cerrados tienen ❓ y hay que abrirlos primero.
+- Se llevan **2 objetos a la vez** ✋✋ y hay que volver a la compuerta 🏠 (en la cabina) para dejarlos.
 - El depósito de la base aguanta **18 unidades de masa**, y todo junto pesa casi el doble: hay que elegir.
-- La **tripulación de fondo** da pistas con globitos (🥔 → 📦🟩). Por la escotilla se ve la tormenta acercándose, en los últimos segundos suena la alarma y la nave tiembla.
+- La **tripulación de fondo** da pistas según dónde quedaron los objetos en esta partida (🥔 → 🏥📦). Por las escotillas se ve la tormenta acercándose; en los últimos segundos suena la alarma y la nave tiembla.
 
 | Objeto | Masa | Para qué sirve |
 |---|---|---|
@@ -83,10 +87,17 @@ Cada sol tiene este ciclo:
 2. ☀️ **Alerta de tormenta solar** (si la hubo ese día, según DONKI).
 3. 🚨 **Evento**: algo pasa en la base (ver [Decisiones con consecuencias](#-decisiones-con-consecuencias)).
 4. ⚡ **Plan de energía**: repartís la energía del día.
-5. 🌙 **Noche**: reporte de lo que pasó, con la base iluminada de noche.
+5. 🌙 **Noche**: la **consola de reporte** (pantalla ámbar) muestra cómo cambiaron los recursos, la radiación, cuánto bloqueó el escudo y qué consecuencia tuvo la decisión del día. El **teléfono** de la consola abre los datos de la NASA y el **botón ✓** pasa al sol siguiente.
 
-### 6. Final
-Se gana sobreviviendo los 12 soles. Hay hasta **3 estrellas**: ★ sobrevivir, ★ llegar a 10 puntos de ciencia, ★ recibir poca radiación. Al final aparece **"Lo que aprendiste"** con los datos científicos que vio el jugador. Si se pierde (sin oxígeno, sin comida o demasiada radiación) se explica por qué, sin castigar: la idea es volver a intentar con otra estrategia.
+### 6. Informe final
+Se gana sobreviviendo los 12 soles. Hay hasta **3 estrellas**: ★ sobrevivir, ★ llegar a 10 puntos de ciencia, ★ recibir poca radiación. El informe aparece en la consola con 3 pestañas:
+
+- **Resumen:** soles, tormentas reales enfrentadas, radiación, ciencia, cuántas decisiones salieron bien y cuántas tuvieron costo, y el **estado final de la base** (mina, muestras, parches, fugas, paneles rotos).
+- **Bitácora:** sol por sol, cada tormenta (con fecha y velocidad real de la CME y cuánto bloqueó el escudo), cada evento con la opción elegida y su consecuencia, y las reparaciones.
+- **Aprendiste:** los datos científicos que vio el jugador. Si se pierde (sin oxígeno, sin comida o demasiada radiación) se explica por qué, sin castigar: la idea es volver a intentar con otra estrategia.
+
+### 🌐 Idiomas
+Botón **🇦🇷 ES / 🇬🇧 EN** en la pantalla de inicio, en la selección de personaje y en el panel de datos. Todo el juego está traducido (interfaz, objetos, eventos, glosario) y la elección se recuerda.
 
 ---
 
@@ -110,7 +121,7 @@ Lo que sobra se guarda en la batería (1 ⚡ sin batería, 4 con batería) y el 
 Cada evento se cuenta en **3 momentos**:
 
 1. **El problema en 3D**: la cámara va a donde pasa (por ejemplo, un meteorito cae y se ve el aire saliendo del domo).
-2. **Corte al interior de la nave**: transición a la ilustración de la cabina (según el comandante elegido) con la tripulación, y la tarjeta de decisión.
+2. **Corte al interior de la nave**: transición a la ilustración de la cabina (según el comandante elegido) y aparece la **terminal "Expedición a Marte"**: la pantalla verde muestra la situación y las opciones, la **impresora** saca un ticket con el costo de la opción elegida y el **botón ✓** confirma (también con teclas 1-3 y Enter).
 3. **Paneo por la base**: la cámara recorre el lugar mostrando el resultado, con brillos **verdes** si salió bien o **rojos** si salió mal.
 
 | Evento | Opciones | Lo que queda en la base |
@@ -165,7 +176,7 @@ Las fuentes también se muestran **dentro del juego** (botón "🔎 Datos reales
 
 ```bash
 # 1. Clonar el repositorio
-git clone https://github.com/<tu-usuario>/mision-marte.git
+git clone https://github.com/necsuuu/mision-marte.git
 cd mision-marte
 
 # 2. Instalar dependencias
@@ -201,27 +212,39 @@ src/
 ├── styles.css
 ├── assets/
 │   ├── characters/         Comandantes y tripulación (recortados, fondo transparente)
-│   └── scenes/             Ilustraciones de la cabina (una por comandante)
+│   │   └── walk/           Fotogramas de caminata (quieto / pierna izq. / pierna der.)
+│   ├── scenes/             Ilustraciones de la cabina (una por comandante)
+│   └── ui/                 Terminal de decisiones y consola de reporte
 ├── data/
 │   ├── donki.js            API DONKI en vivo + reparto de tormentas por sol
 │   ├── snapshot.js         Datos reales guardados (respaldo + mayo 2024)
 │   └── marsDistance.js     Distancia Tierra–Marte del día → retraso de radio
 ├── game/
 │   ├── content.js          ⭐ TODOS los textos, objetos, eventos y números de balance
-│   ├── characters.js       Comandantes, tripulación e ilustraciones
-│   └── store.js            Lógica: energía, recursos, radiación, eventos, estado de la base
+│   ├── characters.js       Comandantes, tripulación, fotogramas e ilustraciones
+│   ├── shipLayout.js       Plano de la nave: módulos, muebles, lugares para objetos, obstáculos
+│   ├── pathfinding.js      Grilla + A*: el astronauta rodea los muebles
+│   └── store.js            Lógica: energía, recursos, radiación, eventos, estado de la base, bitácora
+├── i18n/
+│   ├── ui.js               Textos de la interfaz (es / en)
+│   ├── content_en.js       Objetos, eventos y glosario en inglés
+│   └── core.js, useT.js    Funciones para traducir
 ├── three/
 │   ├── Planet.jsx          Marte girando (pantallas de inicio)
 │   ├── MarsBase.jsx        Escena de la base: cielo, día/noche, director de cámara, cinemática
 │   ├── baseParts.jsx       Domo, invernadero, paneles, antena, rover, nave, mina, tripulación
 │   ├── effects.jsx         Partículas: polvo, tormenta solar, fuga de aire, meteorito, alarma, fuego
 │   ├── cine.jsx            Reloj de la cinemática y animación de despliegue
-│   ├── Room.jsx            Interior de la nave: muebles, objetos, jugador y tripulación
+│   ├── Room.jsx            Nave de 3 módulos: muebles, objetos, jugador (click/WASD), cámara que sigue, tripulación
 │   ├── items3d.jsx         Modelos 3D de los objetos
 │   ├── CharacterSprite.jsx Personajes 2D dentro del mundo 3D
 │   ├── terrain.jsx         Terreno y rocas de Marte
 │   └── noise.js            Ruido para generar terreno y texturas
 └── ui/                     Pantallas: inicio, selección, modo, cinemática, sol, final, panel de datos
+    ├── Terminal.jsx        Terminal CRT de decisiones (pantalla + impresora + botón ✓)
+    └── Console.jsx         Consola ámbar del reporte nocturno y final
+tools/
+└── generar_fotogramas.py   Genera los fotogramas de caminata a partir de los dibujos originales
 ```
 
 ---
@@ -230,7 +253,9 @@ src/
 
 - **Dificultad y balance:** `src/game/content.js` → objeto `BASE` (oxígeno inicial, cuánto rinde cada ⚡, dosis de radiación, etc.), `CAPACITY` (masa máxima) y `SOLS` (duración).
 - **Agregar un evento:** sumarlo al array `EVENTS` en `content.js`. Cada evento tiene `scene` (a dónde mira la cámara), `incident` (qué animación muestra) y `choices` con `effects`, `fx` y `outcome`.
-- **Traducir al inglés:** casi todo el texto está en `content.js` y en los archivos de `src/ui/`.
+- **Textos y traducciones:** interfaz en `src/i18n/ui.js` (es/en); contenido en español en `content.js` y en inglés en `src/i18n/content_en.js`.
+- **Mover muebles o agregar lugares para objetos:** `src/game/shipLayout.js` (`FURN`, `SLOTS`, `OBSTACLES`).
+- **Fotogramas de caminata dibujados a mano:** reemplazar los archivos de `src/assets/characters/walk/` (mismo tamaño) o regenerarlos con `python3 tools/generar_fotogramas.py` (necesita Pillow, numpy y scipy).
 - **Cambiar quién maneja el jugador:** `src/game/characters.js` (campo `sprite` de cada comandante).
 - **Depurar:** en la consola del navegador, `__game.getState()` muestra todo el estado del juego.
 

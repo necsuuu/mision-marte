@@ -134,7 +134,7 @@ export function buildSolWeather(weather, sols, mode) {
   return plan
 }
 
-export function fmtDate(d) {
+export function fmtDate(d, lang = 'es') {
   const date = typeof d === 'string' ? new Date(d.length <= 10 ? d + 'T12:00Z' : d + 'Z') : d
-  return date.toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })
+  return date.toLocaleDateString(lang === 'en' ? 'en-US' : 'es-AR', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })
 }

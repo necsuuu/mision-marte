@@ -500,19 +500,22 @@ export function Lander() {
 }
 
 // ---------- Tripulación en la base (sprites que siempre miran a la cámara) ----------
-function FacingSprite({ src, position, height = 2.6, start = 14, walkTo }) {
+function FacingSprite({ src, frames, position, height = 2.6, start = 14, walkTo }) {
   const ref = useRef()
   const holder = useRef()
+  const moving = useRef(false)
+  const movingRef = useMemo(() => () => moving.current, [])
   const { camera } = useThree()
   useFrame((st, dt) => {
     if (!ref.current || !holder.current) return
     const target = walkTo || position
     const h = holder.current.position
     const dx = target[0] - h.x, dz = target[2] - h.z
-    const moving = Math.hypot(dx, dz) > 0.1
+    const mv = Math.hypot(dx, dz) > 0.1
+    moving.current = mv
     h.x += dx * Math.min(1, dt * 1.6)
     h.z += dz * Math.min(1, dt * 1.6)
-    ref.current.position.y = moving ? Math.abs(Math.sin(st.clock.elapsedTime * 9)) * 0.15 : Math.abs(Math.sin(st.clock.elapsedTime * 2)) * 0.04
+    ref.current.position.y = mv ? Math.abs(Math.sin(st.clock.elapsedTime * 9)) * 0.08 : Math.abs(Math.sin(st.clock.elapsedTime * 2)) * 0.04
     ref.current.rotation.y = Math.atan2(camera.position.x - h.x, camera.position.z - h.z)
     const p = cine.active ? Math.max(0, Math.min(1, (cine.t - start) / 0.6)) : 1
     holder.current.visible = p > 0
@@ -521,7 +524,7 @@ function FacingSprite({ src, position, height = 2.6, start = 14, walkTo }) {
   return (
     <group ref={holder} position={position}>
       <group ref={ref}>
-        <Suspense fallback={null}><CharacterSprite src={src} height={height} /></Suspense>
+        <Suspense fallback={null}><CharacterSprite src={src} frames={frames} movingRef={movingRef} height={height} /></Suspense>
       </group>
     </group>
   )
@@ -535,7 +538,7 @@ export function Crew() {
   const commanderTo = EVA_FX[fx] || null
   return (
     <>
-      <FacingSprite src={ch.sprite} position={POS.home} start={14.2} walkTo={commanderTo} />
+      <FacingSprite src={ch.sprite} frames={ch.walk} position={POS.home} start={14.2} walkTo={commanderTo} />
       <FacingSprite src={CREW[0].sprite} position={[10.8, 0, 2.2]} start={14.6} height={2.4} />
       <FacingSprite src={CREW[1].sprite} position={[-10.6, 0, 3.6]} start={15} height={2.4} />
     </>

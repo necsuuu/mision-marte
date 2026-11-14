@@ -1,6 +1,9 @@
 import { create } from 'zustand'
 import { ITEMS, CAPACITY, BASE, EVENTS, SOLS, REPAIRS, LEAK_O2, ICE_MINE_O2 } from './content'
 import { loadSpaceWeather, buildSolWeather } from '../data/donki'
+import { randomLayout } from './shipLayout'
+
+const savedLang = (() => { try { return localStorage.getItem('mm-lang') || 'es' } catch { return 'es' } })()
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v))
 const shuffle = (arr) => [...arr].sort(() => Math.random() - 0.5)
@@ -70,6 +73,10 @@ const freshBase = () => ({
 })
 
 const initialState = {
+  lang: savedLang,
+  layout: {}, // objeto → lugar en la nave (al azar en cada partida)
+  roomPlayerX: 0,
+  decisions: [], // bitácora de decisiones para el informe final
   screen: 'title', // title | character | mode | landing | loading | sol | end
   player: { name: '', age: null, character: null },
   easy: false,
@@ -104,19 +111,25 @@ const initialState = {
   loseReason: null,
 }
 
+export const BAD_FX = new Set(['leaking', 'dusty', 'worse', 'panelbroken'])
 const phaseFor = (card) => (!card ? 'plan' : card.type === 'event' ? 'incident' : 'event')
 
 export const useGame = create((set, get) => ({
   ...initialState,
 
-  goTitle: () => set({ ...initialState, player: get().player }),
+  setLang: (lang) => {
+    try { localStorage.setItem('mm-lang', lang) } catch { /* sin almacenamiento */ }
+    set({ lang })
+  },
+  goTitle: () => set({ ...initialState, lang: get().lang, player: get().player }),
   goCharacter: () => set({ screen: 'character' }),
   setPlayer: (patch) => set({ player: { ...get().player, ...patch } }),
-  goModes: () => set({ ...initialState, player: get().player, screen: 'mode' }),
+  goModes: () => set({ ...initialState, lang: get().lang, player: get().player, screen: 'mode' }),
 
   // Modo elegido → cinemática de aterrizaje (mientras tanto se consulta a la NASA)
   startLoading: (mode) => {
-    set({ ...initialState, player: get().player, screen: 'landing', mode, weatherLoading: true, roomItems: makeRoomItems() })
+    const roomItems = makeRoomItems()
+    set({ ...initialState, lang: get().lang, player: get().player, screen: 'landing', mode, weatherLoading: true, roomItems, layout: randomLayout(roomItems.map((r) => r.key)) })
     loadSpaceWeather(mode).then((weather) => set({ weather, weatherLoading: false }))
   },
   finishLanding: () => set({ screen: 'loading' }),
@@ -189,6 +202,7 @@ export const useGame = create((set, get) => ({
       sol: 1,
       learned: [],
       log: [],
+      decisions: [],
     })
     get().prepareSol()
   },
@@ -224,19 +238,21 @@ export const useGame = create((set, get) => ({
 
   choose: (choice) => {
     const s = get()
+    const card = s.cards[0]
+    const choiceIdx = card.event.choices.indexOf(choice)
     let eff = choice.effects
-    let outcome = choice.outcome
     let fx = choice.fx
+    let ok = true
     if (eff.chance !== undefined) {
-      const ok = Math.random() < eff.chance
+      ok = Math.random() < eff.chance
       eff = ok ? eff.success : eff.fail
-      outcome = ok ? choice.outcome.success : choice.outcome.fail
       fx = ok ? choice.fx.success : choice.fx.fail
     }
     const patch = applyEffects(s, eff, fx)
-    const card = s.cards[0]
     const learned = card.event?.fact && !s.learned.includes(card.event.fact) ? [...s.learned, card.event.fact] : s.learned
-    set({ ...patch, learned, phase: 'outcome', cardResult: { text: outcome, effects: eff, fx, t: Date.now() } })
+    const good = !BAD_FX.has(fx)
+    const decisions = [...s.decisions, { sol: s.sol, ev: card.event, choiceIdx, ok, fx, good }]
+    set({ ...patch, learned, decisions, phase: 'outcome', cardResult: { choiceIdx, ok, effects: eff, fx, good, t: Date.now() } })
   },
 
   nextCard: () => {
@@ -265,24 +281,24 @@ export const useGame = create((set, get) => ({
     const notes = []
     const base = { ...s.base }
     let panels = s.panels
-    if (s.alloc.fixLeak && base.leak) { base.leak = false; base.patches += 1; notes.push('🩹 ¡Fuga reparada!') }
-    if (s.alloc.fixPanel && base.brokenPanels > 0) { base.brokenPanels -= 1; panels += 1; notes.push('🔧 ¡Panel reparado!') }
-    if (p.leakLoss) notes.push(`💨 La fuga se llevó ${p.leakLoss} de oxígeno.`)
-    if (p.mine) notes.push(`⛏️🧊 La mina de hielo dio +${p.mine} de oxígeno.`)
-    if (o2 <= 0) { health -= 30; notes.push('¡Sin oxígeno! (−30 ❤️)'); o2 = 0 }
-    if (food <= 0) { health -= 15; notes.push('¡Sin comida! (−15 ❤️)'); food = 0 }
+    if (s.alloc.fixLeak && base.leak) { base.leak = false; base.patches += 1; notes.push(['n.leakFixed']) }
+    if (s.alloc.fixPanel && base.brokenPanels > 0) { base.brokenPanels -= 1; panels += 1; notes.push(['n.panelFixed']) }
+    if (p.leakLoss) notes.push(['n.leakLoss', { n: p.leakLoss }])
+    if (p.mine) notes.push(['n.mine', { n: p.mine }])
+    if (o2 <= 0) { health -= 30; notes.push(['n.noO2']); o2 = 0 }
+    if (food <= 0) { health -= 15; notes.push(['n.noFood']); food = 0 }
     if (p.stormDose > 0) {
       const dmg = Math.round(p.stormDose * 4)
       health -= dmg
-      notes.push(`☢️ +${p.stormDose.toFixed(1)} mSv de la tormenta (−${dmg} ❤️).`)
+      notes.push(['n.storm', { d: p.stormDose.toFixed(1), h: dmg }])
     }
     const dose = s.dose + p.dose
-    if (dose > BASE.doseLimit) { health -= 10; notes.push('☢️ Límite de radiación superado (−10 ❤️).') }
+    if (dose > BASE.doseLimit) { health -= 10; notes.push(['n.limit']) }
     health = clamp(health, 0, 100)
     const science = s.science + p.dSci
     const dust = s.dust.sols > 0 ? { ...s.dust, sols: s.dust.sols - 1 } : s.dust
     const report = { ...p, notes, o2Before: s.o2, foodBefore: s.food, healthBefore: s.health }
-    const log = [...s.log, { sol: s.sol, storm: p.storm, alloc: s.alloc, dose: p.dose, health }]
+    const log = [...s.log, { sol: s.sol, storm: p.storm, alloc: s.alloc, dose: p.dose, stormDose: p.stormDose, blocked: p.blocked, health, fixedLeak: !!(s.alloc.fixLeak && s.base.leak), fixedPanel: !!(s.alloc.fixPanel && s.base.brokenPanels > 0) }]
     set({ o2, food, health, dose, science, battery: p.saved, dust, base, panels, report, log, phase: 'report' })
   },
 

@@ -238,21 +238,6 @@ src/
 
 ---
 
-## 🌐 Publicarlo en internet
-
-La forma más simple es **[Vercel](https://vercel.com)** (gratis):
-
-1. Importar este repositorio en Vercel.
-2. Framework: **Vite** (lo detecta solo).
-3. En *Environment Variables* agregar `VITE_NASA_API_KEY` con tu key.
-4. Deploy.
-
-También funciona en Netlify o GitHub Pages (el proyecto usa `base: './'`, así que anda en cualquier carpeta).
-
-> ⚠️ Las variables `VITE_*` quedan dentro del JavaScript que descarga el navegador. Para una API key de la NASA no es grave, pero si se quiere ocultar, hay que pasar las consultas por una función serverless.
-
----
-
 ## 🧪 Notas técnicas de las APIs
 
 Probado el 14/11/2026:

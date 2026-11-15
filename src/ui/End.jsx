@@ -24,9 +24,8 @@ export default function End({ onData }) {
     return d ? locEvent(s.lang, d.ev).fact : f
   })
   const b = s.base
-  const needQuiz = s.quiz.pre && !s.quiz.post
-
-  if (needQuiz) return <Quiz phase="post" onDone={s.finishQuizPost} />
+  // Al terminar: 4 preguntas para repasar (se puede saltear)
+  if (!s.quiz.post) return <Quiz onDone={s.finishQuizPost} onSkip={() => s.finishQuizPost([])} />
 
   return (
     <motion.div className="screen center end-screen" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
@@ -61,8 +60,8 @@ export default function End({ onData }) {
                   <div className="ok"><b>{good}</b><span>{T('end.good')}</span></div>
                   <div className="ko"><b>{bad}</b><span>{T('end.bad')}</span></div>
                 </div>
-                {s.quiz.post && (
-                  <div className="amber-quiz">🧠 {T('end.quiz', { a: quizScore(s.quiz.pre), b: quizScore(s.quiz.post), n: QUIZ.length })}</div>
+                {s.quiz.post?.length > 0 && (
+                  <div className="amber-quiz">🧠 {T('end.quiz', { b: quizScore(s.quiz.post), n: QUIZ.length })}</div>
                 )}
                 <div className="amber-sub">{T('end.base')}</div>
                 <div className="amber-base">

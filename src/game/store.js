@@ -173,13 +173,13 @@ const initialState = {
   voice: null, // 🔊 null = automático (prendida en modo cadete); true/false si el jugador la tocó
   lite: savedLite, // ⚙️ gráficos livianos para compus viejas
   paused: false, // ⏸️ menú de pausa (tecla Esc)
-  quiz: { pre: null, post: null }, // respuestas del mini quiz antes y después (solo en memoria)
+  quiz: { pre: null, post: null }, // respuestas del quiz final (solo en memoria)
   layout: {}, // objeto → lugar en la nave (al azar en cada partida)
   roomPlayerX: 0,
   roomFocus: null, // lo que el comandante tiene cerca (para mostrar la info al jugar con teclado)
   decisions: [], // bitácora de decisiones para el informe final
   helpReasons: null, // explicación del ayudante en el plan de energía
-  screen: 'title', // title | character | mode | quiz | launch | tutorial | loading | landing | sol | end
+  screen: 'title', // title | character | mode | launch | tutorial | loading | landing | sol | end
   player: { name: '', age: null, character: null },
   easy: false,
   roomItems: makeRoomItems(),
@@ -187,6 +187,7 @@ const initialState = {
   roomLeft: null, // segundos que quedan en la nave (para la tormenta que se acerca)
   carrying: [],
   roomMsg: null,
+  roomInspect: null, // objeto bajo el mouse (para la ficha del objeto)
   mode: 'recent',
   weather: null,
   weatherLoading: false,
@@ -231,15 +232,14 @@ export const useGame = create((set, get) => ({
   // Modo elegido → cinemática de despegue (mientras tanto se consulta a la NASA)
   startLoading: (mode) => {
     const roomItems = makeRoomItems()
-    set({ ...initialState, ...keep(get()), screen: 'quiz', mode, easy: isCadet(get().player.age), weatherLoading: true, roomItems, layout: randomLayout(roomItems.map((r) => r.key)) })
+    set({ ...initialState, ...keep(get()), screen: 'launch', mode, easy: isCadet(get().player.age), weatherLoading: true, roomItems, layout: randomLayout(roomItems.map((r) => r.key)) })
     loadSpaceWeather(mode).then((weather) => set({ weather, weatherLoading: false }))
   },
-  // Quiz de antes → despegue. Si lo saltea, no se le pregunta al final.
-  finishQuizPre: (answers) => { if (get().screen === 'quiz') set({ screen: 'launch', quiz: { pre: answers || null, post: null } }) },
-  finishQuizPost: (answers) => set({ quiz: { ...get().quiz, post: answers } }),
+  // Quiz final (4 preguntas para repasar lo aprendido). Se puede saltear.
+  finishQuizPost: (answers) => set({ quiz: { pre: null, post: answers || [] } }),
   // ⏸️ Pausa: se puede pausar durante la misión (no en los menús)
   setPaused: (paused) => {
-    const PAUSABLE = ['quiz', 'launch', 'tutorial', 'loading', 'landing', 'sol']
+    const PAUSABLE = ['launch', 'tutorial', 'loading', 'landing', 'sol']
     if (paused && !PAUSABLE.includes(get().screen)) return
     set({ paused })
   },
@@ -289,6 +289,7 @@ export const useGame = create((set, get) => ({
       roomItems: s.roomItems.map((r) => (r.key === key ? { ...r, state: 'carried' } : r)),
       carrying: [...s.carrying, key],
       roomMsg: { type: 'picked', id: ri.id, t: Date.now() },
+      roomInspect: null,
     })
     return true
   },

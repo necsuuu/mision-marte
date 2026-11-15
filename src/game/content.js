@@ -5,6 +5,12 @@ export const SOLS = 12 // duración de la misión
 export const CAPACITY = 18 // masa máxima del cohete (unidades del juego)
 export const LOAD_SECONDS = 60 // tiempo para cargar el cohete
 
+/** Para qué sirve cada objeto en la base (se muestra en la ficha del objeto). */
+export const ITEM_USE = {
+  panel: 'energy', battery: 'energy', moxie: 'air', o2tank: 'air', rations: 'food', seeds: 'food',
+  water: 'shield', repair: 'repair', medkit: 'health', science: 'science',
+}
+
 export const ITEMS = [
   { id: 'panel', name: 'Panel solar extra', emoji: '🔆', mass: 4, desc: '+1 panel: más energía cada sol.' },
   { id: 'battery', name: 'Batería', emoji: '🔋', mass: 3, desc: 'Guarda hasta 4 ⚡ que sobren para el sol siguiente.' },

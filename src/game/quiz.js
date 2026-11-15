@@ -1,5 +1,4 @@
-// Mini quiz de 4 preguntas: se hace ANTES de la misión y otra vez al FINAL,
-// para ver qué aprendió el jugador. Las respuestas solo viven en memoria (no se guardan ni se envían).
+// Quiz final de 4 preguntas: al terminar la misión, para repasar lo que se vio en el juego. Las respuestas solo viven en memoria (no se guardan ni se envían).
 // La primera opción de cada pregunta es la correcta; la pantalla las mezcla.
 export const QUIZ = [
   {

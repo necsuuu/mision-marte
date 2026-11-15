@@ -50,7 +50,7 @@ export function Toolbar() {
   const T = useT()
   const voiceOn = useGame((s) => s.voice ?? s.easy)
   const lite = useGame((s) => s.lite)
-  const canPause = useGame((s) => ['quiz', 'launch', 'tutorial', 'loading', 'landing', 'sol'].includes(s.screen))
+  const canPause = useGame((s) => ['launch', 'tutorial', 'loading', 'landing', 'sol'].includes(s.screen))
   const { toggleVoice, toggleLite, setPaused } = useGame.getState()
   return (
     <div className="toolbar">

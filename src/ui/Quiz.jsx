@@ -5,13 +5,9 @@ import { QUIZ, quizScore } from '../game/quiz'
 import { useT } from '../i18n/useT'
 import { speak } from '../game/voice'
 
-/**
- * Quiz rápido. phase 'pre' = antes de la misión (sin corregir, para no dar las respuestas);
- * phase 'post' = al final (muestra si estuvo bien y por qué).
- */
-export default function Quiz({ phase, onDone, onSkip }) {
+/** Quiz final: 4 preguntas para repasar lo que se vio en la misión, con la explicación de cada respuesta. */
+export default function Quiz({ onDone, onSkip }) {
   const lang = useGame((s) => s.lang)
-  const pre = useGame((s) => s.quiz.pre)
   const T = useT()
   const [i, setI] = useState(0)
   const [answers, setAnswers] = useState([])
@@ -23,31 +19,23 @@ export default function Quiz({ phase, onDone, onSkip }) {
 
   const pick = (opt) => {
     if (picked !== null) return
-    const next = [...answers, opt]
-    if (phase === 'pre') {
-      setAnswers(next)
-      if (i + 1 >= QUIZ.length) onDone(next)
-      else setI(i + 1)
-      return
-    }
     setPicked(opt)
-    setAnswers(next)
-    speak(opt === 0 ? T('quiz.right') + ' ' + q.why : T('quiz.wrong') + ' ' + q.why)
+    setAnswers([...answers, opt])
+    speak((opt === 0 ? T('quiz.right') : T('quiz.wrong')) + ' ' + q.why)
   }
   const next = () => {
     setPicked(null)
-    if (i + 1 >= QUIZ.length) setI(QUIZ.length)
-    else setI(i + 1)
+    setI(i + 1)
   }
 
   return (
     <motion.div className="screen center quiz-screen" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
       <div className="quiz-card">
-        <div className="kicker">{T(phase === 'pre' ? 'quiz.preKicker' : 'quiz.postKicker')} · {Math.min(i + 1, QUIZ.length)}/{QUIZ.length}</div>
+        <div className="kicker">{T('quiz.postKicker')} · {Math.min(i + 1, QUIZ.length)}/{QUIZ.length}</div>
         <AnimatePresence mode="wait">
           {!done ? (
             <motion.div key={i} initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }}>
-              <h2 className="quiz-q" onClick={() => speak(q.q)}>{q.q}</h2>
+              <h2 className="quiz-q" onClick={() => speak(q.q, true)}>{q.q}</h2>
               <div className="quiz-opts">
                 {orders[i].map((o) => (
                   <button
@@ -68,13 +56,13 @@ export default function Quiz({ phase, onDone, onSkip }) {
             </motion.div>
           ) : (
             <motion.div key="res" className="quiz-result" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
-              <h2>{T('quiz.result', { a: quizScore(pre), b: quizScore(answers), n: QUIZ.length })}</h2>
-              <p>{quizScore(answers) > quizScore(pre) ? T('quiz.better') : T('quiz.keep')}</p>
+              <h2>{T('quiz.result', { b: quizScore(answers), n: QUIZ.length })}</h2>
+              <p>{quizScore(answers) >= 3 ? T('quiz.better') : T('quiz.keep')}</p>
               <button className="btn primary big" onClick={() => onDone(answers)}>{T('quiz.toReport')} ▶</button>
             </motion.div>
           )}
         </AnimatePresence>
-        {phase === 'pre' && <button className="link-btn" onClick={onSkip}>{T('quiz.skip')}</button>}
+        {!done && <button className="link-btn" onClick={onSkip}>{T('quiz.skip')}</button>}
       </div>
     </motion.div>
   )

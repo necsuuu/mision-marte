@@ -7,6 +7,8 @@
 import selectWoman from '../assets/characters/select_woman.webp'
 import selectMan from '../assets/characters/select_man.webp'
 import interiorMan from '../assets/scenes/interior_man.webp'
+import portraitMan from '../assets/characters/portrait_man.webp'
+import portraitWoman from '../assets/characters/portrait_woman.webp'
 import interiorWoman from '../assets/scenes/interior_woman.webp'
 import w0 from '../assets/characters/walk/select_woman_0.webp'
 import w1 from '../assets/characters/walk/select_woman_1.webp'
@@ -30,8 +32,8 @@ export const CREW = [
 ]
 
 export const CHARACTERS = [
-  { id: 'woman', select: selectWoman, sprite: w0, walk: [w0, w1, w3], interior: interiorWoman, color: '#7be07b', female: true },
-  { id: 'man', select: selectMan, sprite: m0, walk: [m0, m1, m3], interior: interiorMan, color: '#ffb347', female: false },
+  { id: 'woman', portrait: portraitWoman, select: selectWoman, sprite: w0, walk: [w0, w1, w3], interior: interiorWoman, color: '#7be07b', female: true },
+  { id: 'man', portrait: portraitMan, select: selectMan, sprite: m0, walk: [m0, m1, m3], interior: interiorMan, color: '#ffb347', female: false },
 ]
 
 export const getCharacter = (id) => CHARACTERS.find((c) => c.id === id) || CHARACTERS[0]

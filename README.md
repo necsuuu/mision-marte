@@ -36,7 +36,7 @@ El contenido espacial para chicos suele ser **demasiado abstracto** (pósters, d
 ## 🎮 Cómo se juega
 
 ```
-Comandante → Misión → 🧠 Quiz (4 preguntas) → 🚀 Despegue → Tutorial → 📦 Carga en la nave (60 s) → 🪂 Aterrizaje en Marte → 12 soles → 🧠 Quiz final → Resultado
+Comandante → Misión → 🚀 Despegue → Tutorial → 📦 Carga en la nave (60 s) → 🪂 Aterrizaje en Marte → 12 soles → 🧠 Preguntas de repaso → Resultado
 ```
 
 ### 1. Elegí tu comandante
@@ -52,17 +52,14 @@ Estas ayudas son **solo para el modo cadete**: los jugadores de 10 años o más 
 Desde los **10 años** la base consume más aire y comida (27 y 13 por sol, contra 20 y 10 de los cadetes): la energía no alcanza para todo y hay que pensar el reparto. Lo probamos con partidas simuladas: una estrategia fija ("siempre 2⚡ a cada cosa") ya no saca 3 estrellas y, si la carga fue mala, pierde; con buen reparto se gana con 3 estrellas.
 
 **Accesibilidad**
-- 🔊 **Lectura en voz alta** (voz del navegador, sin internet): se prende sola en modo cadete y se puede prender o apagar en cualquier momento con el botón de abajo a la izquierda. Lee los avisos, las decisiones, el plan, los resultados y el quiz.
+- 🔊 **Lectura en voz alta** (voz del navegador, sin internet): se prende sola en modo cadete y se puede prender o apagar en cualquier momento con el botón de abajo a la izquierda. Lee los avisos, las decisiones, el plan, los resultados y las preguntas de repaso.
 - ✋ **Botón de acción en pantalla** (igual que la tecla E) para jugar en tablets o con un solo dedo.
 - ✨/🐢 **Gráficos livianos** para compus viejas: sin sombras y con menos resolución. Además, si el juego anda lento, baja la resolución solo.
 - Textos grandes en todo el juego.
 
 > El nombre y la edad **solo viven en la memoria del navegador** mientras se juega: no se guardan ni se envían a ningún lado.
 
-### 2. Quiz de antes (opcional)
-Antes de despegar hay **4 preguntas cortas** (radiación, hacia dónde van las tormentas, qué cuidar primero, retraso de los mensajes). Al final de la misión se repiten, y el informe muestra **cuántas sabía antes y cuántas después**. Así se puede ver si el juego enseña. Las respuestas no se guardan ni se envían. Se puede saltear.
-
-### Elegí la misión
+### 2. Elegí la misión
 | Modo | Qué tiene |
 |---|---|
 | 🛰️ **Misión real** | Las tormentas solares de los **últimos 60 días**, consultadas en vivo a la NASA |
@@ -79,10 +76,11 @@ Cuenta regresiva 3, 2, 1: el cohete se enciende y despega entre el humo, atravie
 La nave tiene **3 módulos** conectados por puertas: 🏥 **Módulo médico** · 🛰️ **Cabina** · 🔧 **Ingeniería**. La cámara sigue al comandante y un **mini mapa** muestra en qué módulo está y cuántos objetos quedan en cada uno.
 
 - **Controles:** 🖱️ clic en el piso para caminar y clic en un objeto para agarrarlo, o ⌨️ **WASD / flechas** para moverse y **E** (o Espacio) para abrir / agarrar / dejar.
-- **⏸️ Pausa:** con **Esc** (o el botón ⏸️ de abajo a la izquierda) se frena todo el juego: la escena, la cuenta regresiva y la voz. Desde ahí se puede seguir, **reiniciar la misión desde cero** o **salir al menú principal** (las dos últimas piden confirmación). Funciona en el quiz, el despegue, el tutorial, la nave, el aterrizaje y los soles.
+- **⏸️ Pausa:** con **Esc** (o el botón ⏸️ de abajo a la izquierda) se frena todo el juego: la escena, la cuenta regresiva y la voz. Desde ahí se puede seguir, **reiniciar la misión desde cero** o **salir al menú principal** (las dos últimas piden confirmación). Funciona en el despegue, el tutorial, la nave, el aterrizaje y los soles.
 - El astronauta **rodea los muebles** (búsqueda de caminos A*), no los atraviesa, y tiene **animación de caminata**.
 - **Los objetos aparecen en lugares distintos en cada partida.** Hay 16 lugares posibles (casilleros, heladera, vitrina, cajonera, cajones, estantes, mesas) para 11 objetos, así que algunos muebles están vacíos. 🕸️
 - Los muebles cerrados tienen ❓ y hay que abrirlos primero.
+- **Ficha del objeto:** al pasar el mouse por un objeto (o acercarse con el teclado) aparece abajo a la izquierda el **retrato del comandante** contando qué es: nombre, para qué sirve en la base (aire, comida, energía, radiación…), cuánto pesa y cuánto lugar queda, y si se puede agarrar (manos llenas, no entra). Al agarrarlo, el comandante festeja y el objeto queda en sus manos.
 - El área de clic de cada objeto se calcula con el tamaño real del modelo 3D, y las etiquetas flotantes no tapan los clics: se agarra tocándolo en cualquier parte, desde cualquier ángulo.
 - Se llevan **2 objetos a la vez** ✋✋ y hay que volver a la compuerta 🏠 (en la cabina) para dejarlos.
 - El depósito de la base aguanta **18 unidades de masa**, y todo junto pesa casi el doble: hay que elegir.
@@ -120,7 +118,9 @@ Se gana sobreviviendo los 12 soles. Hay hasta **3 estrellas**: ★ sobrevivir, �
 
 - **Resumen:** soles, tormentas reales enfrentadas, radiación, ciencia, cuántas decisiones salieron bien y cuántas tuvieron costo, y el **estado final de la base** (mina, muestras, parches, fugas, paneles rotos).
 - **Bitácora:** sol por sol, cada tormenta (con fecha y velocidad real de la CME y cuánto bloqueó el escudo), cada evento con la opción elegida y su consecuencia, y las reparaciones.
-- **Aprendiste:** las **habilidades de astronauta** que practicó (administrar recursos, leer pronósticos, protegerse de la radiación, decidir en emergencias, trabajar con minutos de retraso) y los datos científicos que vio. Si hizo el quiz, el resumen muestra el antes y después. Si se pierde (sin oxígeno, sin comida o demasiada radiación) se explica por qué, sin castigar: la idea es volver a intentar con otra estrategia.
+- **Aprendiste:** las **habilidades de astronauta** que practicó (administrar recursos, leer pronósticos, protegerse de la radiación, decidir en emergencias, trabajar con minutos de retraso) y los datos científicos que vio.
+
+Antes del informe hay **4 preguntas de repaso** (radiación, hacia dónde van las tormentas, qué cuidar primero, retraso de los mensajes), cada una con su explicación. El resumen muestra cuántas acertó. Se pueden saltear y las respuestas no se guardan. Si se pierde (sin oxígeno, sin comida o demasiada radiación) se explica por qué, sin castigar: la idea es volver a intentar con otra estrategia.
 
 ### 🌐 Idiomas
 Botón **🇦🇷 ES / 🇬🇧 EN** en la pantalla de inicio, en la selección de personaje y en el panel de datos. Todo el juego está traducido (interfaz, objetos, eventos, glosario) y la elección se recuerda.
@@ -250,7 +250,7 @@ src/
 │   ├── characters.js       Comandantes, tripulación, fotogramas e ilustraciones
 │   ├── shipLayout.js       Plano de la nave: módulos, muebles, lugares para objetos, obstáculos
 │   ├── pathfinding.js      Grilla + A*: el astronauta rodea los muebles
-│   ├── quiz.js             Preguntas del quiz y habilidades de astronauta
+│   ├── quiz.js             Preguntas de repaso y habilidades de astronauta
 │   ├── voice.js            Lectura en voz alta (Web Speech API)
 │   └── store.js            Lógica: energía, recursos, radiación, eventos, estado de la base, bitácora
 ├── i18n/
@@ -271,7 +271,8 @@ src/
 │   └── noise.js            Ruido para generar terreno y texturas
 └── ui/                     Pantallas: inicio, selección, modo, cinemática, sol, final, panel de datos
     ├── LaunchUI.jsx        Cuenta regresiva y textos del despegue
-    ├── Quiz.jsx            Quiz de 4 preguntas antes y después de la misión
+    ├── Quiz.jsx            Preguntas de repaso al final de la misión
+    ├── ItemCard.jsx        Ficha del objeto con el retrato del comandante
     ├── Terminal.jsx        Terminal CRT de decisiones (pantalla + impresora + botón ✓)
     └── Console.jsx         Consola ámbar del reporte nocturno y final
 tools/

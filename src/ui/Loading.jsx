@@ -7,6 +7,7 @@ import { SECTORS, slotById, FURN } from '../game/shipLayout'
 import { locItem } from '../i18n/core'
 import { useT } from '../i18n/useT'
 import { fade } from './common'
+import ItemCard from './ItemCard'
 
 const byId = (id) => ITEMS.find((i) => i.id === id)
 
@@ -134,6 +135,7 @@ export default function Loading() {
 
           <MiniMap />
 
+          <ItemCard />
           <div className="room-bottom">
             <ActionButton />
             <div className="hands">

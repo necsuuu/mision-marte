@@ -410,7 +410,8 @@ function RoomItem({ entry, playerRef }) {
     if (entry.state === 'carried') {
       const idx = carrying.indexOf(entry.key)
       const p = playerRef.current
-      tx = p.x + (idx ? 0.6 : -0.6); ty = 1.2; tz = p.z + 0.5; ts = 0.7
+      // en las manos del comandante (el dibujo está inclinado hacia la cámara)
+      tx = p.x + (idx ? 0.55 : -0.55); ty = 1.75 + Math.sin(performance.now() / 260 + idx) * 0.05; tz = p.z + 0.95; ts = 0.62
     } else if (entry.state === 'loaded') {
       const idx = loadedKeys.split(',').indexOf(entry.key)
       tx = HATCH.x - 1.6 + (idx % 4) * 0.8; tz = -6.2 + Math.floor(idx / 4) * 0.6; ty = 0.1; ts = 0.5
@@ -437,8 +438,14 @@ function RoomItem({ entry, playerRef }) {
     <group ref={group} position={slot.at} visible={!hidden}>
       <group
         onPointerDown={onDown}
-        onPointerOver={(e) => { e.stopPropagation(); setHover(true); setCursor('pointer') }}
-        onPointerOut={() => { setHover(false); setCursor('default') }}
+        onPointerOver={(e) => {
+          e.stopPropagation(); setHover(true); setCursor('pointer')
+          if (entry.state === 'shelf' && accessible) useGame.setState({ roomInspect: entry.key }) // ficha del objeto
+        }}
+        onPointerOut={() => {
+          setHover(false); setCursor('default')
+          if (useGame.getState().roomInspect === entry.key) useGame.setState({ roomInspect: null })
+        }}
       >
         <group ref={modelRef}><Model /></group>
         {hit && (
@@ -452,7 +459,7 @@ function RoomItem({ entry, playerRef }) {
         <Html pointerEvents="none" position={[0, 1.6, 0]} center zIndexRange={[10, 0]} style={{ pointerEvents: 'none' }}>
           <div className={'item-tag' + (hover ? ' hover' : '')}>
             <span>{item.emoji}</span>
-            {hover && <><b>{item.name}</b><small>⚖️ {item.mass}</small></>}
+            {/* el detalle (nombre, peso, para qué sirve) está en la ficha del comandante */}
             {focused && <kbd className="key-e">E</kbd>}
           </div>
         </Html>
@@ -542,11 +549,22 @@ function Player({ playerRef }) {
   const path = useRef([])
   const pending = useRef(null)
   const marker = useRef()
+  const ring = useRef()
   const keys = useRef({})
   const moving = useRef(false)
   const lastPub = useRef(0)
   const [flip, setFlip] = useState(false)
   const [bubble, setBubble] = useState(null)
+  const hop = useRef(-1) // tiempo del saltito al agarrar algo
+  const [spark, setSpark] = useState(null)
+
+  useEffect(() => {
+    if (msg?.type !== 'picked') return
+    hop.current = 0
+    setSpark(msg.t)
+    const tm = setTimeout(() => setSpark(null), 900)
+    return () => clearTimeout(tm)
+  }, [msg])
 
   useEffect(() => {
     if (!msg || !BUBBLE_KEYS[msg.type]) return
@@ -641,7 +659,20 @@ function Player({ playerRef }) {
     }
 
     if (group.current) group.current.position.set(p.x, 0, p.z)
-    if (body.current) body.current.position.y = mv ? Math.abs(Math.sin(st.clock.elapsedTime * 9)) * 0.08 : 0
+    if (body.current) {
+      let y = mv ? Math.abs(Math.sin(st.clock.elapsedTime * 9)) * 0.08 : 0
+      let sq = 1
+      if (hop.current >= 0) {
+        // saltito de festejo: se agacha, salta y vuelve
+        hop.current += dt
+        const h = hop.current / 0.45
+        if (h >= 1) hop.current = -1
+        else { y += Math.sin(h * Math.PI) * 0.45; sq = h < 0.15 ? 1 - h * 0.6 : 1 + Math.sin(h * Math.PI) * 0.06 }
+      }
+      body.current.position.y = y
+      body.current.scale.set(1 / Math.sqrt(sq), sq, 1)
+    }
+    if (ring.current) ring.current.material.opacity = 0.45 + Math.sin(st.clock.elapsedTime * 3) * 0.15
     if (marker.current) marker.current.material.opacity = Math.max(0, marker.current.material.opacity - dt * 1.5)
   })
 
@@ -650,8 +681,18 @@ function Player({ playerRef }) {
     <>
       <group ref={group} position={START}>
         <group ref={body}>
-          <Suspense fallback={null}><CharacterSprite frames={ch.walk} movingRef={movingRef} height={3.1} flip={flip} tilt={0.55} /></Suspense>
+          <Suspense fallback={null}><CharacterSprite frames={ch.walk} movingRef={movingRef} height={3.4} flip={flip} tilt={0.55} /></Suspense>
         </group>
+        {/* anillo dorado: "este sos vos" */}
+        <mesh ref={ring} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 0]}>
+          <ringGeometry args={[0.55, 0.75, 40]} />
+          <meshBasicMaterial color="#ffd166" transparent opacity={0.5} depthWrite={false} />
+        </mesh>
+        {spark && (
+          <Html pointerEvents="none" position={[0, 3.2, -1.2]} center zIndexRange={[11, 0]} style={{ pointerEvents: 'none' }}>
+            <div key={spark} className="pick-spark">✨</div>
+          </Html>
+        )}
         <Html pointerEvents="none" position={[0, 3.4, -1.6]} center zIndexRange={[10, 0]} style={{ pointerEvents: 'none' }}>
           {bubble ? <div className="bubble">{bubble}</div> : player.name ? <div className="name-tag">⭐ {player.name}</div> : null}
         </Html>

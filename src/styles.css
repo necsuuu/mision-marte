@@ -636,3 +636,37 @@ p { margin: 0 0 0.8em; line-height: 1.5; }
 .pause-row .btn { min-width: 120px; font-size: 1.15rem; }
 .pause-lang { position: static; }
 .pause-hint { opacity: 0.6; }
+
+/* ---------- v0.8: ficha del objeto con el comandante ---------- */
+.item-card { position: absolute; left: 14px; bottom: 96px; z-index: 6; display: flex; align-items: flex-end; gap: 10px; width: min(520px, calc(100vw - 28px)); pointer-events: none; }
+.ic-commander { flex: none; display: grid; justify-items: center; gap: 4px; }
+.ic-commander img { width: 104px; height: 104px; border-radius: 50%; object-fit: cover; border: 3px solid var(--gold); background: radial-gradient(circle at 50% 35%, #2b3350, #12162a); box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5), 0 0 0 4px rgba(255, 209, 102, 0.15); }
+.ic-commander span { font: 600 0.85rem 'Fredoka', sans-serif; background: rgba(10, 12, 20, 0.85); padding: 2px 10px; border-radius: 999px; white-space: nowrap; }
+.ic-bubble { position: relative; flex: 1; background: rgba(250, 246, 236, 0.97); color: #1d1f2a; border-radius: 18px; padding: 12px 16px 12px; box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45); display: grid; gap: 8px; }
+.ic-bubble::before { content: ''; position: absolute; left: -10px; bottom: 34px; border: 10px solid transparent; border-right-color: rgba(250, 246, 236, 0.97); border-left: 0; }
+.ic-head { display: flex; align-items: center; gap: 12px; }
+.ic-icon { width: 58px; height: 58px; flex: none; display: grid; place-items: center; font-size: 2.3rem; border-radius: 14px; background: linear-gradient(160deg, #fff, #ecdfc4); border: 2px solid #d9c49a; box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.08); }
+.ic-name { display: block; font: 700 1.3rem 'Fredoka', sans-serif; line-height: 1.1; }
+.ic-use { display: inline-block; margin-top: 4px; font: 700 0.8rem 'Nunito', sans-serif; padding: 2px 10px; border-radius: 999px; background: #e9eef8; color: #2b3b62; }
+.ic-use.use-air { background: #dff4ff; color: #0d5b80; }
+.ic-use.use-food { background: #e3f7df; color: #2c6b22; }
+.ic-use.use-energy { background: #fff3cc; color: #7a5600; }
+.ic-use.use-shield { background: #f1e6ff; color: #5b2a8f; }
+.ic-use.use-health { background: #ffe3e3; color: #8f2a2a; }
+.ic-use.use-repair { background: #ece8e2; color: #5b4a33; }
+.ic-desc { margin: 0; font: 600 1.05rem/1.35 'Nunito', sans-serif; }
+.ic-fact { margin: 0; font-size: 0.9rem; line-height: 1.35; color: #5a5040; }
+.ic-say { margin: 0; font: 700 1.15rem 'Fredoka', sans-serif; color: #2c6b22; }
+.ic-weight { display: flex; align-items: center; gap: 8px; font: 700 0.95rem 'Nunito', sans-serif; flex-wrap: wrap; }
+.ic-blocks { display: inline-flex; gap: 3px; }
+.ic-blocks i { width: 14px; height: 14px; border-radius: 3px; background: #c49a3a; box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.2); }
+.ic-blocks i.over { background: #e05a5a; }
+.ic-weight small { color: #6b6455; font-weight: 600; }
+.ic-status { font: 700 0.95rem 'Nunito', sans-serif; padding: 6px 10px; border-radius: 10px; background: #f1eadb; }
+.ic-status.st-pressE, .ic-status.st-click { background: #fff2c7; color: #6b4a00; }
+.ic-status.st-heavy, .ic-status.st-hands { background: #ffe0e0; color: #8f2a2a; }
+.ic-status.st-got { background: #e3f7df; color: #2c6b22; }
+.item-card.cheer .ic-bubble { box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45), 0 0 0 3px #7be07b; }
+.pick-spark { font-size: 2rem; animation: spark 0.9s ease-out forwards; }
+@keyframes spark { 0% { transform: scale(0.3) translateY(10px); opacity: 0; } 30% { transform: scale(1.4) translateY(-6px); opacity: 1; } 100% { transform: scale(1) translateY(-30px); opacity: 0; } }
+@media (max-width: 760px) { .ic-commander img { width: 72px; height: 72px; } .ic-name { font-size: 1.1rem; } .ic-desc { font-size: 0.95rem; } }

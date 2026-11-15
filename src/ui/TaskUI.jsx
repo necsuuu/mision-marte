@@ -480,17 +480,17 @@ function WaterGame() {
   useFinishAfter(checked, 1300, () => ({ inBand, spills }))
   return (
     <Mini title={T('water.title')} help={T(isTouch ? 'water.help@touch' : 'water.help')} done={checked && (inBand === 3 ? T('water.done') : T('water.some', { n: inBand }))}>
-      <div className="trays">
+      <div className="wtrays">
         {trays.map((t, i) => {
           const ok = !t.spilled && t.level >= lo && t.level <= hi
           return (
-            <div key={i} className={'tray' + (t.spilled ? ' spilled' : ok ? ' ok' : '')}>
-              <div className="tray-tank">
-                <div className="tray-band" style={{ bottom: `${lo}%`, height: `${hi - lo}%` }} />
-                <motion.div className="tray-water" animate={{ height: `${t.level}%` }} transition={{ type: 'spring', damping: 14 }} />
-                {t.spilled && <span className="tray-spill">💦</span>}
+            <div key={i} className={'wtray' + (t.spilled ? ' spilled' : ok ? ' ok' : '')}>
+              <div className="wtray-tank">
+                <div className="wtray-band" style={{ bottom: `${lo}%`, height: `${hi - lo}%` }} />
+                <motion.div className="wtray-water" animate={{ height: `${t.level}%` }} transition={{ type: 'spring', damping: 14 }} />
+                {t.spilled && <span className="wtray-spill">💦</span>}
               </div>
-              <button className="btn tray-btn" onClick={() => pour(i)} disabled={checked || t.spilled}>
+              <button className="btn wtray-btn" onClick={() => pour(i)} disabled={checked || t.spilled}>
                 <span className="hose" style={{ height: 4 + t.flow * 0.9 }} />💧 {isTouch ? '' : <kbd>{i + 1}</kbd>}
               </button>
             </div>

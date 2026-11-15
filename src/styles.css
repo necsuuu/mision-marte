@@ -885,16 +885,16 @@ p { margin: 0 0 0.8em; line-height: 1.5; }
 .talk-body b { font: 600 1.05rem 'Fredoka', sans-serif; color: #7be07b; }
 .talk-body p { margin: 0; font-size: 1.12rem; line-height: 1.4; }
 .talk-btns { display: flex; gap: 10px; flex-wrap: wrap; }
-.trays { display: flex; justify-content: center; gap: clamp(14px, 5vw, 44px); }
-.tray { display: grid; justify-items: center; gap: 8px; }
-.tray-tank { position: relative; width: 74px; height: min(200px, calc(var(--vh) * 32)); border-radius: 12px; border: 3px solid #4a5160; background: #0d1018; overflow: hidden; }
-.tray-band { position: absolute; left: 0; right: 0; background: rgba(123, 224, 123, 0.28); border-top: 2px dashed #7be07b; border-bottom: 2px dashed #7be07b; z-index: 1; }
-.tray-water { position: absolute; left: 0; right: 0; bottom: 0; background: linear-gradient(180deg, #7fe9ff, #2f8ad1); }
-.tray.ok .tray-tank { border-color: #7be07b; box-shadow: 0 0 14px rgba(123, 224, 123, 0.5); }
-.tray.spilled .tray-tank { border-color: #ff6b6b; }
-.tray-spill { position: absolute; top: 4px; left: 0; right: 0; text-align: center; font-size: 1.4rem; z-index: 2; }
-.tray-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; font-size: 1.05rem; }
-.tray-btn kbd { font: 700 0.75rem 'Space Mono', monospace; padding: 1px 5px; border-radius: 4px; border: 1px solid currentColor; opacity: 0.7; }
+.wtrays { display: flex; justify-content: center; gap: clamp(14px, 5vw, 44px); }
+.wtray { display: grid; justify-items: center; gap: 8px; }
+.wtray-tank { position: relative; width: 74px; height: min(200px, calc(var(--vh) * 32)); border-radius: 12px; border: 3px solid #4a5160; background: #0d1018; overflow: hidden; }
+.wtray-band { position: absolute; left: 0; right: 0; background: rgba(123, 224, 123, 0.28); border-top: 2px dashed #7be07b; border-bottom: 2px dashed #7be07b; z-index: 1; }
+.wtray-water { position: absolute; left: 0; right: 0; bottom: 0; background: linear-gradient(180deg, #7fe9ff, #2f8ad1); }
+.wtray.ok .wtray-tank { border-color: #7be07b; box-shadow: 0 0 14px rgba(123, 224, 123, 0.5); }
+.wtray.spilled .wtray-tank { border-color: #ff6b6b; }
+.wtray-spill { position: absolute; top: 4px; left: 0; right: 0; text-align: center; font-size: 1.4rem; z-index: 2; }
+.wtray-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; font-size: 1.05rem; }
+.wtray-btn kbd { font: 700 0.75rem 'Space Mono', monospace; padding: 1px 5px; border-radius: 4px; border: 1px solid currentColor; opacity: 0.7; }
 .hose { display: inline-block; width: 10px; border-radius: 3px; background: #5ad1ff; }
 .aim-wrap { display: grid; grid-template-columns: auto minmax(0, 260px) auto auto; align-items: center; justify-content: center; gap: 12px; }
 .aim-dial { width: 100%; max-height: calc(var(--vh) * 42); touch-action: none; cursor: grab; }
@@ -1115,8 +1115,8 @@ body { overscroll-behavior: none; -webkit-tap-highlight-color: transparent; }
   .talk-body p { font-size: 0.92rem; }
   .talk-body { gap: 4px; }
   .talk-btns .btn { font-size: 0.95rem; padding: 6px 12px; }
-  .tray-tank { height: calc(var(--vh) * 100 - 170px); width: 58px; }
-  .tray-btn { padding: 4px 10px; font-size: 0.95rem; }
+  .wtray-tank { height: calc(var(--vh) * 100 - 170px); width: 58px; }
+  .wtray-btn { padding: 4px 10px; font-size: 0.95rem; }
   .aim-dial { max-height: calc(var(--vh) * 100 - 100px); }
   .task-done { font-size: 0.8rem; padding: 3px 8px; }
 }

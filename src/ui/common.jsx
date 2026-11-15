@@ -87,7 +87,7 @@ export function LangToggle({ className = '' }) {
   const setLang = useGame((s) => s.setLang)
   return (
     <div className={'lang-toggle ' + className} role="group" aria-label="Idioma / Language">
-      {[['es', '🇦🇷 ES'], ['en', '🇬🇧 EN']].map(([l, label]) => (
+      {[['es', 'ES'], ['en', 'EN']].map(([l, label]) => (
         <button key={l} className={lang === l ? 'on' : ''} onClick={() => setLang(l)}>{label}</button>
       ))}
     </div>

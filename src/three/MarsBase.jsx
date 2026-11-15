@@ -35,7 +35,7 @@ const SHOTS = {
   sky: () => ({ target: [30, 8, 20], cam: [-4, 4, -2] }),
   supply: () => ({ target: [POS.supply[0], 2.2, POS.supply[2]], cam: [POS.supply[0] + 7, 4.2, POS.supply[2] + 8] }),
 }
-const GOOD_FX = new Set(['found', 'supply', 'patched', 'cleaned', 'icemine', 'study', 'uv', 'healed', 'rest', 'reply', 'fixed', 'panelfixed', 'sample', 'sunset', 'fewerplants'])
+const GOOD_FX = new Set(['watered', 'found', 'supply', 'patched', 'cleaned', 'icemine', 'study', 'uv', 'healed', 'rest', 'reply', 'fixed', 'panelfixed', 'sample', 'sunset', 'fewerplants'])
 
 // En pantallas anchas corre la imagen a la izquierda para que el panel no tape la base
 function ViewShift({ enabled }) {

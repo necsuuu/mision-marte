@@ -29,7 +29,7 @@ export function locEvent(lang, ev) {
   const o = CONTENT_EN.events[ev.id]
   if (!o) return ev
   return {
-    ...pick(ev, { title: o.title, text: o.text, fact: o.fact }),
+    ...pick(ev, { title: o.title, text: o.text, fact: o.fact, ask: o.ask, talk: o.talk }),
     choices: ev.choices.map((c, i) => pick(c, o.choices?.[i])), // label, hint, outcome y fact de cada opción
   }
 }

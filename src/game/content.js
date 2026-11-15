@@ -191,6 +191,36 @@ export const EVENTS = [
 ]
 
 /**
+ * 🙋 PEDIDOS DE AYUDA: un compañero necesita una mano. No pasan por la computadora (direct):
+ * hay que salir, ir a hablarle y hacer el trabajo con él. Están mezclados con los demás eventos.
+ * La primera opción se hace a mano (task); la segunda es "ahora no" (o lo que pasa si se lo deja a la tripulación).
+ */
+export const HELP_EVENTS = [
+  {
+    id: 'help_water', direct: true, good: true, crew: 'botanist', requires: 'seeds', emoji: '💧', title: 'El botánico pide ayuda', scene: 'greenhouse', incident: 'help',
+    text: 'Se desajustó el riego del invernadero hidropónico.',
+    ask: '¡Comandante! ¿Me ayudás con el riego?',
+    talk: 'Cada bandeja necesita la cantidad justa de agua: que llegue a la franja verde. Si te pasás, se rebalsa y las raíces se ahogan. ¿Me das una mano?',
+    fact: 'En hidroponía las plantas crecen sin tierra: las raíces toman el agua y los nutrientes de un líquido. Así se ahorra agua, algo muy valioso en Marte.',
+    choices: [
+      { label: '¡Dale, te ayudo!', task: 'water', effects: {}, fx: 'watered', outcome: '💧🌱 ¡Riego ajustado!' },
+      { label: 'Ahora no', effects: { food: 2 }, fx: 'rest', outcome: '🌱 Lo arregló solo, más despacio (+2 🥔).' },
+    ],
+  },
+  {
+    id: 'help_antenna', direct: true, good: true, crew: 'engineer', emoji: '📡', title: 'La ingeniera pide ayuda', scene: 'antenna', incident: 'help',
+    text: 'La antena perdió la señal con la Tierra.',
+    ask: '¡Comandante! Perdimos la señal con la Tierra',
+    talk: 'Hay que volver a apuntar la antena. Girala despacio hasta que la señal llegue al máximo y quedate ahí. ¿Me ayudás?',
+    fact: 'La NASA habla con sus naves con la Red de Espacio Profundo: antenas gigantes en California, España y Australia. Como la Tierra gira, siempre hay una mirando hacia Marte.',
+    choices: [
+      { label: '¡Dale, te ayudo!', task: 'aim', effects: {}, fx: 'reply', outcome: '📡✅ ¡Señal con la Tierra!' },
+      { label: 'Ahora no', effects: { science: 1 }, fx: 'rest', outcome: '📡 La ingeniera la apuntó sola; tardó toda la tarde (+1 🔬).' },
+    ],
+  },
+]
+
+/**
  * 📦 Evento especial de mitad de misión: no sale al azar, llega siempre en el sol MID_SOL.
  * Es distinto a los demás: no hay un problema, hay un premio… pero solo se puede elegir una caja.
  */
@@ -263,28 +293,28 @@ export const EXPEDITION_EVENT = {
   text: 'Hoy no hay tormenta solar, así que se puede salir. Explorar gasta aire y puede salir mal. ¿A dónde mandamos el rover?',
   choices: [
     {
-      site: 'crater', label: '🧊 Al cráter con hielo', hint: 'cerca · 80%',
+      task: 'drive', site: 'crater', label: '🧊 Al cráter con hielo', hint: 'cerca · 80%',
       effects: { chance: 0.8, success: { o2: 14 }, fail: { o2: -6 } },
       fx: { success: 'found', fail: 'nothing' },
       outcome: { success: '🧊 ¡Trajeron hielo! Derretido da agua y aire: +14 🫁', fail: 'El hielo estaba muy hondo. Se gastó aire: −6 🫁' },
       fact: 'En Marte hay hielo de agua bajo el suelo y en los polos. Con agua se puede hacer oxígeno para respirar y combustible para volver.',
     },
     {
-      site: 'cave', label: '🕳️ A la cueva de lava', hint: 'media · 70%',
+      task: 'drive', site: 'cave', label: '🕳️ A la cueva de lava', hint: 'media · 70%',
       effects: { chance: 0.7, success: { science: 3, o2: -6 }, fail: { o2: -6, health: -6 } },
       fx: { success: 'found', fail: 'nothing' },
       outcome: { success: '🕳️ ¡Una cueva enorme! +3 de ciencia (−6 🫁)', fail: 'El rover se trabó en la entrada. −6 🫁 y −6 ❤️ por el esfuerzo' },
       fact: 'Los tubos de lava son cuevas que dejaron los volcanes de Marte. Adentro la roca tapa la radiación: podrían servir de casa para astronautas.',
     },
     {
-      site: 'oldrover', label: '🤖 Al rover viejo', hint: 'lejos · 65%',
+      task: 'drive', site: 'oldrover', label: '🤖 Al rover viejo', hint: 'lejos · 65%',
       effects: { chance: 0.65, success: { bonusNext: 3, o2: -8 }, fail: { o2: -8 } },
       fx: { success: 'found', fail: 'nothing' },
       outcome: { success: '🔋 ¡Sus baterías todavía sirven! +3 ⚡ mañana (−8 🫁)', fail: 'Estaba tapado de polvo y no se pudo sacar nada. −8 🫁' },
       fact: 'El rover Opportunity estaba pensado para trabajar 90 días y anduvo más de 14 años en Marte.',
     },
     {
-      site: 'hill', label: '⛰️ Al cerro mirador', hint: 'cerca · seguro',
+      task: 'drive', site: 'hill', label: '⛰️ Al cerro mirador', hint: 'cerca · seguro',
       effects: { science: 2, o2: -5 }, fx: 'found',
       outcome: '📸 ¡Qué vista! Fotos y mediciones: +2 de ciencia (−5 🫁)',
       fact: 'En Marte está el Monte Olimpo, el volcán más alto del sistema solar: unas dos veces y media el Everest.',

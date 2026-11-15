@@ -4,6 +4,7 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useGame } from '../game/store'
 import { BUILDS } from '../game/content'
+import { SITES } from '../game/tasks'
 import { terrainHeight } from './terrain'
 
 // ---------- Dónde va cada obra ----------
@@ -141,12 +142,6 @@ export function Builds() {
 }
 
 // ---------- Lugares de expedición ----------
-export const SITES = {
-  crater: [15, 0, 14],
-  cave: [-17.5, 0, 12],
-  oldrover: [18.5, 0, -12.5],
-  hill: [-14, 0, -18.5],
-}
 export const sitePos = (id) => { const [x, , z] = SITES[id]; return [x, terrainHeight(x, z), z] }
 
 function Flag({ color = '#ffd166' }) {
@@ -250,6 +245,6 @@ export function ExpeditionSites() {
 /** Lugar al que fue el rover en la expedición que se está mostrando (o null). */
 export function activeSite(s = useGame.getState()) {
   const card = s.cards[0]
-  if (s.screen !== 'sol' || !card?.event?.expedition || s.phase !== 'outcome') return null
+  if (s.screen !== 'sol' || !card?.event?.expedition || s.phase !== 'outcome') return null // durante la tarea lo maneja el jugador
   return card.event.choices[s.cardResult?.choiceIdx]?.site || null
 }

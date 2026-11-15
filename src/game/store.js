@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import {
-  ITEMS, CAPACITY, LOAD_SECONDS, BASE, EVENTS, SOLS, REPAIRS, LEAK_O2, ICE_MINE_O2, MID_SOL, SUPPLY_EVENT,
+  ITEMS, CAPACITY, LOAD_SECONDS, BASE, EVENTS, HELP_EVENTS, SOLS, REPAIRS, LEAK_O2, ICE_MINE_O2, MID_SOL, SUPPLY_EVENT,
   BUILDS, BUILD_FX, BUILD_FROM_SOL, MISSION_FROM_SOL, MISSION_BONUS, EXPEDITION_EVENT, EXPEDITION_FROM_SOL, EXPEDITION_MAX,
 } from './content'
 import { loadSpaceWeather, buildSolWeather } from '../data/donki'
@@ -205,6 +205,10 @@ export function makeRoomItems() {
   return list
 }
 export const MAX_CARRY = 2
+
+const ALL_EVENTS = [...EVENTS, ...HELP_EVENTS]
+/** Una tarea nueva, recién empezada. */
+const newTask = (id, choiceIdx) => ({ id, choiceIdx, elapsed: 0, near: null, mini: null, busy: null, cleaned: [], found: [], arrived: false, talked: false })
 
 /** Pone primero en el mazo un evento que se resuelve a mano, así en los primeros soles se juega al menos uno. */
 function handsOnFirst(deck) {
@@ -413,7 +417,7 @@ export const useGame = create((set, get) => ({
       o2: clamp(BASE.o2 + bonus + 30 * (inv.o2tank || 0), 0, 100),
       food: clamp(BASE.food + bonus + 30 * (inv.rations || 0), 0, 100),
       plan,
-      eventDeck: handsOnFirst(shuffle(EVENTS.filter((e) => !e.requires || inv[e.requires]))),
+      eventDeck: handsOnFirst(shuffle(ALL_EVENTS.filter((e) => !e.requires || inv[e.requires]))),
       screen: 'landing',
       sol: 1,
       learned: [],
@@ -439,7 +443,7 @@ export const useGame = create((set, get) => ({
       cards.push({ type: 'event', event: EXPEDITION_EVENT, sites: shuffle(sites).slice(0, 2) })
       lastExpedition = s.sol
     } else if (Math.random() < eventChance) {
-      if (!deck.length) deck = shuffle(EVENTS.filter((e) => !e.requires || s.inventory[e.requires]))
+      if (!deck.length) deck = shuffle(ALL_EVENTS.filter((e) => !e.requires || s.inventory[e.requires]))
       // No repetir la fuga si ya hay una abierta
       let idx = deck.findIndex((e) => !(e.id === 'leak' && s.base.leak))
       if (idx < 0) idx = 0
@@ -460,7 +464,13 @@ export const useGame = create((set, get) => ({
   },
 
   afterDawn: () => set({ phase: phaseFor(get().cards[0]) }),
-  toDecision: () => set({ phase: 'decision' }),
+  toDecision: () => {
+    const s = get()
+    const ev = s.cards[0]?.event
+    // 🙋 pedido de ayuda: no pasa por la computadora, se sale directo a la base a hablar con el compañero
+    if (ev?.direct) return set({ phase: 'task', task: newTask(ev.choices[0].task, 0) })
+    set({ phase: 'decision' })
+  },
 
   choose: (choice) => {
     const s = get()
@@ -469,7 +479,7 @@ export const useGame = create((set, get) => ({
     const choiceIdx = card.event.choices.indexOf(choice)
     // 🛠️ Esta opción se hace a mano: primero la tarea en la base, después se calculan los efectos
     if (choice.task) {
-      return set({ phase: 'task', task: { id: choice.task, choiceIdx, elapsed: 0, near: null, mini: null, busy: null, cleaned: [], started: false } })
+      return set({ phase: 'task', task: newTask(choice.task, choiceIdx) })
     }
     get().resolveChoice(choice, choiceIdx, choice.effects)
   },
@@ -506,14 +516,22 @@ export const useGame = create((set, get) => ({
     if (s.phase !== 'task' || !t || t.mini || t.busy) return
     const spot = taskSpots(s).find((p) => p.id === spotId)
     if (!spot || spot.done) return
-    if (spot.act === 'clean') set({ task: { ...t, busy: spotId, busyT: 0 } })
-    else set({ task: { ...t, mini: spot.act } })
+    if (spot.act === 'clean') set({ task: { ...t, busy: spotId } })
+    else if (spot.act === 'arrive') set({ task: { ...t, arrived: true, near: null } })
+    else if (spot.act === 'collect') {
+      const found = [...t.found, Number(spotId.slice(6))]
+      set({ task: { ...t, found, near: null } })
+      if (found.length >= 3) setTimeout(() => get().finishTask({ arrived: true, found: found.length }), 600)
+    } else set({ task: { ...t, mini: spot.act } })
   },
   /** Termina la tarea. result: lo que hizo el jugador (o { crew: true } si la deja a la tripulación). */
   finishTask: (result) => {
     const s = get()
     if (s.phase !== 'task' || !s.task) return
-    const choice = s.cards[0].event.choices[s.task.choiceIdx]
+    const ev = s.cards[0].event
+    // pedido de ayuda que no se acepta (o "ahora no"): es la segunda opción del evento, tal cual
+    if (ev.direct && result.crew) return get().resolveChoice(ev.choices[1], 1, ev.choices[1].effects)
+    const choice = ev.choices[s.task.choiceIdx]
     const { effects, line } = taskEffects(s, choice, result)
     get().resolveChoice(choice, s.task.choiceIdx, effects, line)
   },

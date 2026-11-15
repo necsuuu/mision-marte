@@ -3,7 +3,7 @@ import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { Html } from '@react-three/drei'
 import { TASKS } from '../game/tasks'
-import { t } from '../i18n/core'
+import { t, locEvent } from '../i18n/core'
 import * as THREE from 'three'
 import { rng } from './noise'
 import { terrainHeight } from './terrain'
@@ -13,6 +13,7 @@ import CharacterSprite from './CharacterSprite'
 import { Deploy, cine } from './cine'
 import { LeakJet, AlarmBeacon, RetroFlame } from './effects'
 import { activeSite, sitePos } from './builds'
+import { taskPlayer, taskPose } from './BaseTask'
 
 // ---------- Posiciones importantes ----------
 export const POS = {
@@ -270,9 +271,18 @@ export function Rover() {
   const site = useGame((s) => activeSite(s)) // 🚙 expedición: el rover va al lugar elegido
   const goal = site ? sitePos(site) : act && (act.ev.id === 'ice' || act.ev.id === 'rock') ? (act.ev.id === 'ice' ? POS.ice : POS.rock) : null
   const ang = useRef(0)
+  const driving = useGame((s) => s.phase === 'task' && s.task?.id === 'drive')
   useFrame((st, dt) => {
     const g = ref.current
     if (!g) return
+    if (driving) {
+      // 🚙 lo maneja el jugador
+      g.position.set(taskPlayer.x, terrainHeight(taskPlayer.x, taskPlayer.z) + 0.35, taskPlayer.z)
+      g.rotation.y = taskPose.heading - Math.PI / 2
+      if (drill.current) drill.current.visible = false
+      g.visible = true
+      return
+    }
     if (goal) {
       const tx = goal[0] - 1.6, tz = goal[2]
       g.position.x += (tx - g.position.x) * Math.min(1, dt * 1.5)
@@ -555,16 +565,22 @@ export function Crew() {
   const ch = useGame((s) => getCharacter(s.player.character))
   const fx = useGame((s) => (s.phase === 'outcome' ? s.cardResult?.fx : null))
   const task = useGame((s) => (s.phase === 'task' ? s.task : null))
-  const say = useCrewTalk(task)
+  const lang = useGame((s) => s.lang)
+  const act = useActiveEvent()
+  const talk = useCrewTalk(task)
+  // 🙋 pedido de ayuda: mientras se muestra, el compañero levanta la mano y lo dice
+  const asking = act?.ev.direct && act.phase === 'incident' ? act.ev.crew : null
+  const say = asking ? locEvent(lang, act.ev).ask : talk
   const commanderTo = EVA_FX[fx] || null
   // 🛠️ durante una tarea, el compañero que sabe del tema va al lugar y le habla al comandante
   const helper = task ? TASKS[task.id] : null
   const at = (id) => (helper?.crew === id ? helper.helperAt : null)
+  const talking = (id) => helper?.crew === id || asking === id
   return (
     <>
       {!task && <FacingSprite src={ch.sprite} frames={ch.walk} position={POS.home} start={14.2} walkTo={commanderTo} />}
-      <FacingSprite src={CREW[0].sprite} frames={CREW[0].walk} position={[10.8, 0, 2.2]} start={14.6} height={2.4} walkTo={at('engineer')} say={helper?.crew === 'engineer' ? say : null} />
-      <FacingSprite src={CREW[1].sprite} frames={CREW[1].walk} position={[-10.6, 0, 3.6]} start={15} height={2.4} walkTo={at('botanist')} say={helper?.crew === 'botanist' ? say : null} />
+      <FacingSprite src={CREW[0].sprite} frames={CREW[0].walk} position={[10.8, 0, 2.2]} start={14.6} height={2.4} walkTo={at('engineer')} say={talking('engineer') ? say : null} />
+      <FacingSprite src={CREW[1].sprite} frames={CREW[1].walk} position={[-10.6, 0, 3.6]} start={15} height={2.4} walkTo={at('botanist')} say={talking('botanist') ? say : null} />
     </>
   )
 }
@@ -584,6 +600,8 @@ function useCrewTalk(task) {
     const pick = () => {
       const st = useGame.getState().task
       if (!st) return
+      if (st.mini === 'talk') return setLine(null)
+      if (TASKS[id].talk && !st.talked) return setLine(t(lang, st.near ? `crew.${id}.hi` : `crew.${id}.call`))
       if (st.mini) return setLine(t(lang, `crew.${id}.doing`))
       if (st.near) return setLine(t(lang, `crew.${id}.near`))
       setLine(t(lang, st.elapsed > 8 ? `crew.${id}.hurry` : `crew.${id}.alert`))
@@ -591,6 +609,6 @@ function useCrewTalk(task) {
     pick()
     const iv = setInterval(pick, 4000)
     return () => clearInterval(iv)
-  }, [id, near, mini, lang])
+  }, [id, near, mini, lang, task?.talked])
   return line
 }

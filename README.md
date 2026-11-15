@@ -145,6 +145,15 @@ Cada sol tiene este ciclo:
 - La computadora avisa en el papel cuáles opciones se hacen a mano, y el resultado y la bitácora dicen cómo salió (por ejemplo "Sellaste la grieta en 12 s: se escaparon 4 de aire").
 - En los primeros soles siempre aparece al menos una de estas emergencias.
 
+**🙋 Compañeros que piden ayuda.** Algunos días, en vez de un problema, un compañero llama al comandante: levanta la mano en la base y dice qué necesita. Hay que caminar hasta él, escucharlo y decidir si ayudar ("¡Dale, te ayudo!") o no ("Ahora no", que también funciona pero rinde menos).
+
+| Pedido | Qué hay que hacer | Qué cambia |
+|---|---|---|
+| 💧 El botánico: el riego se desajustó | Llenar 3 bandejas hasta la franja verde; cada manguera da distinta cantidad y si se pasa se rebalsa | +3 🥔 por bandeja en su punto, −2 por cada una rebalsada (si no se ayuda: +2 🥔) |
+| 📡 La ingeniera: se perdió la señal con la Tierra | Girar la antena (arrastrando el dial, con ◀ ▶ o las flechas) hasta que la señal llegue al máximo y quedarse ahí | +2 🔬, +3 si se encuentra en 12 s o menos (si no se ayuda: +1 🔬) |
+
+**🚙 Expediciones manejando el rover.** Al elegir un lugar de expedición, el jugador maneja el rover hasta ahí siguiendo la flecha, antes de que se acabe la batería (60 s; 90 s para cadetes). Al llegar aparecen 3 muestras brillantes: pasar por arriba las junta. Cada muestra sube un 8% la chance de que la expedición salga bien (en el cerro, que es seguro, juntar 2 o más da +1 🔬). El "Piloto automático" llega solo pero junta una sola muestra, y si se acaba la batería antes de llegar no se explora.
+
 **Para que cada sol sea distinto** (los tres sistemas se suman al plan de energía de siempre):
 
 - **🏗️ Construir (desde el sol 2):** en el plan hay una fila más, "Construir". Se elige una obra y se le va poniendo ⚡ durante varios soles; cuando se junta el costo queda para siempre en la base y se ve en 3D (mientras tanto se ve la obra a medio hacer). Se puede cambiar de obra sin perder lo avanzado.
@@ -338,7 +347,7 @@ src/
     ├── LaunchUI.jsx        Cuenta regresiva y textos del despegue
     ├── Quiz.jsx            Preguntas de repaso al final de la misión
     ├── ItemCard.jsx        Ficha del objeto con el retrato del comandante
-    ├── TaskUI.jsx          Tarea a mano: objetivo, botón de acción y desafíos (grieta, cables, plantas)
+    ├── TaskUI.jsx          Tarea a mano: objetivo, botón de acción, charla con el compañero y desafíos (grieta, cables, plantas, riego, antena)
     ├── Terminal.jsx        Terminal CRT de decisiones (pantalla + impresora + botón ✓)
     └── Console.jsx         Consola ámbar del reporte nocturno y final
 public/
@@ -356,7 +365,7 @@ tools/
 
 - **Dificultad y balance:** `src/game/content.js` → objeto `BASE` (oxígeno inicial, cuánto rinde cada ⚡, dosis de radiación, etc.), `CAPACITY` (masa máxima) y `SOLS` (duración).
 - **Agregar un evento:** sumarlo al array `EVENTS` en `content.js`. Cada evento tiene `scene` (a dónde mira la cámara), `incident` (qué animación muestra) y `choices` con `effects`, `fx` y `outcome`.
-- **Tareas a mano:** en `content.js`, una opción con `task: 'id'` se hace en la base. Lugares, tiempos y cómo el desempeño cambia los efectos están en `src/game/tasks.js`; los desafíos (grieta, cables, plantas) en `src/ui/TaskUI.jsx`.
+- **Tareas a mano:** en `content.js`, una opción con `task: 'id'` se hace en la base; los pedidos de ayuda están en `HELP_EVENTS` (con `direct: true` no pasan por la computadora). Lugares, tiempos y cómo el desempeño cambia los efectos están en `src/game/tasks.js`; los desafíos (grieta, cables, plantas) en `src/ui/TaskUI.jsx`.
 - **Obras, misiones del día y expediciones:** `BUILDS`, `MISSIONS` y `EXPEDITION_EVENT` en `content.js` (costos, premios y textos). Las condiciones de cada misión están en `missionMet`, en `src/game/store.js`.
 - **Textos y traducciones:** interfaz en `src/i18n/ui.js` (es/en); contenido en español en `content.js` y en inglés en `src/i18n/content_en.js`.
 - **Mover muebles o agregar lugares para objetos:** `src/game/shipLayout.js` (`FURN`, `SLOTS`, `OBSTACLES`).

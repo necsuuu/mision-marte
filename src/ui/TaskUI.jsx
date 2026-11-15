@@ -3,7 +3,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useGame } from '../game/store'
-import { TASKS, taskSpots, taskLimit, leakLoss, CIRCUIT_WIRES, PLANT_GRID } from '../game/tasks'
+import { TASKS, taskSpots, taskLimit, leakLoss, CIRCUIT_WIRES, PLANT_GRID, WATER_BAND } from '../game/tasks'
+import { CREW } from '../game/characters'
+import { locEvent } from '../i18n/core'
 import { isTouch } from '../game/device'
 import { play } from '../game/sfx'
 import { useSpeak } from '../game/voice'
@@ -22,6 +24,9 @@ export default function TaskUI() {
         {task.mini === 'seal' && <SealGame key="seal" />}
         {task.mini === 'wire' && <CircuitGame key="wire" />}
         {task.mini === 'check' && <PlantsGame key="check" />}
+        {task.mini === 'talk' && <TalkCard key="talk" />}
+        {task.mini === 'water' && <WaterGame key="water" />}
+        {task.mini === 'aim' && <AimGame key="aim" />}
       </AnimatePresence>
     </>
   )
@@ -37,8 +42,11 @@ function TaskBanner() {
   const near = spots.find((p) => p.id === task.near)
   const lim = taskLimit(s)
   const left = lim ? Math.max(0, Math.ceil(lim - task.elapsed)) : null
-  const goal = near ? T('task.at', { act: T('task.act.' + near.act) }) : T('task.goal.' + task.id)
-  useSpeak(T('task.goal.' + task.id))
+  const ev = s.cards[0]?.event
+  const stage = task.id === 'drive' ? (task.arrived ? '.found' : '') : def.talk ? (task.talked ? '.work' : '') : ''
+  const goal = near ? T('task.at', { act: T('task.act.' + near.act) }) : T('task.goal.' + task.id + stage)
+  useSpeak(T('task.goal.' + task.id + stage))
+  const crewLabel = ev?.direct ? '🙅 ' + T('task.notNow') : task.id === 'drive' ? '🤖 ' + T('task.autopilot') : '🤖 ' + T('task.crewDo')
   return (
     <motion.div className="task-banner" initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>
       <span className="task-icon">{def.icon}</span>
@@ -46,14 +54,18 @@ function TaskBanner() {
       <div className="task-meters">
         {task.id === 'seal' && <span className="ko">{T('task.o2lost', { n: leakLoss(s, task.elapsed) })}</span>}
         {task.id === 'clean' && <span>{T('task.panels', { a: task.cleaned.length, b: s.panels })}</span>}
+        {task.id === 'drive' && task.arrived && <span>🪨 {task.found.length}/3</span>}
         {left !== null && (
           <span className={'task-time' + (left <= 10 ? ' ko' : '')}>
-            ⏱️ {left}s
+            {task.id === 'drive' ? '🔋' : '⏱️'} {left}s
             <i style={{ width: `${(left / lim) * 100}%` }} />
           </span>
         )}
       </div>
-      <button className="task-crew" onClick={() => s.finishTask({ crew: true })} title={T('task.crewDoWhy')}>🤖 {T('task.crewDo')}</button>
+      {task.id === 'drive' && task.arrived && (
+        <button className="btn primary task-done" onClick={() => s.finishTask({ arrived: true, found: task.found.length })}>🏠 {T('task.goHome')}</button>
+      )}
+      <button className="task-crew" onClick={() => s.finishTask({ crew: true })} title={T('task.crewDoWhy')}>{crewLabel}</button>
     </motion.div>
   )
 }
@@ -396,6 +408,162 @@ function PlantsGame() {
       <div className="mini-foot">
         {easy && <span>{T('plants.count', { n: sick })}</span>}
         <button className="btn primary" onClick={finish} disabled={checked}>✔ {T('plants.ok')}</button>
+      </div>
+    </Mini>
+  )
+}
+
+// ---------- 💬 Conversación con el compañero que pide ayuda ----------
+function TalkCard() {
+  const T = useT()
+  const s = useGame()
+  const ev = locEvent(s.lang, s.cards[0].event)
+  const crew = CREW.find((c) => c.id === ev.crew) || CREW[0]
+  useSpeak(ev.talk)
+  return (
+    <motion.div className="mini-overlay talk-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+      <motion.div className="talk-card" initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ type: 'spring', damping: 18 }}>
+        <img src={crew.sprite} alt="" className="talk-face" />
+        <div className="talk-body">
+          <b>{T('crew.name.' + crew.id)}</b>
+          <p>{ev.talk}</p>
+          <div className="talk-btns">
+            <button className="btn primary" onClick={() => { play('pick'); s.taskPatch({ talked: true, mini: null }) }}>👍 {ev.choices[0].label}</button>
+            <button className="btn ghost" onClick={() => s.finishTask({ crew: true })}>{ev.choices[1].label}</button>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  )
+}
+
+// ---------- 💧 Riego: llenar cada bandeja hasta la franja verde, sin rebalsar ----------
+function WaterGame() {
+  const T = useT()
+  const easy = useGame((s) => s.easy)
+  const [lo, hi] = WATER_BAND(easy)
+  // cada bandeja tiene una manguera distinta: unas dan mucha agua por toque y otras poca
+  const [trays, setTrays] = useState(() => [16, 10, 6].sort(() => Math.random() - 0.5).map((flow) => ({ flow, level: 12 + Math.round(Math.random() * 22), spilled: false })))
+  const [checked, setChecked] = useState(false)
+  const pour = (i) => {
+    if (checked) return
+    setTrays((ts) => ts.map((t, k) => {
+      if (k !== i || t.spilled) return t
+      const level = t.level + t.flow
+      if (level > 100) { play('deny'); return { ...t, level: 100, spilled: true } }
+      play('tick')
+      return { ...t, level }
+    }))
+  }
+  // con teclado: 1, 2 y 3 riegan cada bandeja; Enter termina
+  useEffect(() => {
+    const down = (e) => {
+      if (useGame.getState().paused) return
+      const n = parseInt(e.key, 10)
+      if (n >= 1 && n <= 3) pour(n - 1)
+    }
+    window.addEventListener('keydown', down)
+    return () => window.removeEventListener('keydown', down)
+  })
+  const inBand = trays.filter((t) => !t.spilled && t.level >= lo && t.level <= hi).length
+  const spills = trays.filter((t) => t.spilled).length
+  const finish = () => {
+    if (checked) return
+    setChecked(true)
+    play(inBand === 3 ? 'good' : 'deny')
+  }
+  useFinishAfter(checked, 1300, () => ({ inBand, spills }))
+  return (
+    <Mini title={T('water.title')} help={T(isTouch ? 'water.help@touch' : 'water.help')} done={checked && (inBand === 3 ? T('water.done') : T('water.some', { n: inBand }))}>
+      <div className="trays">
+        {trays.map((t, i) => {
+          const ok = !t.spilled && t.level >= lo && t.level <= hi
+          return (
+            <div key={i} className={'tray' + (t.spilled ? ' spilled' : ok ? ' ok' : '')}>
+              <div className="tray-tank">
+                <div className="tray-band" style={{ bottom: `${lo}%`, height: `${hi - lo}%` }} />
+                <motion.div className="tray-water" animate={{ height: `${t.level}%` }} transition={{ type: 'spring', damping: 14 }} />
+                {t.spilled && <span className="tray-spill">💦</span>}
+              </div>
+              <button className="btn tray-btn" onClick={() => pour(i)} disabled={checked || t.spilled}>
+                <span className="hose" style={{ height: 4 + t.flow * 0.9 }} />💧 {isTouch ? '' : <kbd>{i + 1}</kbd>}
+              </button>
+            </div>
+          )
+        })}
+      </div>
+      <div className="mini-foot">
+        <span>{T('water.inBand', { n: inBand })}</span>
+        <button className="btn primary" onClick={finish} disabled={checked}>✔ {T('plants.ok')}</button>
+      </div>
+    </Mini>
+  )
+}
+
+// ---------- 📡 Antena: girarla hasta encontrar la señal más fuerte ----------
+function AimGame() {
+  const T = useT()
+  const easy = useGame((s) => s.easy)
+  const [target] = useState(() => 60 + Math.random() * 240) // dónde está la Tierra (en grados)
+  const [angle, setAngle] = useState(0)
+  const [lockT, setLockT] = useState(0)
+  const [done, setDone] = useState(false)
+  const t0 = useRef(useGame.getState().task?.elapsed || 0)
+  const dial = useRef(null)
+  const diff = Math.abs(((angle - target + 540) % 360) - 180)
+  const signal = Math.pow(Math.max(0, Math.cos((diff * Math.PI) / 180)), easy ? 3 : 6)
+  const locked = signal > 0.93
+  const turn = (d) => !done && setAngle((a) => (a + d + 360) % 360)
+  const fromPointer = (e) => {
+    const r = dial.current.getBoundingClientRect()
+    const a = (Math.atan2(e.clientX - (r.left + r.width / 2), -(e.clientY - (r.top + r.height / 2))) * 180) / Math.PI
+    if (!done) setAngle((a + 360) % 360)
+  }
+  // quedarse en la señal fuerte un ratito para fijarla
+  useEffect(() => {
+    if (done) return
+    if (!locked) { setLockT(0); return }
+    const iv = setInterval(() => setLockT((v) => v + 0.1), 100)
+    return () => clearInterval(iv)
+  }, [locked, done])
+  useEffect(() => {
+    if (done || lockT < 1.2) return
+    setDone(true)
+    play('good')
+  }, [lockT, done])
+  useEffect(() => {
+    const down = (e) => {
+      if (useGame.getState().paused) return
+      if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a') turn(-4)
+      if (e.key === 'ArrowRight' || e.key.toLowerCase() === 'd') turn(4)
+    }
+    window.addEventListener('keydown', down)
+    return () => window.removeEventListener('keydown', down)
+  })
+  useEffect(() => { if (!done && signal > 0.6) play('tick') }, [Math.round(signal * 10)]) // eslint-disable-line react-hooks/exhaustive-deps
+  useFinishAfter(done, 1200, () => ({ time: (useGame.getState().task?.elapsed || 0) - t0.current }))
+  const bars = Math.round(signal * 5)
+  return (
+    <Mini title={T('aim.title')} help={T(isTouch ? 'aim.help@touch' : 'aim.help')} done={done && T('aim.done')}>
+      <div className="aim-wrap">
+        <button className="btn aim-turn" onPointerDown={() => turn(-6)} aria-label="◀">◀</button>
+        <svg ref={dial} className="aim-dial" viewBox="0 0 200 200"
+          onPointerDown={(e) => { e.currentTarget.setPointerCapture?.(e.pointerId); fromPointer(e) }}
+          onPointerMove={(e) => e.buttons && fromPointer(e)}>
+          <circle cx="100" cy="100" r="92" fill="#11151f" stroke="#3b4252" strokeWidth="4" />
+          {[...Array(24).keys()].map((i) => <line key={i} x1="100" y1="12" x2="100" y2={i % 6 ? 20 : 26} stroke="#4a5160" strokeWidth="2" transform={`rotate(${i * 15} 100 100)`} />)}
+          {easy && <text x="100" y="100" transform={`rotate(${target} 100 100) translate(0 -70)`} textAnchor="middle" fontSize="16" opacity="0.5">🌍</text>}
+          <g transform={`rotate(${angle} 100 100)`}>
+            <path d="M100 100 L100 30" stroke={locked ? '#7be07b' : '#ffd166'} strokeWidth="6" strokeLinecap="round" />
+            <path d="M78 46 Q100 18 122 46" fill="none" stroke={locked ? '#7be07b' : '#ffd166'} strokeWidth="7" strokeLinecap="round" />
+          </g>
+          <circle cx="100" cy="100" r="12" fill="#d9d2c6" />
+        </svg>
+        <button className="btn aim-turn" onPointerDown={() => turn(6)} aria-label="▶">▶</button>
+        <div className={'aim-signal' + (locked ? ' on' : '')}>
+          <div className="aim-bars">{[1, 2, 3, 4, 5].map((b) => <i key={b} className={b <= bars ? 'on' : ''} style={{ height: 8 + b * 8 }} />)}</div>
+          <small>{locked ? T('aim.hold') : T('aim.signal')}</small>
+        </div>
       </div>
     </Mini>
   )

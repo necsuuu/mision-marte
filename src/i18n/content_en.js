@@ -163,6 +163,28 @@ export const CONTENT_EN = {
         { label: '🏠 Stay at the base', hint: 'no risk', outcome: '😴 The crew rested: +4 ❤️' },
       ],
     },
+    help_water: {
+      title: 'The botanist needs help',
+      text: 'The hydroponic greenhouse watering got out of balance.',
+      ask: 'Commander! Can you help me with the watering?',
+      talk: 'Each tray needs just the right amount of water: up to the green band. Too much and it overflows and the roots drown. Can you give me a hand?',
+      fact: 'In hydroponics plants grow without soil: the roots take water and nutrients from a liquid. It saves water, which is very precious on Mars.',
+      choices: [
+        { label: 'Sure, I\'ll help!', outcome: '💧🌱 Watering fixed!' },
+        { label: 'Not now', outcome: '🌱 He fixed it alone, more slowly (+2 🥔).' },
+      ],
+    },
+    help_antenna: {
+      title: 'The engineer needs help',
+      text: 'The antenna lost the signal with Earth.',
+      ask: 'Commander! We lost the signal with Earth',
+      talk: 'We need to aim the antenna again. Turn it slowly until the signal reaches the top and stay there. Will you help me?',
+      fact: 'NASA talks to its spacecraft with the Deep Space Network: giant antennas in California, Spain and Australia. As Earth turns, one of them is always facing Mars.',
+      choices: [
+        { label: 'Sure, I\'ll help!', outcome: '📡✅ Signal with Earth!' },
+        { label: 'Not now', outcome: '📡 The engineer aimed it alone; it took all afternoon (+1 🔬).' },
+      ],
+    },
     supply: {
       title: 'A capsule from Earth has arrived!',
       text: 'Halfway through the mission: Earth sent cargo. The rover can only bring ONE crate before night. Which one?',

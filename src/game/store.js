@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import {
-  ITEMS, CAPACITY, LOAD_SECONDS, BASE, EVENTS, HELP_EVENTS, SOLS, REPAIRS, LEAK_O2, ICE_MINE_O2, MID_SOL, SUPPLY_EVENT,
+  ITEMS, CAPACITY, LOAD_SECONDS, BASE, EVENTS, HELP_EVENTS, BUILD_HELP_EVENT, SOLS, REPAIRS, LEAK_O2, ICE_MINE_O2, MID_SOL, SUPPLY_EVENT,
   BUILDS, BUILD_FX, BUILD_FROM_SOL, MISSION_FROM_SOL, MISSION_BONUS, EXPEDITION_EVENT, EXPEDITION_FROM_SOL, EXPEDITION_MAX,
 } from './content'
 import { loadSpaceWeather, buildSolWeather } from '../data/donki'
@@ -208,7 +208,8 @@ export const MAX_CARRY = 2
 
 const ALL_EVENTS = [...EVENTS, ...HELP_EVENTS]
 /** Una tarea nueva, recién empezada. */
-const newTask = (id, choiceIdx) => ({ id, choiceIdx, elapsed: 0, near: null, mini: null, busy: null, cleaned: [], found: [], arrived: false, talked: false })
+// en la expedición, antes de salir se elige quién acompaña en el rover
+const newTask = (id, choiceIdx) => ({ id, choiceIdx, elapsed: 0, near: null, mini: id === 'drive' ? 'mate' : null, busy: null, cleaned: [], found: [], arrived: false, talked: false, mate: null })
 
 /** Pone primero en el mazo un evento que se resuelve a mano, así en los primeros soles se juega al menos uno. */
 function handsOnFirst(deck) {
@@ -271,6 +272,7 @@ const initialState = {
   plan: [],
   alloc: { ...emptyAlloc },
   today: { chipsPenalty: 0, blockScience: false, bonus: 0 },
+  lastBuildHelp: 0, // último sol en que la ingeniera pidió ayuda con la obra
   build: { active: null, progress: {}, done: [] }, // 🏗️ obra elegida, avance de cada una y las terminadas
   mission: null, // 🎯 misión de hoy: { id }
   medals: 0, // 🏅 misiones cumplidas
@@ -436,12 +438,17 @@ export const useGame = create((set, get) => ({
     const sites = EXPEDITION_EVENT.choices.map((c) => c.site).filter((x) => x && !s.visited.includes(x))
     const canExplore = !(storm && storm.level > 0) && s.sol >= EXPEDITION_FROM_SOL && s.sol !== MID_SOL && s.expeditions < EXPEDITION_MAX && s.sol - s.lastExpedition >= 2 && sites.length > 0
     let lastExpedition = s.lastExpedition
+    let lastBuildHelp = s.lastBuildHelp
     if (s.sol === MID_SOL) {
       // 📦 Mitad de misión: siempre llega la cápsula de carga (y ese día no hay otro evento)
       cards.push({ type: 'event', event: SUPPLY_EVENT })
     } else if (canExplore && Math.random() < (s.expeditions === 0 && s.sol >= 4 ? 0.85 : 0.5)) {
       cards.push({ type: 'event', event: EXPEDITION_EVENT, sites: shuffle(sites).slice(0, 2) })
       lastExpedition = s.sol
+    } else if (s.build.active && buildLeft(s, s.build.active) >= 2 && s.sol - s.lastBuildHelp >= 3 && Math.random() < 0.5) {
+      // 🏗️ hay una obra a medio hacer: la ingeniera pide una mano
+      cards.push({ type: 'event', event: BUILD_HELP_EVENT })
+      lastBuildHelp = s.sol
     } else if (Math.random() < eventChance) {
       if (!deck.length) deck = shuffle(ALL_EVENTS.filter((e) => !e.requires || s.inventory[e.requires]))
       // No repetir la fuga si ya hay una abierta
@@ -452,7 +459,7 @@ export const useGame = create((set, get) => ({
       deck = deck.filter((_, i) => i !== idx)
     }
     set({
-      cards, eventDeck: deck, cardResult: null, lastExpedition,
+      cards, eventDeck: deck, cardResult: null, lastExpedition, lastBuildHelp,
       phase: 'dawn',
       today: { chipsPenalty: 0, blockScience: false, bonus: s.bonusNext },
       bonusNext: 0,
@@ -517,7 +524,8 @@ export const useGame = create((set, get) => ({
     const spot = taskSpots(s).find((p) => p.id === spotId)
     if (!spot || spot.done) return
     if (spot.act === 'clean') set({ task: { ...t, busy: spotId } })
-    else if (spot.act === 'arrive') set({ task: { ...t, arrived: true, near: null } })
+    else if (spot.act === 'arrive' || spot.act === 'pick') set({ task: { ...t, arrived: true, near: null } })
+    else if (spot.act === 'home') get().finishTask({ time: t.elapsed })
     else if (spot.act === 'collect') {
       const found = [...t.found, Number(spotId.slice(6))]
       set({ task: { ...t, found, near: null } })
@@ -639,11 +647,17 @@ function applyEffects(s, e = {}, fx) {
   if (e.dust) patch.dust = { ...e.dust }
   if (e.chipsPenalty || e.blockScience) {
     patch.today = {
+      ...s.today,
       chipsPenalty: s.today.chipsPenalty + (e.chipsPenalty || 0),
       blockScience: s.today.blockScience || !!e.blockScience,
     }
   }
   if (e.bonusNext) patch.bonusNext = s.bonusNext + e.bonusNext
+  // 🏗️ la obra avanza (nunca la termina: el último paso se hace de noche con la energía del plan)
+  if (e.buildProgress && s.build.active) {
+    const id = s.build.active
+    patch.build = { ...s.build, progress: { ...s.build.progress, [id]: (s.build.progress[id] || 0) + e.buildProgress } }
+  }
   if (e.useItem) patch.inventory = { ...s.inventory, [e.useItem]: Math.max(0, (s.inventory[e.useItem] || 0) - 1) }
   // Cambios que quedan en la base
   if (e.leak) base.leak = true

@@ -4,15 +4,12 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useGame } from '../game/store'
 import { BUILDS } from '../game/content'
-import { SITES } from '../game/tasks'
+import { SITES, BUILD_POS } from '../game/tasks'
+
+export { BUILD_POS }
 import { terrainHeight } from './terrain'
 
 // ---------- Dónde va cada obra ----------
-export const BUILD_POS = {
-  shelter: [-3.6, 0, -6.6],
-  farm: [-8.2, 0, 6.8],
-  lab: [11.6, 0, 5.4],
-}
 
 /** Cartel de "en obra": piso marcado y cuatro postes naranjas. */
 function Site({ r = 2 }) {

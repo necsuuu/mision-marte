@@ -2,7 +2,7 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { Html } from '@react-three/drei'
-import { TASKS } from '../game/tasks'
+import { TASKS, helperSpot } from '../game/tasks'
 import { t, locEvent } from '../i18n/core'
 import * as THREE from 'three'
 import { rng } from './noise'
@@ -574,7 +574,9 @@ export function Crew() {
   const commanderTo = EVA_FX[fx] || null
   // 🛠️ durante una tarea, el compañero que sabe del tema va al lugar y le habla al comandante
   const helper = task ? TASKS[task.id] : null
-  const at = (id) => (helper?.crew === id ? helper.helperAt : null)
+  const buildId = useGame((s) => s.build.active)
+  const spot = useMemo(() => helperSpot({ task, build: { active: buildId } }), [task?.id, buildId]) // eslint-disable-line react-hooks/exhaustive-deps
+  const at = (id) => (helper?.crew === id ? spot : null)
   const talking = (id) => helper?.crew === id || asking === id
   return (
     <>

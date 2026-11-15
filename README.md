@@ -138,6 +138,10 @@ Cada sol tiene este ciclo:
 | 🌪️ Tormenta de polvo (salir a limpiar) | Ir panel por panel limpiándolos antes de que llegue el polvo (45 s; 70 s para cadetes) | Cuantos más paneles limpios, más ⚡ dan los próximos soles |
 | ⚡ Panel roto (kit o EVA) | Ir a la caja de cables del panel caído y unir cada cable con el enchufe de su mismo color y forma | Cada equivocación es un chispazo: −1 ⚡ ese día (hasta −2) |
 | 🥀 Plantas enfermas (sacarlas) | Entrar al invernadero y elegir cuáles sacar: las enfermas tienen hojas amarillas con manchas | Sacar sanas o dejar enfermas cuesta comida; hacerlo bien cuesta menos que antes |
+| 🤒 Alguien se siente mal (kit médico) | Ir a la enfermería del domo, mirar los 2 síntomas y elegir del kit solo lo que sirve | Cada cosa justa suma ❤️ y cada cosa de más resta (de +7 a 0) |
+| 🦴 Huesos más débiles (bici) | Pedalear en la bici del domo manteniendo la aguja en la zona verde durante 10 s | Cuanto más parejo, más ❤️ (de +2 a +5) |
+| 🪨 Roca rara (ir a buscarla) | Salir con el traje, agarrar la roca y volver a la puerta del domo | Mientras se está afuera se gasta aire: de −4 a −10 🫁 según lo que se tarde |
+| 🧊 Hielo (construir la mina) | Ir hasta el hielo y frenar la mecha en la zona verde, 3 intentos | 3 aciertos: la mina cuesta −1 ⚡ hoy; 2: −2; menos: −3 |
 
 - **Compañeros que ayudan:** la ingeniera 🔧 o el botánico 🌱 (según el problema) va al lugar y le habla al comandante: primero avisa qué pasó, cuando llega le explica qué hacer y, si tarda, le indica el camino.
 - **Controles:** tocar o hacer clic en el piso para caminar, W A S D o flechas, y E (o el botón ✋, o tocar el ícono del lugar) para usar. Tocar el ícono hace que el comandante vaya solo y lo use al llegar.
@@ -152,7 +156,9 @@ Cada sol tiene este ciclo:
 | 💧 El botánico: el riego se desajustó | Llenar 3 bandejas hasta la franja verde; cada manguera da distinta cantidad y si se pasa se rebalsa | +3 🥔 por bandeja en su punto, −2 por cada una rebalsada (si no se ayuda: +2 🥔) |
 | 📡 La ingeniera: se perdió la señal con la Tierra | Girar la antena (arrastrando el dial, con ◀ ▶ o las flechas) hasta que la señal llegue al máximo y quedarse ahí | +2 🔬, +3 si se encuentra en 12 s o menos (si no se ayuda: +1 🔬) |
 
-**🚙 Expediciones manejando el rover.** Al elegir un lugar de expedición, el jugador maneja el rover hasta ahí siguiendo la flecha, antes de que se acabe la batería (60 s; 90 s para cadetes). Al llegar aparecen 3 muestras brillantes: pasar por arriba las junta. Cada muestra sube un 8% la chance de que la expedición salga bien (en el cerro, que es seguro, juntar 2 o más da +1 🔬). El "Piloto automático" llega solo pero junta una sola muestra, y si se acaba la batería antes de llegar no se explora.
+**🏗️ Construir con la ingeniera.** Mientras hay una obra a medio hacer, algunas mañanas la ingeniera pide ayuda. En la obra se abre el plano y hay que poner las piezas en orden, de abajo hacia arriba (los cadetes ven el dibujo de cada piso; los mayores, solo el nombre). Sin errores la obra avanza 2 pasos sin gastar energía; con 1 o 2 errores, 1 paso. El último paso siempre se hace de noche con la energía del plan, para que el festejo de obra terminada siga en el reporte.
+
+**🚙 Expediciones manejando el rover.** Antes de salir se elige quién acompaña: la ingeniera cuida la batería (+30 s para manejar) y el botánico sabe elegir muestras (cada una suma 12% en vez de 8%, y en el cerro con una sola ya hay ciencia extra). Después el jugador maneja el rover hasta ahí siguiendo la flecha, antes de que se acabe la batería (60 s; 90 s para cadetes). Al llegar aparecen 3 muestras brillantes: pasar por arriba las junta. Cada muestra sube un 8% la chance de que la expedición salga bien (en el cerro, que es seguro, juntar 2 o más da +1 🔬). El "Piloto automático" llega solo pero junta una sola muestra, y si se acaba la batería antes de llegar no se explora.
 
 **Para que cada sol sea distinto** (los tres sistemas se suman al plan de energía de siempre):
 
@@ -347,7 +353,7 @@ src/
     ├── LaunchUI.jsx        Cuenta regresiva y textos del despegue
     ├── Quiz.jsx            Preguntas de repaso al final de la misión
     ├── ItemCard.jsx        Ficha del objeto con el retrato del comandante
-    ├── TaskUI.jsx          Tarea a mano: objetivo, botón de acción, charla con el compañero y desafíos (grieta, cables, plantas, riego, antena)
+    ├── TaskUI.jsx          Tarea a mano: objetivo, botón de acción, charla con el compañero y desafíos (grieta, cables, plantas, riego, antena, enfermería, bici, hielo, obra y compañero del rover)
     ├── Terminal.jsx        Terminal CRT de decisiones (pantalla + impresora + botón ✓)
     └── Console.jsx         Consola ámbar del reporte nocturno y final
 public/

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useGame } from '../game/store'
-import { TASKS, taskSpots, taskLimit, leakLoss, CIRCUIT_WIRES, PLANT_GRID, WATER_BAND } from '../game/tasks'
+import { TASKS, taskSpots, taskLimit, leakLoss, CIRCUIT_WIRES, PLANT_GRID, WATER_BAND, MATES, SYMPTOMS, KIT, LAYERS, PIECES } from '../game/tasks'
 import { CREW } from '../game/characters'
 import { locEvent } from '../i18n/core'
 import { isTouch } from '../game/device'
@@ -27,6 +27,11 @@ export default function TaskUI() {
         {task.mini === 'talk' && <TalkCard key="talk" />}
         {task.mini === 'water' && <WaterGame key="water" />}
         {task.mini === 'aim' && <AimGame key="aim" />}
+        {task.mini === 'mate' && <MateCard key="mate" />}
+        {task.mini === 'medic' && <MedicGame key="medic" />}
+        {task.mini === 'bike' && <BikeGame key="bike" />}
+        {task.mini === 'drill' && <DrillGame key="drill" />}
+        {task.mini === 'assemble' && <AssembleGame key="assemble" />}
       </AnimatePresence>
     </>
   )
@@ -43,7 +48,7 @@ function TaskBanner() {
   const lim = taskLimit(s)
   const left = lim ? Math.max(0, Math.ceil(lim - task.elapsed)) : null
   const ev = s.cards[0]?.event
-  const stage = task.id === 'drive' ? (task.arrived ? '.found' : '') : def.talk ? (task.talked ? '.work' : '') : ''
+  const stage = task.id === 'drive' ? (task.arrived ? '.found' : '') : task.id === 'rock' ? (task.arrived ? '.back' : '') : def.talk ? (task.talked ? '.work' : '') : ''
   const goal = near ? T('task.at', { act: T('task.act.' + near.act) }) : T('task.goal.' + task.id + stage)
   useSpeak(T('task.goal.' + task.id + stage))
   const crewLabel = ev?.direct ? '🙅 ' + T('task.notNow') : task.id === 'drive' ? '🤖 ' + T('task.autopilot') : '🤖 ' + T('task.crewDo')
@@ -565,6 +570,229 @@ function AimGame() {
           <small>{locked ? T('aim.hold') : T('aim.signal')}</small>
         </div>
       </div>
+    </Mini>
+  )
+}
+
+/** Un reloj que avanza con requestAnimationFrame y se frena con la pausa. Llama a tick(dt, total). */
+function useLoop(tick, running = true) {
+  const fn = useRef(tick)
+  fn.current = tick
+  useEffect(() => {
+    if (!running) return
+    let raf = 0
+    let last = performance.now()
+    let total = 0
+    const step = (now) => {
+      const dt = Math.min(0.1, (now - last) / 1000)
+      last = now
+      if (!useGame.getState().paused) { total += dt; fn.current(dt, total) }
+      raf = requestAnimationFrame(step)
+    }
+    raf = requestAnimationFrame(step)
+    return () => cancelAnimationFrame(raf)
+  }, [running])
+}
+
+/** Teclas para el botón principal de un desafío (espacio, E o Enter). */
+function useActionKey(fn) {
+  const ref = useRef(fn)
+  ref.current = fn
+  useEffect(() => {
+    const down = (e) => {
+      if (useGame.getState().paused || e.repeat) return
+      const k = e.key.toLowerCase()
+      if (k === ' ' || k === 'e' || k === 'enter' || k === 'arrowleft' || k === 'arrowright' || k === 'a' || k === 'd') { e.preventDefault(); ref.current(k) }
+    }
+    window.addEventListener('keydown', down)
+    return () => window.removeEventListener('keydown', down)
+  }, [])
+}
+
+// ---------- 🚙 ¿Quién va en el rover? ----------
+function MateCard() {
+  const T = useT()
+  const s = useGame()
+  useSpeak(T('mate.title') + '. ' + T('mate.help'))
+  const pick = (id) => { play('pick'); s.taskPatch({ mate: id, mini: null }) }
+  return (
+    <motion.div className="mini-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+      <motion.div className="mini-card mate-card" initial={{ scale: 0.85, y: 30 }} animate={{ scale: 1, y: 0 }} transition={{ type: 'spring', damping: 18 }}>
+        <div className="mini-head"><b>{T('mate.title')}</b><small>{T('mate.help')}</small></div>
+        <div className="mates">
+          {CREW.map((c) => (
+            <button key={c.id} className="mate" onClick={() => pick(c.id)}>
+              <img src={c.sprite} alt="" />
+              <b>{c.emoji} {T('crew.name.' + c.id)}</b>
+              <small>{T('mate.' + c.id, { s: MATES[c.id].battery, pct: Math.round(MATES[c.id].perSample * 100) })}</small>
+            </button>
+          ))}
+        </div>
+      </motion.div>
+    </motion.div>
+  )
+}
+
+// ---------- ⛑️ Enfermería: elegir del kit lo que sirve para cada síntoma ----------
+function MedicGame() {
+  const T = useT()
+  const [sym] = useState(() => [...SYMPTOMS].sort(() => Math.random() - 0.5).slice(0, 2))
+  const [kit] = useState(() => [...KIT].sort(() => Math.random() - 0.5))
+  const [sel, setSel] = useState([])
+  const [checked, setChecked] = useState(false)
+  const needs = sym.map((x) => x.fix)
+  const right = sel.filter((id) => needs.includes(id)).length
+  const wrong = sel.length - right
+  const toggle = (id) => { if (checked) return; play('tick'); setSel((v) => (v.includes(id) ? v.filter((x) => x !== id) : [...v, id])) }
+  const finish = () => { if (checked) return; setChecked(true); play(right === 2 && !wrong ? 'good' : 'deny') }
+  useFinishAfter(checked, 1700, () => ({ right, wrong }))
+  const mark = (id) => (!checked ? null : needs.includes(id) ? (sel.includes(id) ? '✅' : '⚠️') : sel.includes(id) ? '❌' : null)
+  return (
+    <Mini title={T('medic.title')} help={T(isTouch ? 'medic.help@touch' : 'medic.help')} done={checked && (right === 2 && !wrong ? T('medic.done') : T('medic.some', { ok: right }))}>
+      <div className="symptoms">
+        {sym.map((x) => <div key={x.id} className="symptom"><span>{x.icon}</span><b>{T('sym.' + x.id)}</b></div>)}
+      </div>
+      <div className="kit">
+        {kit.map((k) => (
+          <button key={k.id} className={'kit-item' + (sel.includes(k.id) ? ' on' : '')} onClick={() => toggle(k.id)} disabled={checked}>
+            <span>{k.icon}</span><small>{T('kit.' + k.id)}</small>{mark(k.id) && <i>{mark(k.id)}</i>}
+          </button>
+        ))}
+      </div>
+      <div className="mini-foot">
+        <span>{T('medic.chosen', { n: sel.length })}</span>
+        <button className="btn primary" onClick={finish} disabled={checked || !sel.length}>✔ {T('plants.ok')}</button>
+      </div>
+    </Mini>
+  )
+}
+
+// ---------- 🚴 Bici: pedalear parejo para mantener la velocidad en la zona verde ----------
+const BIKE_SECONDS = 10
+function BikeGame() {
+  const T = useT()
+  const easy = useGame((s) => s.easy)
+  const [lo, hi] = easy ? [35, 75] : [45, 72]
+  const [v, setV] = useState(10)
+  const [time, setTime] = useState(0)
+  const [inZone, setInZone] = useState(0)
+  const [done, setDone] = useState(false)
+  const vRef = useRef(10)
+  const zoneRef = useRef(0)
+  const endRef = useRef(false)
+  useLoop((dt, total) => {
+    vRef.current = Math.max(0, vRef.current - dt * 26)
+    if (vRef.current >= lo && vRef.current <= hi) zoneRef.current += dt
+    setV(vRef.current)
+    setInZone(zoneRef.current)
+    setTime(total)
+    if (total >= BIKE_SECONDS && !endRef.current) { endRef.current = true; setDone(true); play(zoneRef.current >= 6 ? 'good' : 'deny') }
+  }, !done)
+  const pedal = () => { if (done) return; vRef.current = Math.min(100, vRef.current + 11); play('tick') }
+  useActionKey(pedal)
+  const ok = v >= lo && v <= hi
+  useFinishAfter(done, 1300, () => ({ ratio: zoneRef.current / 7 }))
+  return (
+    <Mini title={T('bike.title')} help={T(isTouch ? 'bike.help@touch' : 'bike.help')} done={done && T('bike.done', { pct: Math.round(100 * Math.min(1, inZone / 7)) })}>
+      <div className="bike">
+        <div className="bike-meter">
+          <div className="bike-zone" style={{ left: `${lo}%`, width: `${hi - lo}%` }} />
+          <div className={'bike-needle' + (ok ? ' ok' : '')} style={{ left: `${v}%` }} />
+          <span className="bike-l">🐢</span><span className="bike-r">🚀</span>
+        </div>
+        <motion.button className="btn primary bike-btn" whileTap={{ scale: 0.9 }} onPointerDown={(e) => { e.preventDefault(); pedal() }} disabled={done}>
+          <motion.span animate={{ rotate: v * 7.2 }}>🚴</motion.span> {T('bike.pedal')} {!isTouch && <kbd>␣</kbd>}
+        </motion.button>
+        <div className="mini-bar"><div style={{ width: `${(100 * time) / BIKE_SECONDS}%` }} /></div>
+        <small>{T('bike.inZone', { s: inZone.toFixed(1) })}</small>
+      </div>
+    </Mini>
+  )
+}
+
+// ---------- 🧊 Mina de hielo: frenar la mecha justo en la zona verde (3 intentos) ----------
+function DrillGame() {
+  const T = useT()
+  const easy = useGame((s) => s.easy)
+  const [tries, setTries] = useState([]) // true = acertó
+  const [zone, setZone] = useState(() => ({ at: 30 + Math.random() * 45, w: easy ? 24 : 18 }))
+  const [x, setX] = useState(0)
+  const xRef = useRef(0)
+  const hold = useRef(0) // un ratito quieta después de cada intento
+  const done = tries.length >= 3
+  useLoop((dt, total) => {
+    if (hold.current > 0) { hold.current -= dt; return }
+    const speed = easy ? 1.2 : 1.6 + tries.length * 0.25
+    xRef.current = 50 + 48 * Math.sin(total * speed)
+    setX(xRef.current)
+  }, !done)
+  const hit = () => {
+    if (done || hold.current > 0) return
+    const ok = x >= zone.at && x <= zone.at + zone.w // se compara con lo que se ve en pantalla (justo para el jugador)
+    play(ok ? 'good' : 'deny')
+    setTries((v) => [...v, ok])
+    hold.current = 0.7
+    setZone((z) => ({ at: 15 + Math.random() * 60, w: Math.max(12, z.w - 2) }))
+  }
+  useActionKey(hit)
+  const hits = tries.filter(Boolean).length
+  useFinishAfter(done, 1300, () => ({ hits }))
+  return (
+    <Mini title={T('drill.title')} help={T(isTouch ? 'drill.help@touch' : 'drill.help')} done={done && T('drill.done', { n: hits })}>
+      <div className="drill">
+        <div className="drill-bar">
+          {!done && <div className="drill-zone" style={{ left: `${zone.at}%`, width: `${zone.w}%` }} />}
+          <div className="drill-needle" style={{ left: `${x}%` }}>⛏️</div>
+        </div>
+        <div className="drill-tries">{[0, 1, 2].map((i) => <span key={i}>{tries[i] === undefined ? '⚪' : tries[i] ? '🧊' : '💥'}</span>)}</div>
+        <motion.button className="btn primary" whileTap={{ scale: 0.92 }} onPointerDown={(e) => { e.preventDefault(); hit() }} disabled={done}>
+          ⛏️ {T('drill.go')} {!isTouch && <kbd>␣</kbd>}
+        </motion.button>
+      </div>
+    </Mini>
+  )
+}
+
+// ---------- 🏗️ Obra: poner las piezas en orden, de abajo hacia arriba ----------
+function AssembleGame() {
+  const T = useT()
+  const easy = useGame((s) => s.easy)
+  const id = useGame((s) => s.build.active) || 'shelter'
+  const layers = LAYERS[id]
+  const [pieces] = useState(() => [...layers].sort(() => Math.random() - 0.5))
+  const [placed, setPlaced] = useState(0)
+  const [wrong, setWrong] = useState(0)
+  const [shake, setShake] = useState(null)
+  const done = placed >= layers.length
+  const pick = (p) => {
+    if (done || layers.slice(0, placed).includes(p)) return
+    if (p === layers[placed]) { play('good'); setPlaced((n) => n + 1) }
+    else { play('deny'); setWrong((n) => n + 1); setShake(p); setTimeout(() => setShake(null), 400) }
+  }
+  useFinishAfter(done, 1300, () => ({ wrong }))
+  return (
+    <Mini title={T('asm.title', { b: T('asm.' + id) })} help={T(isTouch ? 'asm.help@touch' : 'asm.help')} done={done && (wrong === 0 ? T('asm.done') : T('asm.some', { n: wrong }))}>
+      <div className="assemble">
+        <div className="blueprint">
+          {[...layers].reverse().map((l) => {
+            const i = layers.indexOf(l)
+            return (
+              <div key={l} className={'bp-row' + (i < placed ? ' done' : i === placed ? ' now' : '')}>
+                <span className="bp-icon">{i < placed || easy ? PIECES[l] : '❔'}</span>
+                <small>{i + 1}. {T('piece.' + l)}</small>
+              </div>
+            )
+          })}
+        </div>
+        <div className="pieces">
+          {pieces.map((p) => (
+            <motion.button key={p} className={'piece' + (layers.slice(0, placed).includes(p) ? ' used' : '')} animate={shake === p ? { x: [0, -8, 8, -6, 0] } : { x: 0 }} onClick={() => pick(p)} disabled={done}>
+              <span>{PIECES[p]}</span><small>{T('piece.' + p)}</small>
+            </motion.button>
+          ))}
+        </div>
+      </div>
+      <div className="mini-foot"><span>{T('asm.mistakes', { n: wrong })}</span></div>
     </Mini>
   )
 }

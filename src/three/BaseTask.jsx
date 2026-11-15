@@ -169,7 +169,7 @@ function TaskPlayer() {
     }
 
     // reloj de la tarea: se publica 5 veces por segundo (no en cada cuadro, para no redibujar la interfaz de más)
-    clock.current += dt
+    if (!(task.id === 'drive' && task.mini)) clock.current += dt // la batería no corre mientras se elige compañero
     pub.current += dt
     if (pub.current > 0.2) {
       pub.current = 0
@@ -267,7 +267,7 @@ function Spots() {
   const spots = taskSpots(s)
   const def = TASKS[s.task.id]
   const n = nearestSpot(spots, taskPlayer)
-  const icons = { collect: '🪨', talk: '💬', arrive: '🚩' }
+  const icons = { collect: '🪨', talk: '💬', arrive: '🚩', pick: '🪨', home: '🏠' }
   return spots.filter((sp) => !sp.done).map((sp) => (
     <Spot key={sp.id} spot={sp} icon={icons[sp.act] || def.icon} label={t(s.lang, 'task.act.' + sp.act)} current={n?.spot.id === sp.id} />
   ))

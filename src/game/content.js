@@ -119,7 +119,7 @@ export const EVENTS = [
     text: 'Bajo la arena hay hielo de agua. Con electricidad se puede sacar oxígeno.',
     fact: 'Hay mucho hielo de agua enterrado en Marte. Es clave para futuras bases.',
     choices: [
-      { label: 'Construir una mina de hielo', hint: '−2 ⚡ hoy · +5 🫁 cada sol', effects: { chipsPenalty: 2, o2: 10, iceMine: true }, fx: 'icemine', outcome: '⛏️🧊 ¡Mina de hielo lista! +5 🫁 todos los soles.' },
+      { label: 'Construir una mina de hielo', hint: '−2 ⚡ hoy · +5 🫁 cada sol', task: 'drill', effects: { chipsPenalty: 2, o2: 10, iceMine: true }, fx: 'icemine', outcome: '⛏️🧊 ¡Mina de hielo lista! +5 🫁 todos los soles.' },
       { label: 'Solo estudiarlo', hint: '+3 🔬', effects: { science: 3 }, fx: 'study', outcome: '🔬 Datos enviados a la Tierra (+3 ciencia).' },
     ],
   },
@@ -137,7 +137,7 @@ export const EVENTS = [
     text: 'Fiebre y cansancio. En el espacio el sistema inmune funciona distinto.',
     fact: 'Estudios de la NASA (repositorio OSDR) muestran que los vuelos espaciales cambian el sistema inmune.',
     choices: [
-      { label: 'Usar el kit médico', requires: 'medkit', hint: '⛑️', effects: { useItem: 'medkit', health: 5 }, fx: 'healed', outcome: '⛑️💚 ¡Recuperado!' },
+      { label: 'Usar el kit médico', requires: 'medkit', hint: '⛑️', task: 'medic', effects: { useItem: 'medkit', health: 5 }, fx: 'healed', outcome: '⛑️💚 ¡Recuperado!' },
       { label: 'Que descanse hoy', hint: 'Sin 🔬 hoy', effects: { blockScience: true }, fx: 'rest', outcome: '😴 Descansó. Hoy no hay ciencia.' },
       { label: 'Seguir trabajando', hint: '−15 ❤️', effects: { health: -15 }, fx: 'worse', outcome: '🤒⬇️ Empeoró. La salud del equipo bajó.' },
     ],
@@ -147,7 +147,7 @@ export const EVENTS = [
     text: 'En Marte la gravedad es solo el 38% de la de la Tierra. Los huesos y músculos se debilitan.',
     fact: 'En el espacio los astronautas pueden perder cerca de 1% de su masa ósea por mes. Por eso hacen ejercicio todos los días.',
     choices: [
-      { label: 'Ejercicio en la bici', hint: '−1 ⚡ · +5 ❤️', effects: { chipsPenalty: 1, health: 5 }, fx: 'healed', outcome: '🚴💪 ¡Huesos fuertes!' },
+      { label: 'Ejercicio en la bici', hint: '−1 ⚡ · +5 ❤️', task: 'bike', effects: { chipsPenalty: 1, health: 5 }, fx: 'healed', outcome: '🚴💪 ¡Huesos fuertes!' },
       { label: 'Saltear el ejercicio', hint: '−8 ❤️', effects: { health: -8 }, fx: 'worse', outcome: '🦴⬇️ El cuerpo lo siente.' },
     ],
   },
@@ -178,7 +178,7 @@ export const EVENTS = [
     text: 'Una roca con capas, como si hubiera estado bajo el agua hace millones de años.',
     fact: 'Curiosity y Perseverance encontraron rocas que se formaron en lagos y ríos de Marte hace miles de millones de años.',
     choices: [
-      { label: 'Ir a buscarla (EVA)', hint: '−8 🫁 · +4 🔬', effects: { o2: -8, science: 4, dose: 0.2, sample: true }, fx: 'sample', outcome: '🪨📦 ¡Muestra guardada en la base!' },
+      { label: 'Ir a buscarla (EVA)', hint: '−8 🫁 · +4 🔬', task: 'rock', effects: { o2: -8, science: 4, dose: 0.2, sample: true }, fx: 'sample', outcome: '🪨📦 ¡Muestra guardada en la base!' },
       { label: 'Sacarle fotos', hint: '+1 🔬', effects: { science: 1 }, fx: 'study', outcome: '📸 Algo es algo.' },
     ],
   },
@@ -219,6 +219,22 @@ export const HELP_EVENTS = [
     ],
   },
 ]
+
+/**
+ * 🏗️ La ingeniera pide ayuda con la obra que se está construyendo (no está en el mazo: aparece
+ * algunas mañanas mientras hay una obra a medio hacer). Si se la ayuda bien, la obra avanza sin gastar energía.
+ */
+export const BUILD_HELP_EVENT = {
+  id: 'help_build', direct: true, good: true, crew: 'engineer', emoji: '🏗️', title: 'La ingeniera pide ayuda', scene: 'dome', incident: 'help',
+  text: 'La obra necesita otro par de manos.',
+  ask: '¡Comandante! ¿Me das una mano con la obra?',
+  talk: 'Hoy podemos adelantar la obra sin gastar energía. Hay que poner las piezas en orden, de abajo hacia arriba: mirá el plano y elegí la que va en cada piso.',
+  fact: 'Los ingenieros de la NASA estudian cómo construir en Marte con robots e impresoras 3D que usen el mismo suelo marciano (regolito), así no hay que traer todo desde la Tierra.',
+  choices: [
+    { label: '¡Dale, te ayudo!', task: 'assemble', effects: {}, fx: 'found', outcome: '🏗️ ¡Trabajo en equipo!' },
+    { label: 'Ahora no', effects: {}, fx: 'rest', outcome: '🏗️ La obra sigue como estaba.' },
+  ],
+}
 
 /**
  * 📦 Evento especial de mitad de misión: no sale al azar, llega siempre en el sol MID_SOL.

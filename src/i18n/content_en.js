@@ -185,6 +185,17 @@ export const CONTENT_EN = {
         { label: 'Not now', outcome: '📡 The engineer aimed it alone; it took all afternoon (+1 🔬).' },
       ],
     },
+    help_build: {
+      title: 'The engineer needs help',
+      text: 'The construction needs another pair of hands.',
+      ask: 'Commander! Can you give me a hand with the build?',
+      talk: 'Today we can move the build forward without spending energy. The pieces go in order, from the bottom up: look at the plan and pick the one for each level.',
+      fact: 'NASA engineers study how to build on Mars with robots and 3D printers that use Martian soil itself (regolith), so not everything has to come from Earth.',
+      choices: [
+        { label: 'Sure, I\'ll help!', outcome: '🏗️ Teamwork!' },
+        { label: 'Not now', outcome: '🏗️ The build stays as it was.' },
+      ],
+    },
     supply: {
       title: 'A capsule from Earth has arrived!',
       text: 'Halfway through the mission: Earth sent cargo. The rover can only bring ONE crate before night. Which one?',

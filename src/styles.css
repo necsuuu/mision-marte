@@ -906,6 +906,44 @@ p { margin: 0 0 0.8em; line-height: 1.5; }
 .aim-signal.on .aim-bars i.on { background: #7be07b; box-shadow: 0 0 8px #7be07b; }
 .aim-signal small { font-weight: 700; }
 
+/* ================= v0.19: enfermería, bici, mina de hielo, compañero del rover y obras ================= */
+.mates { display: flex; justify-content: center; gap: 16px; flex-wrap: wrap; }
+.mate { display: grid; justify-items: center; gap: 6px; width: min(240px, 42vw); padding: 12px; border-radius: 16px; border: 2px solid #3b4252; background: #11151f; color: inherit; font: inherit; cursor: pointer; }
+.mate:hover, .mate:focus-visible { border-color: #ffd166; transform: translateY(-2px); }
+.mate img { height: min(150px, calc(var(--vh) * 22)); }
+.mate b { font: 600 1.1rem 'Fredoka', sans-serif; }
+.mate small { text-align: center; opacity: 0.9; }
+.symptoms { display: flex; justify-content: center; gap: 12px; margin-bottom: 10px; }
+.symptom { display: flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 999px; background: rgba(255, 107, 107, 0.15); border: 2px solid #ff6b6b; }
+.symptom span { font-size: 1.6rem; }
+.kit { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.kit-item { position: relative; display: grid; justify-items: center; gap: 2px; padding: 10px 6px; border-radius: 14px; border: 2px solid #3b4252; background: #11151f; color: inherit; font: inherit; cursor: pointer; }
+.kit-item span { font-size: 2rem; }
+.kit-item.on { border-color: #ffd166; background: rgba(255, 209, 102, 0.12); }
+.kit-item i { position: absolute; top: 4px; right: 6px; font-style: normal; }
+.bike, .drill { display: grid; justify-items: center; gap: 14px; }
+.bike-meter, .drill-bar { position: relative; width: min(520px, 80vw); height: 42px; border-radius: 12px; background: #0d1018; border: 3px solid #4a5160; }
+.bike-zone, .drill-zone { position: absolute; top: 0; bottom: 0; background: rgba(123, 224, 123, 0.35); border-left: 2px dashed #7be07b; border-right: 2px dashed #7be07b; }
+.bike-needle { position: absolute; top: -6px; bottom: -6px; width: 6px; margin-left: -3px; border-radius: 3px; background: #ffd166; transition: left 0.05s linear; }
+.bike-needle.ok { background: #7be07b; box-shadow: 0 0 10px #7be07b; }
+.bike-l, .bike-r { position: absolute; top: 50%; transform: translateY(-50%); font-size: 1.2rem; }
+.bike-l { left: -30px; } .bike-r { right: -32px; }
+.bike-btn, .drill .btn { font-size: 1.2rem; padding: 12px 26px; touch-action: manipulation; }
+.bike-btn span { display: inline-block; }
+.bike .mini-bar { width: min(520px, 80vw); }
+.drill-needle { position: absolute; top: 50%; transform: translate(-50%, -50%); font-size: 1.7rem; }
+.drill-tries { display: flex; gap: 10px; font-size: 1.6rem; }
+.assemble { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 18px; align-items: center; }
+.blueprint { display: grid; gap: 6px; padding: 10px; border-radius: 14px; background: #10264a; border: 2px dashed #5ad1ff; }
+.bp-row { display: flex; align-items: center; gap: 10px; padding: 6px 12px; border-radius: 10px; border: 2px solid transparent; opacity: 0.55; }
+.bp-row.now { opacity: 1; border-color: #ffd166; box-shadow: 0 0 12px rgba(255, 209, 102, 0.5); }
+.bp-row.done { opacity: 1; background: rgba(123, 224, 123, 0.15); }
+.bp-icon { font-size: 1.6rem; width: 34px; text-align: center; }
+.pieces { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.piece { display: grid; justify-items: center; gap: 2px; padding: 10px; border-radius: 14px; border: 2px solid #3b4252; background: #11151f; color: inherit; font: inherit; cursor: pointer; }
+.piece span { font-size: 2rem; }
+.piece.used { opacity: 0.25; pointer-events: none; }
+
 /* ================= v0.13: celulares de verdad (iPhone y Android) ================= */
 /* Safari en iPhone: que no agrande solo la letra al acostar el teléfono, ni haga zoom con doble toque,
    ni marque texto o rebote la página al arrastrar el dedo */
@@ -1055,6 +1093,21 @@ body { overscroll-behavior: none; -webkit-tap-highlight-color: transparent; }
   .plant-svg { max-height: calc(var(--vh) * 26); }
   .mini-done { font-size: 1.4rem; }
 
+  /* Enfermería, bici, hielo, compañero y obras */
+  .mate img { height: calc(var(--vh) * 24); }
+  .mate { padding: 6px; gap: 2px; }
+  .kit { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+  .kit-item { padding: 4px 2px; }
+  .kit-item span { font-size: 1.5rem; }
+  .kit-item small { font-size: 0.7rem; line-height: 1.1; }
+  .symptoms { margin-bottom: 4px; }
+  .bike, .drill { gap: 6px; }
+  .bike-btn, .drill .btn { padding: 6px 18px; font-size: 1rem; }
+  .bp-row { padding: 2px 8px; }
+  .bp-icon { font-size: 1.2rem; }
+  .piece { padding: 4px; }
+  .piece span { font-size: 1.4rem; }
+  .pieces { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   /* Pedidos de ayuda y rover */
   .talk-overlay { padding-left: var(--gutter); }
   .talk-card { width: calc(100vw - var(--gutter) - 14px); margin-bottom: 4px; padding: 6px 10px 8px; gap: 8px; }

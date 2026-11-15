@@ -13,6 +13,19 @@ const PANELS_AT = [7.5, -2] // centro del grupo de paneles
 /** Posición de cada panel solar (mismo orden y separación que SolarArray en baseParts.jsx). */
 export const panelPos = (i) => [PANELS_AT[0] + (i % 3) * 2.2 - 2.2, 0, PANELS_AT[1] + Math.floor(i / 3) * 2.6]
 
+import { BUILDS } from './content'
+
+const BUILD_COST = Object.fromEntries(BUILDS.map((b) => [b.id, b.cost]))
+
+/** Dónde se levanta cada obra (los dibuja builds.jsx). */
+export const BUILD_POS = {
+  shelter: [-3.6, 0, -6.6],
+  farm: [-8.2, 0, 6.8],
+  lab: [11.6, 0, 5.4],
+}
+/** Dónde aparecen el hielo y la roca rara que encuentra el rover. */
+export const FIND_POS = { ice: [9.5, 0, 8.5], rock: [-4, 0, 11] }
+
 /** Lugares de expedición alrededor de la base (los dibuja builds.jsx). */
 export const SITES = {
   crater: [15, 0, 14],
@@ -68,6 +81,22 @@ export const TASKS = {
   // 🙋 un compañero pide ayuda: primero hay que ir a hablarle, después hacer el trabajo
   water: { icon: '💧', crew: 'botanist', mini: 'water', talk: true, helperAt: [-4.4, 0, 5.4] },
   aim: { icon: '📡', crew: 'engineer', mini: 'aim', talk: true, helperAt: [6.4, 0, -4] },
+  // 🤒 enfermería: elegir del kit médico lo que sirve para lo que tiene el compañero
+  medic: { icon: '⛑️', crew: 'botanist', mini: 'medic', helperAt: [-2.6, 0, 5.4] },
+  // 🚴 bici del domo: pedalear parejo, ni muy lento ni muy rápido
+  bike: { icon: '🚴', crew: 'botanist', mini: 'bike', helperAt: [-2.6, 0, 5.4] },
+  // 🪨 salir con el traje a buscar la roca: mientras se está afuera se gasta aire
+  rock: { icon: '🪨', crew: 'engineer', helperAt: [-1.8, 0, 9.4] },
+  // 🧊 perforar el hielo para la mina: frenar la mecha en la zona verde
+  drill: { icon: '🧊', crew: 'engineer', mini: 'drill', helperAt: [7.4, 0, 9.6] },
+  // 🏗️ ayudar a la ingeniera con la obra: poner las piezas de abajo hacia arriba
+  assemble: { icon: '🏗️', crew: 'engineer', mini: 'assemble', talk: true },
+}
+
+/** Compañero que va en el rover: la ingeniera rinde la batería y el botánico encuentra mejores muestras. */
+export const MATES = {
+  engineer: { battery: 30, perSample: 0.08 },
+  botanist: { battery: 0, perSample: 0.12 },
 }
 
 /** Lugares donde hay que ir en esta tarea: { id, stand (donde se para), at (lo que se marca), label } */
@@ -101,6 +130,26 @@ export function taskSpots(s) {
       }
       return samplesAt(site).map((p, i) => ({ id: 'sample' + i, stand: p, at: [p[0], 0.6, p[2]], act: 'collect', auto: true, small: true, done: t.found.includes(i) }))
     }
+    case 'medic':
+    case 'bike':
+      return [{ id: 'dome', stand: [-1.2, 0, 5.2], at: [-0.6, 2.4, 3.4], act: t.id }]
+    case 'rock': {
+      const [x, , z] = FIND_POS.rock
+      if (t.arrived) return [{ id: 'door', stand: TASK_START, at: [TASK_START[0] - 1, 1.6, TASK_START[2] - 1.2], act: 'home', auto: true }] // ya la tiene: volver al domo
+      return [{ id: 'rock', stand: [x + 0.4, 0, z - 1.3], at: [x, 0.8, z], act: 'pick' }]
+    }
+    case 'drill': {
+      const [x, , z] = FIND_POS.ice
+      return [{ id: 'ice', stand: [x - 1.1, 0, z - 1], at: [x, 0.8, z], act: 'drill' }]
+    }
+    case 'assemble': {
+      const id = s.build?.active
+      if (!id) return []
+      const [x, , z] = BUILD_POS[id]
+      const st = [x + (x > 0 ? -2.6 : 2.6), 0, z + 1.4]
+      if (!t.talked) return [{ id: 'crew', stand: st, at: [x, 1.6, z], act: 'talk' }]
+      return [{ id: 'site', stand: st, at: [x, 1.2, z], act: 'assemble' }]
+    }
     case 'water':
     case 'aim': {
       const d = TASKS[t.id]
@@ -126,8 +175,42 @@ export function timeUpResult(s) {
 export const taskLimit = (s) => {
   const d = TASKS[s.task?.id]
   if (!d?.limit) return null
-  return s.easy ? d.limitCadet : d.limit
+  const extra = s.task.mate ? MATES[s.task.mate].battery : 0 // la ingeniera en el rover: batería que dura más
+  return (s.easy ? d.limitCadet : d.limit) + extra
 }
+/** Dónde espera el compañero en cada tarea (la obra depende de cuál se está construyendo). */
+export function helperSpot(s) {
+  const t = s.task
+  if (!t) return null
+  if (t.id === 'assemble' && s.build?.active) {
+    const [x, , z] = BUILD_POS[s.build.active]
+    return [x + (x > 0 ? -1.4 : 1.4), 0, z + 2.2]
+  }
+  return TASKS[t.id]?.helperAt || null
+}
+
+/** Kit médico: síntomas posibles y lo que sirve para cada uno (más dos cosas que no sirven). */
+export const SYMPTOMS = [
+  { id: 'fever', icon: '🌡️', fix: 'pill' },
+  { id: 'thirst', icon: '💧', fix: 'serum' },
+  { id: 'cut', icon: '🩸', fix: 'band' },
+  { id: 'cough', icon: '😷', fix: 'syrup' },
+]
+export const KIT = [
+  { id: 'pill', icon: '💊' },
+  { id: 'serum', icon: '🧃' },
+  { id: 'band', icon: '🩹' },
+  { id: 'syrup', icon: '🍯' },
+  { id: 'sun', icon: '🧴' },
+  { id: 'brush', icon: '🪥' },
+]
+/** Capas de cada obra, de abajo hacia arriba (para armarla con la ingeniera). */
+export const LAYERS = {
+  shelter: ['floor', 'wall', 'bags', 'roof'],
+  farm: ['floor', 'beds', 'frame', 'glass'],
+  lab: ['floor', 'pole', 'sensors', 'vane'],
+}
+export const PIECES = { floor: '▬', wall: '🧱', bags: '🪨', roof: '⛺', beds: '🪴', frame: '🔲', glass: '🫧', pole: '📏', sensors: '🌡️', vane: '🌬️' }
 
 // ---------- Desafíos: tamaños según la edad ----------
 export const CIRCUIT_WIRES = (easy) => (easy ? 3 : 4)
@@ -179,12 +262,13 @@ export function taskEffects(s, choice, result) {
       const r = crew ? { arrived: true, found: 1 } : result // piloto automático: llega, pero junta una sola muestra
       if (base.chance !== undefined) {
         if (!r.arrived) return { effects: { ...base, chance: 0 }, line: ['task.line.driveLate'] }
-        const chance = Math.min(0.95, base.chance + 0.08 * r.found)
+        const per = s.task.mate ? MATES[s.task.mate].perSample : 0.08
+        const chance = Math.min(0.95, base.chance + per * r.found)
         return { effects: { ...base, chance }, line: [crew ? 'task.crewLine.drive' : 'task.line.drive', { n: r.found, pct: Math.round(chance * 100) }] }
       }
       // lugar seguro (cerro): las muestras suman ciencia
       if (!r.arrived) return { effects: { ...base, science: 0 }, line: ['task.line.driveLate'] }
-      const extra = r.found >= 2 ? 1 : 0
+      const extra = r.found >= (s.task.mate === 'botanist' ? 1 : 2) ? 1 : 0
       return { effects: { ...base, science: (base.science || 0) + extra }, line: [crew ? 'task.crewLine.drive' : 'task.line.driveSafe', { n: r.found, x: extra }] }
     }
     case 'water': {
@@ -195,6 +279,32 @@ export function taskEffects(s, choice, result) {
       const secs = Math.round(result.time)
       const sci = 2 + (secs <= 12 ? 1 : 0) // rápido: un punto más
       return { effects: { ...base, science: sci }, line: ['task.line.aim', { s: secs, n: sci }] }
+    }
+    case 'medic': {
+      // cada cosa justa suma, cada cosa que no hacía falta resta
+      const health = crew ? 3 : Math.max(0, 1 + 3 * result.right - 2 * result.wrong)
+      return { effects: { ...base, health }, line: crew ? ['task.crewLine.medic', { n: health }] : ['task.line.medic', { ok: result.right, w: result.wrong, n: health }] }
+    }
+    case 'bike': {
+      const health = crew ? 3 : 2 + Math.round(3 * Math.min(1, result.ratio))
+      return { effects: { ...base, health }, line: crew ? ['task.crewLine.bike', { n: health }] : ['task.line.bike', { pct: Math.round(100 * Math.min(1, result.ratio)), n: health }] }
+    }
+    case 'rock': {
+      // afuera con el traje: cuanto más rápido se vuelve, menos aire
+      const lost = crew ? 10 : Math.min(10, 4 + Math.floor(result.time / 4))
+      return { effects: { ...base, o2: -lost }, line: crew ? ['task.crewLine.rock', { n: lost }] : ['task.line.rock', { s: Math.round(result.time), n: lost }] }
+    }
+    case 'drill': {
+      const hits = crew ? 1 : result.hits
+      const pen = hits >= 3 ? 1 : hits === 2 ? 2 : 3
+      return { effects: { ...base, chipsPenalty: pen }, line: crew ? ['task.crewLine.drill', { n: pen }] : ['task.line.drill', { h: hits, n: pen }] }
+    }
+    case 'assemble': {
+      const id = s.build?.active
+      const left = id ? BUILD_COST[id] - (s.build.progress[id] || 0) : 0
+      const want = result.wrong === 0 ? 2 : result.wrong <= 2 ? 1 : 0
+      const n = Math.max(0, Math.min(want, left - 1)) // el último paso se hace de noche, con la energía del plan
+      return { effects: { ...base, buildProgress: n }, line: ['task.line.assemble', { w: result.wrong, n }] }
     }
     default:
       return { effects: base, line: null }

@@ -1,40 +1,46 @@
-"""Arma el ícono del juego (pestaña del navegador y pantalla de inicio del celular).
-Uso: python3 tools/armar_icono.py   → escribe public/icon-512.png, icon-192.png, apple-touch-icon.png y favicon.png
+"""Arma el ícono del juego (pestaña del navegador y pantalla de inicio del celular) a partir del casco.
+Uso: python3 tools/armar_icono.py
+  Lee  src/assets/title/originales/icono_casco.png (el casco en el círculo naranja, sobre fondo blanco)
+  Escribe en public/: favicon.png (círculo con fondo transparente) y apple-touch-icon.png, icon-192.png,
+  icon-512.png (cuadrados con fondo oscuro, porque el celular les redondea las esquinas y no admite transparencia).
 """
-from PIL import Image, ImageDraw, ImageFilter
-import random
+from PIL import Image, ImageDraw
+import numpy as np
 
-S = 1024
-random.seed(7)
-# cielo de Marte: naranja arriba, rojo oscuro abajo
-bg = Image.new('RGB', (S, S))
-px = bg.load()
-for y in range(S):
-    t = y / S
-    r = int(250 - 120 * t); g = int(150 - 110 * t); b = int(70 - 45 * t)
-    for x in range(S):
-        px[x, y] = (r, g, b)
-d = ImageDraw.Draw(bg, 'RGBA')
-# sol pálido y suelo
-d.ellipse((640, 90, 900, 350), fill=(255, 226, 170, 150))
-bg = bg.filter(ImageFilter.GaussianBlur(6))
-d = ImageDraw.Draw(bg, 'RGBA')
-d.ellipse((-300, 760, S + 300, S + 520), fill=(110, 38, 22, 255))
-for _ in range(26):
-    x = random.randint(0, S); y = random.randint(820, S); r = random.randint(8, 26)
-    d.ellipse((x - r, y - r // 2, x + r, y + r // 2), fill=(80, 26, 16, 160))
+src = Image.open('src/assets/title/originales/icono_casco.png').convert('RGB')
+a = np.array(src).astype(int)
+# el círculo es todo lo que no es el fondo blanco
+ink = (a.min(axis=2) < 235)
+ys, xs = np.where(ink)
+x0, x1, y0, y1 = xs.min(), xs.max(), ys.min(), ys.max()
+cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
+r = max(x1 - x0, y1 - y0) / 2 + 2
+box = (int(cx - r), int(cy - r), int(cx + r), int(cy + r))
+circle = src.crop(box)
+S = circle.width
 
-# comandante (busto) desde la ilustración de selección de personaje
-ch = Image.open('src/assets/characters/select_man.webp').convert('RGBA')
-w, h = ch.size
-bust = ch.crop((0, 0, w, int(h * 0.52)))
-scale = (S * 0.98) / bust.height
-bust = bust.resize((int(bust.width * scale), int(bust.height * scale)), Image.LANCZOS)
-sh = Image.new('RGBA', bust.size, (0, 0, 0, 0)); sh.putalpha(bust.getchannel('A').point(lambda a: int(a * 0.45)))
-x0 = (S - bust.width) // 2
-bg.paste(sh.filter(ImageFilter.GaussianBlur(14)), (x0 + 14, S - bust.height + 30), sh.filter(ImageFilter.GaussianBlur(14)))
-bg.paste(bust, (x0, S - bust.height + 12), bust)
+# máscara redonda suave (4x de resolución para que el borde no quede serruchado)
+big = Image.new('L', (S * 4, S * 4), 0)
+e = int(S * 4 * 0.012)  # un poquito para adentro: así no queda el borde blanco del dibujo original
+ImageDraw.Draw(big).ellipse((e, e, S * 4 - 1 - e, S * 4 - 1 - e), fill=255)
+mask = big.resize((S, S), Image.LANCZOS)
+badge = circle.convert('RGBA')
+badge.putalpha(mask)
 
-for name, size in [('icon-512.png', 512), ('icon-192.png', 192), ('apple-touch-icon.png', 180), ('favicon.png', 64)]:
-    bg.resize((size, size), Image.LANCZOS).save('public/' + name, optimize=True)
-    print('public/' + name)
+BG = (13, 15, 24, 255)  # el mismo azul casi negro del juego
+
+
+def square(size, fill):
+    """Ícono cuadrado: el círculo ocupa casi todo, sobre fondo oscuro."""
+    out = Image.new('RGBA', (size, size), BG)
+    d = int(size * fill)
+    b = badge.resize((d, d), Image.LANCZOS)
+    out.alpha_composite(b, ((size - d) // 2, (size - d) // 2))
+    return out.convert('RGB')
+
+
+badge.resize((64, 64), Image.LANCZOS).save('public/favicon.png', optimize=True)
+square(180, 0.9).save('public/apple-touch-icon.png', optimize=True)
+square(192, 0.82).save('public/icon-192.png', optimize=True)  # Android recorta un círculo: le dejo margen
+square(512, 0.82).save('public/icon-512.png', optimize=True)
+print('listo: favicon.png, apple-touch-icon.png, icon-192.png, icon-512.png')

@@ -30,11 +30,13 @@ export default function Stage() {
   const finishLaunch = useGame((s) => s.finishLaunch)
   const onBase = screen === 'sol' || screen === 'end' || screen === 'landing'
   const inRoom = screen === 'loading' || screen === 'tutorial'
-  const planetOffset = screen === 'title' ? [2.4, -0.2, 0] : screen === 'character' ? [4.6, -2.2, -4] : [3.6, -1.6, -3]
+  // En el título y en la selección de personaje hay una ilustración de fondo: ahí no se dibuja nada en 3D
+  const still = screen === 'title' || screen === 'character'
+  const planetOffset = [3.6, -1.6, -3]
   return (
     <Canvas
       shadows
-      frameloop={paused || screen === 'title' ? 'never' : 'always'}
+      frameloop={paused || still ? 'never' : 'always'}
       dpr={[1, 1.75]}
       camera={{ position: [0, 0, 8], fov: 45 }}
       gl={{ powerPreference: 'high-performance' }}
@@ -42,7 +44,7 @@ export default function Stage() {
       <Quality />
       <PauseClock />
       <RenderGate />
-      <Suspense fallback={null}>{screen === 'launch' ? <Launch onDone={finishLaunch} /> : onBase ? <MarsBase key={screen === 'landing' ? 'cine' : 'base'} cinematic={screen === 'landing'} onCineDone={finishLanding} /> : inRoom ? <Room /> : screen === 'title' ? null : <Planet offset={planetOffset} />}</Suspense>
+      <Suspense fallback={null}>{screen === 'launch' ? <Launch onDone={finishLaunch} /> : onBase ? <MarsBase key={screen === 'landing' ? 'cine' : 'base'} cinematic={screen === 'landing'} onCineDone={finishLanding} /> : inRoom ? <Room /> : still ? null : <Planet offset={planetOffset} />}</Suspense>
     </Canvas>
   )
 }

@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useLayoutEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
 import { useGame } from '../game/store'
 import { t, locGlossary } from '../i18n/core'
@@ -26,11 +27,57 @@ export function Tx({ k, vars, as: Tag = 'span', className }) {
 export function Term({ k, children }) {
   const lang = useGame((s) => s.lang)
   const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+  // Cerrar al tocar en otro lado (en pantallas táctiles no hay "sacar el mouse")
+  useEffect(() => {
+    if (!open) return
+    const close = (e) => { if (!ref.current?.contains(e.target)) setOpen(false) }
+    const hide = () => setOpen(false)
+    document.addEventListener('pointerdown', close, true)
+    window.addEventListener('resize', hide)
+    window.addEventListener('scroll', hide, true)
+    return () => { document.removeEventListener('pointerdown', close, true); window.removeEventListener('resize', hide); window.removeEventListener('scroll', hide, true) }
+  }, [open])
   return (
-    <span className="term" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)} onClick={() => setOpen((o) => !o)}>
+    <span
+      ref={ref}
+      className="term"
+      // con mouse se abre al pasar por encima; con el dedo, al tocar (el celular también "pasa por encima" al tocar, por eso se filtra)
+      onPointerEnter={(e) => e.pointerType === 'mouse' && setOpen(true)}
+      onPointerLeave={(e) => e.pointerType === 'mouse' && setOpen(false)}
+      onClick={() => setOpen((o) => !o)}
+    >
       {children}
-      {open && <span className="term-pop">{locGlossary(lang, k)}</span>}
+      {open && <TermPop anchorRef={ref} text={locGlossary(lang, k)} />}
     </span>
+  )
+}
+
+/**
+ * La explicación de una palabra difícil. Va en <body> y con posición fija, así no la corta el borde
+ * de la pantalla de la computadora: se pone arriba de la palabra si entra, si no abajo, y nunca se sale de la ventana.
+ */
+function TermPop({ anchorRef, text }) {
+  const ref = useRef(null)
+  const [pos, setPos] = useState(null)
+  useLayoutEffect(() => {
+    const anchor = anchorRef.current
+    if (!anchor || !ref.current) return
+    const a = anchor.getBoundingClientRect()
+    const p = ref.current.getBoundingClientRect()
+    const M = 8
+    const vw = window.innerWidth, vh = window.innerHeight
+    const left = Math.min(Math.max(M, a.left + a.width / 2 - p.width / 2), vw - p.width - M)
+    const above = a.top - p.height - M >= M
+    const top = above ? a.top - p.height - M : Math.min(a.bottom + M, vh - p.height - M)
+    setPos({ left, top, below: !above, arrow: Math.min(Math.max(14, a.left + a.width / 2 - left), p.width - 14) })
+  }, [anchorRef, text])
+  return createPortal(
+    <span ref={ref} className={'term-pop' + (pos?.below ? ' below' : '')} role="tooltip"
+      style={pos ? { left: pos.left, top: pos.top, '--arrow': pos.arrow + 'px' } : { left: 0, top: 0, visibility: 'hidden' }}>
+      {text}
+    </span>,
+    document.body,
   )
 }
 

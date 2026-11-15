@@ -2,6 +2,8 @@
 // screen = lo que se ve en la pantalla verde · paper = el ticket de la impresora · onOk = botón ✓
 import { motion, AnimatePresence } from 'framer-motion'
 import terminalImg from '../assets/ui/terminal.webp'
+import terminalImgEn from '../assets/ui/terminal_en.webp' // misma computadora con el cartel "EXPEDITION TO MARS"
+import { useGame } from '../game/store'
 import { ScrollArea } from './common'
 
 // Zonas medidas sobre la imagen (en % del ancho/alto)
@@ -10,9 +12,10 @@ const PAPER = { left: '68.32%', top: '12.91%', width: '27.17%', height: '63.89%'
 const OK = { left: '79.56%', top: '78.11%', width: '5.09%', height: '7.3%' }
 
 export default function TerminalFrame({ screen, paper, paperKey, onOk, okReady = true, okLabel }) {
+  const en = useGame((s) => s.lang === 'en')
   return (
     <div className="terminal-wrap">
-      <img className="terminal-img" src={terminalImg} alt="" draggable={false} />
+      <img className="terminal-img" src={en ? terminalImgEn : terminalImg} alt="" draggable={false} />
       <div className="crt" style={SCREEN}>
         <ScrollArea className="crt-inner">{screen}</ScrollArea>
         <div className="scanlines" />

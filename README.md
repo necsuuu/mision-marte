@@ -325,10 +325,11 @@ src/
     └── Console.jsx         Consola ámbar del reporte nocturno y final
 public/
 ├── manifest.webmanifest    Para abrir el juego como app desde la pantalla de inicio del celular
-└── icon-*.png, favicon.png Ícono del juego (el comandante en Marte)
+└── icon-*.png, favicon.png Ícono del juego (el casco de astronauta)
 tools/
 ├── generar_fotogramas.py   Genera los fotogramas de caminata a partir de los dibujos originales
-└── armar_icono.py          Arma el ícono del juego a partir de la ilustración del comandante
+├── armar_icono.py          Arma el ícono del juego a partir del dibujo del casco
+└── armar_fondo_personajes.py  Arma el fondo borroso de la selección de personaje
 ```
 
 ---
@@ -378,8 +379,8 @@ También se explican dentro del juego:
 Declaramos dónde usamos herramientas de IA en este proyecto:
 
 - **Código y textos del juego:** se escribieron con ayuda de un asistente de IA generativa. El equipo puso la idea y las mecánicas, lo hizo probar a mucha gente y fue pidiendo y revisando cada cambio.
-- **Texturas, sonidos e ícono:** no salen de modelos de imagen ni de audio. Las texturas y los sonidos los calcula el código del juego, y el ícono se arma a partir de la ilustración del comandante.
-- **Ilustraciones (personajes, cabina, computadoras, portada y logos):** _(completar: quién las hizo y con qué herramienta)_.
+- **Texturas y sonidos:** no salen de modelos de imagen ni de audio: los calcula el código del juego.
+- **Ilustraciones (personajes, cabina, computadoras, portada, logos, fondo de la selección de personaje y casco del ícono):** _(completar: quién las hizo y con qué herramienta)_.
 - **Datos:** las tormentas solares y la radiación vienen de la NASA (DONKI y Curiosity RAD). La IA no generó datos.
 - No se generó ni modificó ningún elemento de marca de la NASA.
 

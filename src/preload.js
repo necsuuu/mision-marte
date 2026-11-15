@@ -1,6 +1,6 @@
 // Precarga en segundo plano: después de que aparece el título, se van bajando las imágenes del resto del juego
 // (computadora, consola, personajes). Así cuando hacen falta ya están y nada "aparece tarde".
-const urls = Object.values(import.meta.glob(['./assets/ui/*.webp', './assets/scenes/*.webp', './assets/characters/select_*.webp', './assets/characters/portrait_*.webp', './assets/characters/walk/*.webp'], { eager: true, import: 'default' }))
+const urls = Object.values(import.meta.glob(['./assets/ui/*.webp', './assets/scenes/*.webp', './assets/characters/select_*.webp', './assets/characters/portrait_*.webp', './assets/characters/walk/*.webp', './assets/title/char_bg.webp'], { eager: true, import: 'default' }))
 
 export function preloadAssets() {
   const run = () => {

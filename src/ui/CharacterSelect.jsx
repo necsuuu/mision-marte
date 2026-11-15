@@ -3,6 +3,7 @@ import { useGame } from '../game/store'
 import { CHARACTERS } from '../game/characters'
 import { useT } from '../i18n/useT'
 import { fade, LangToggle } from './common'
+import charBg from '../assets/title/char_bg.webp'
 
 const AGES = [6, 7, 8, 9, 10, 11, 12, 13]
 
@@ -13,7 +14,8 @@ export default function CharacterSelect() {
   const chosen = CHARACTERS.find((c) => c.id === player.character)
 
   return (
-    <motion.div className="screen center char-screen" {...fade}>
+    // fondo: Marte con robots rotos, ya borroneado (tools/armar_fondo_personajes.py)
+    <motion.div className="screen center char-screen" style={{ '--char-bg': `url(${charBg})` }} {...fade}>
       <LangToggle className="corner" />
       <h2 className="char-title">{T('char.who')}</h2>
 

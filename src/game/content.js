@@ -87,6 +87,7 @@ export const GLOSSARY = {
  *  o2, food, health, science, dose  → suman/restan ya
  *  chipsPenalty                      → ⚡ que perdés este sol
  *  dust: { level, sols }             → tormenta de polvo (baja la energía solar)
+ * task: 'id' (en una opción)          → después de elegir, el comandante lo hace a mano en la base (ver tasks.js)
  *  blockScience                      → hoy no se puede hacer ciencia
  *  useItem                           → consume un objeto
  *  leak / breakPanel                 → daño que QUEDA en la base hasta repararlo (castigo)
@@ -99,8 +100,8 @@ export const EVENTS = [
     text: 'Una piedrita del espacio hizo un agujero. ¡Se escapa el aire!',
     fact: 'Las piedritas del espacio viajan tan rápido que hasta una del tamaño de un grano de arena puede agujerear una pared.',
     choices: [
-      { label: 'Usar el kit de reparación', requires: 'repair', hint: '🧰', effects: { useItem: 'repair' }, fx: 'patched', outcome: '🧰 ✅ ¡Agujero sellado!' },
-      { label: 'Parchar con lo que hay', hint: '−2 ⚡ · −5 🫁', effects: { chipsPenalty: 2, o2: -5 }, fx: 'patched', outcome: '🩹 Parche puesto. Costó energía.' },
+      { label: 'Usar el kit de reparación', requires: 'repair', hint: '🧰', task: 'seal', effects: { useItem: 'repair' }, fx: 'patched', outcome: '🧰 ✅ ¡Agujero sellado!' },
+      { label: 'Parchar con lo que hay', hint: '−2 ⚡ · −5 🫁', task: 'seal', effects: { chipsPenalty: 2, o2: -5 }, fx: 'patched', outcome: '🩹 Parche puesto. Costó energía.' },
       { label: 'Ignorarlo por ahora', hint: '−10 🫁 · la fuga sigue', effects: { o2: -10, leak: true }, fx: 'leaking', outcome: '💨 La fuga sigue: −5 🫁 cada sol hasta repararla.' },
     ],
   },
@@ -109,7 +110,7 @@ export const EVENTS = [
     text: 'El polvo tapa el cielo y ensucia los paneles solares.',
     fact: 'En 2018 una tormenta de polvo cubrió todo Marte y el rover Opportunity se quedó sin energía para siempre.',
     choices: [
-      { label: 'Salir a limpiar los paneles', hint: '−8 🫁 · más ⚡', effects: { o2: -8, dose: 0.2, dust: { level: 0.25, sols: 2 } }, fx: 'cleaned', outcome: '🧹✨ Paneles limpios. Gastaste aire, pero tenés más energía.' },
+      { label: 'Salir a limpiar los paneles', hint: '−8 🫁 · más ⚡', task: 'clean', effects: { o2: -8, dose: 0.2, dust: { level: 0.25, sols: 2 } }, fx: 'cleaned', outcome: '🧹✨ Paneles limpios. Gastaste aire, pero tenés más energía.' },
       { label: 'Quedarse adentro', hint: 'Menos ⚡ por 3 soles', effects: { dust: { level: 0.5, sols: 3 } }, fx: 'dusty', outcome: '🟫 Los paneles quedan sucios: menos ⚡ por 3 soles.' },
     ],
   },
@@ -127,7 +128,7 @@ export const EVENTS = [
     text: 'Las papas se ponen amarillas. Hay un hongo en el invernadero.',
     fact: 'Cultivar comida en el espacio es difícil: las plantas también sufren con poca luz y poca gravedad.',
     choices: [
-      { label: 'Sacar las plantas enfermas', hint: '−10 🥔', effects: { food: -10 }, fx: 'fewerplants', outcome: '🥀➡️🌱 Menos plantas, pero el resto está sano.' },
+      { label: 'Sacar las plantas enfermas', hint: '−10 🥔', task: 'plants', effects: { food: -10 }, fx: 'fewerplants', outcome: '🥀➡️🌱 Menos plantas, pero el resto está sano.' },
       { label: 'Desinfectar con luz UV', hint: '−2 ⚡', effects: { chipsPenalty: 2 }, fx: 'uv', outcome: '💜 La luz UV eliminó el hongo.' },
     ],
   },
@@ -167,8 +168,8 @@ export const EVENTS = [
     id: 'panelbreak', emoji: '⚡', title: 'Se rompió un panel solar', scene: 'panels', incident: 'gust',
     text: 'Una ráfaga de arena golpeó un panel y dejó de funcionar.',
     choices: [
-      { label: 'Usar el kit de reparación', requires: 'repair', hint: '🧰', effects: { useItem: 'repair' }, fx: 'panelfixed', outcome: '🧰⚡ Panel como nuevo.' },
-      { label: 'Arreglarlo afuera (EVA)', hint: '−10 🫁 · −2 ⚡', effects: { o2: -10, chipsPenalty: 2, dose: 0.2 }, fx: 'panelfixed', outcome: '👩‍🚀⚡ Arreglado con el traje puesto.' },
+      { label: 'Usar el kit de reparación', requires: 'repair', hint: '🧰', task: 'circuit', effects: { useItem: 'repair' }, fx: 'panelfixed', outcome: '🧰⚡ Panel como nuevo.' },
+      { label: 'Arreglarlo afuera (EVA)', hint: '−10 🫁 · −2 ⚡', task: 'circuit', effects: { o2: -10, chipsPenalty: 2, dose: 0.2 }, fx: 'panelfixed', outcome: '👩‍🚀⚡ Arreglado con el traje puesto.' },
       { label: 'Dejarlo roto', hint: '−2 ⚡ cada sol', effects: { breakPanel: true }, fx: 'panelbroken', outcome: '💥 Panel roto: menos ⚡ cada sol. Podés repararlo después.' },
     ],
   },

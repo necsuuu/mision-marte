@@ -1,6 +1,9 @@
 // Piezas de la base marciana. Muchas cambian según las decisiones del jugador (estado "base" del store).
-import { Suspense, useMemo, useRef } from 'react'
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
+import { Html } from '@react-three/drei'
+import { TASKS } from '../game/tasks'
+import { t } from '../i18n/core'
 import * as THREE from 'three'
 import { rng } from './noise'
 import { terrainHeight } from './terrain'
@@ -34,7 +37,7 @@ export function useActiveEvent() {
   const phase = useGame((s) => s.phase)
   const screen = useGame((s) => s.screen)
   const fx = useGame((s) => s.cardResult?.fx || null)
-  const live = screen === 'sol' && card?.type === 'event' && ['incident', 'decision', 'outcome'].includes(phase)
+  const live = screen === 'sol' && card?.type === 'event' && ['incident', 'decision', 'task', 'outcome'].includes(phase)
   return useMemo(() => (live ? { ev: card.event, phase, fx } : null), [live, card, phase, fx])
 }
 
@@ -57,7 +60,7 @@ export function Habitat({ night }) {
   const leak = useGame((s) => s.base.leak)
   const act = useActiveEvent()
   const leakShown = leak || (act?.ev.id === 'leak' && (act.phase !== 'outcome' || act.fx === 'leaking'))
-  const alarm = o2 < 25 || health < 40 || (act && act.ev.incident === 'alarm' && act.phase !== 'outcome')
+  const alarm = o2 < 25 || health < 40 || (act && act.ev.incident === 'alarm' && act.phase !== 'outcome') || (act?.ev.id === 'leak' && act.phase === 'task')
   const windowColor = health > 40 ? '#7fe9ff' : '#ff6b6b'
   const hole = DOME_SPOTS[0]
   return (
@@ -205,15 +208,20 @@ export function SolarArray() {
   const act = useActiveEvent()
   const dustEvent = act?.ev.id === 'dust' && act.phase !== 'outcome' ? 0.55 : 0
   const dust = Math.max(dustState, dustEvent)
-  const shaking = act?.ev.id === 'panelbreak' && act.phase !== 'outcome'
-  const color = new THREE.Color('#1d3b8f').lerp(new THREE.Color('#9a5a34'), dust * 1.3)
+  const shaking = act?.ev.id === 'panelbreak' && act.phase !== 'outcome' && act.phase !== 'task'
+  const fallen = act?.ev.id === 'panelbreak' && act.phase === 'task' // 🔌 tarea de cables: el panel está caído hasta arreglarlo
+  const cleaned = useGame((s) => (s.phase === 'task' && s.task?.id === 'clean' ? s.task.cleaned : null))
+  const dirty = new THREE.Color('#9a5a34')
+  const colorFor = (d) => new THREE.Color('#1d3b8f').lerp(dirty, d * 1.3)
+  const color = colorFor(dust)
   const total = panels + broken
   // 🏗️ panel nuevo en obra: se ve el poste esperando su placa
   const pending = useGame((s) => s.build.active === 'panel' || (s.build.progress.panel > 0 && !s.build.done.includes('panel')))
   return (
     <group position={POS.panels}>
       {Array.from({ length: total }).map((_, i) => (
-        <OnePanel key={i} i={i} broken={i >= panels} shaking={shaking && i === panels - 1} color={color} dust={dust} />
+        <OnePanel key={i} i={i} broken={i >= panels || (fallen && i === panels - 1)} shaking={shaking && i === panels - 1}
+          color={cleaned?.includes(i) ? colorFor(0) : color} dust={cleaned?.includes(i) ? 0 : dust} />
       ))}
       {pending && <OnePanel key="obra" i={total} broken={false} shaking={false} color={color} dust={dust} frame />}
     </group>
@@ -506,7 +514,7 @@ export function Lander() {
 }
 
 // ---------- Tripulación en la base (sprites que siempre miran a la cámara) ----------
-function FacingSprite({ src, frames, position, height = 2.6, start = 14, walkTo }) {
+function FacingSprite({ src, frames, position, height = 2.6, start = 14, walkTo, say }) {
   const ref = useRef()
   const holder = useRef()
   const moving = useRef(false)
@@ -532,6 +540,11 @@ function FacingSprite({ src, frames, position, height = 2.6, start = 14, walkTo 
       <group ref={ref}>
         <Suspense fallback={null}><CharacterSprite src={src} frames={frames} movingRef={movingRef} height={height} /></Suspense>
       </group>
+      {say && (
+        <Html pointerEvents="none" position={[0, height + 0.6, 0]} center zIndexRange={[11, 0]} style={{ pointerEvents: 'none' }}>
+          <div key={say} className="bubble crew-say">{say}</div>
+        </Html>
+      )}
     </group>
   )
 }
@@ -541,12 +554,43 @@ const EVA_FX = { cleaned: [6.5, 0, 1.5], panelfixed: [6.5, 0, 1.5], sample: [-3,
 export function Crew() {
   const ch = useGame((s) => getCharacter(s.player.character))
   const fx = useGame((s) => (s.phase === 'outcome' ? s.cardResult?.fx : null))
+  const task = useGame((s) => (s.phase === 'task' ? s.task : null))
+  const say = useCrewTalk(task)
   const commanderTo = EVA_FX[fx] || null
+  // 🛠️ durante una tarea, el compañero que sabe del tema va al lugar y le habla al comandante
+  const helper = task ? TASKS[task.id] : null
+  const at = (id) => (helper?.crew === id ? helper.helperAt : null)
   return (
     <>
-      <FacingSprite src={ch.sprite} frames={ch.walk} position={POS.home} start={14.2} walkTo={commanderTo} />
-      <FacingSprite src={CREW[0].sprite} position={[10.8, 0, 2.2]} start={14.6} height={2.4} />
-      <FacingSprite src={CREW[1].sprite} position={[-10.6, 0, 3.6]} start={15} height={2.4} />
+      {!task && <FacingSprite src={ch.sprite} frames={ch.walk} position={POS.home} start={14.2} walkTo={commanderTo} />}
+      <FacingSprite src={CREW[0].sprite} frames={CREW[0].walk} position={[10.8, 0, 2.2]} start={14.6} height={2.4} walkTo={at('engineer')} say={helper?.crew === 'engineer' ? say : null} />
+      <FacingSprite src={CREW[1].sprite} frames={CREW[1].walk} position={[-10.6, 0, 3.6]} start={15} height={2.4} walkTo={at('botanist')} say={helper?.crew === 'botanist' ? say : null} />
     </>
   )
+}
+
+/**
+ * Lo que dice el compañero durante la tarea: primero avisa qué pasó, cuando el comandante
+ * llega le explica qué hacer, y si tarda le vuelve a indicar el camino.
+ */
+function useCrewTalk(task) {
+  const lang = useGame((s) => s.lang)
+  const near = !!task?.near
+  const mini = task?.mini
+  const id = task?.id
+  const [line, setLine] = useState(null)
+  useEffect(() => {
+    if (!id) return setLine(null)
+    const pick = () => {
+      const st = useGame.getState().task
+      if (!st) return
+      if (st.mini) return setLine(t(lang, `crew.${id}.doing`))
+      if (st.near) return setLine(t(lang, `crew.${id}.near`))
+      setLine(t(lang, st.elapsed > 8 ? `crew.${id}.hurry` : `crew.${id}.alert`))
+    }
+    pick()
+    const iv = setInterval(pick, 4000)
+    return () => clearInterval(iv)
+  }, [id, near, mini, lang])
+  return line
 }

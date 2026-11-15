@@ -8,6 +8,7 @@ import { locEvent, outcomeText, noteText } from '../i18n/core'
 import { useT } from '../i18n/useT'
 import { Bar, Delta, Term, fade } from './common'
 import DayTerminal from './DayTerminal'
+import TaskUI from './TaskUI'
 import Console from './Console'
 import { useSpeak } from '../game/voice'
 
@@ -27,6 +28,7 @@ export default function SolScreen({ onData }) {
           {s.phase === 'outcome' && card && <Outcome key={'o' + s.sol} s={s} />}
         </AnimatePresence>
       </div>
+      {s.phase === 'task' && <TaskUI />}
       <AnimatePresence>
         {((s.phase === 'event' && card) || (s.phase === 'decision' && card) || s.phase === 'plan') && <DayTerminal key={'term' + s.sol} s={s} />}
       </AnimatePresence>
@@ -131,7 +133,7 @@ function Outcome({ s }) {
   const { nextCard } = useGame.getState()
   const [ready, setReady] = useState(false)
   const fact = ev.choices[r.choiceIdx]?.fact || ev.fact
-  useSpeak(outcomeText(s.lang, raw, r) + '. ' + (fact || ''))
+  useSpeak(outcomeText(s.lang, raw, r) + '. ' + (r.taskLine ? noteText(s.lang, r.taskLine[0], r.taskLine[1]) + '. ' : '') + (fact || ''))
   useEffect(() => {
     const tm = setTimeout(() => setReady(true), 2200)
     return () => clearTimeout(tm)
@@ -140,6 +142,7 @@ function Outcome({ s }) {
     <motion.div className={'panel card outcome ' + (r.good ? 'good' : 'bad')} initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0, transition: { delay: 0.8 } }} exit={{ opacity: 0 }}>
       <div className="kicker">{r.good ? T('out.good') : T('out.bad')}</div>
       <h2 className="outcome-text">{outcomeText(s.lang, raw, r)}</h2>
+      {r.taskLine && <div className="task-line">{noteText(s.lang, r.taskLine[0], r.taskLine[1])}</div>}
       {fact && <div className="fact">💡 {fact}</div>}
       <button className="btn primary" disabled={!ready} onClick={nextCard}>{ready ? T('continue') : '🎥 …'}</button>
     </motion.div>

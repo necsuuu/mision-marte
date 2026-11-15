@@ -130,6 +130,21 @@ Cada sol tiene este ciclo:
 
 **📦 Cápsula de carga (sol 6):** justo a mitad de la misión baja con paracaídas una cápsula que mandó la Tierra. No es un problema sino un premio, pero el rover solo puede traer **una** de las tres cajas (oxígeno, comida o instrumentos de ciencia): hay que elegir según lo que más falta. La cápsula queda al lado de la base. Corta la rutina de los soles del medio y enseña un dato real: a Marte solo se puede despegar cada 26 meses.
 
+**🛠️ Emergencias que se resuelven a mano.** En cuatro eventos, después de elegir en la computadora, el comandante **sale a la base y lo hace él mismo**: camina hasta el problema (una flecha amarilla en el piso y un haz de luz marcan dónde ir), lo usa y resuelve un desafío corto. Cómo le salga cambia la partida con las mismas reglas de siempre:
+
+| Evento | Qué hay que hacer | Qué cambia según cómo salga |
+|---|---|---|
+| ☄️ Meteorito en el domo (kit o parche) | Ir hasta la grieta y pasarle sellador por toda su longitud (con el dedo, el mouse, o manteniendo E) | Mientras no se sella se escapa aire: cuanto más rápido, menos 🫁 se pierde |
+| 🌪️ Tormenta de polvo (salir a limpiar) | Ir panel por panel limpiándolos antes de que llegue el polvo (45 s; 70 s para cadetes) | Cuantos más paneles limpios, más ⚡ dan los próximos soles |
+| ⚡ Panel roto (kit o EVA) | Ir a la caja de cables del panel caído y unir cada cable con el enchufe de su mismo color y forma | Cada equivocación es un chispazo: −1 ⚡ ese día (hasta −2) |
+| 🥀 Plantas enfermas (sacarlas) | Entrar al invernadero y elegir cuáles sacar: las enfermas tienen hojas amarillas con manchas | Sacar sanas o dejar enfermas cuesta comida; hacerlo bien cuesta menos que antes |
+
+- **Compañeros que ayudan:** la ingeniera 🔧 o el botánico 🌱 (según el problema) va al lugar y le habla al comandante: primero avisa qué pasó, cuando llega le explica qué hacer y, si tarda, le indica el camino.
+- **Controles:** tocar o hacer clic en el piso para caminar, W A S D o flechas, y E (o el botón ✋, o tocar el ícono del lugar) para usar. Tocar el ícono hace que el comandante vaya solo y lo use al llegar.
+- **"Que lo haga la tripulación":** siempre está el botón para que la haga el equipo sola (nadie se queda trabado), pero sale peor que hacerla uno: más aire perdido, menos paneles limpios, un chispazo o plantas de más.
+- La computadora avisa en el papel cuáles opciones se hacen a mano, y el resultado y la bitácora dicen cómo salió (por ejemplo "Sellaste la grieta en 12 s: se escaparon 4 de aire").
+- En los primeros soles siempre aparece al menos una de estas emergencias.
+
 **Para que cada sol sea distinto** (los tres sistemas se suman al plan de energía de siempre):
 
 - **🏗️ Construir (desde el sol 2):** en el plan hay una fila más, "Construir". Se elige una obra y se le va poniendo ⚡ durante varios soles; cuando se junta el costo queda para siempre en la base y se ve en 3D (mientras tanto se ve la obra a medio hacer). Se puede cambiar de obra sin perder lo avanzado.
@@ -296,6 +311,7 @@ src/
 │   ├── voice.js            Lectura en voz alta (Web Speech API)
 │   ├── sfx.js              Sonido: efectos y ambiente generados por código (Web Audio)
 │   ├── shareCard.js        Imagen para compartir el resultado (se dibuja en el navegador)
+│   ├── tasks.js            Tareas a mano: dónde se hacen, quién ayuda y cómo el resultado cambia los efectos
 │   ├── device.js           Detecta pantalla táctil, iPhone y si se puede usar pantalla completa
 │   └── store.js            Lógica: energía, recursos, radiación, eventos, estado de la base, bitácora
 ├── i18n/
@@ -310,6 +326,7 @@ src/
 │   ├── MarsBase.jsx        Escena de la base: cielo, día/noche, director de cámara, cinemática
 │   ├── baseParts.jsx       Domo, invernadero, paneles, antena, rover, nave, mina, tripulación
 │   ├── builds.jsx          Obras que construye el jugador y lugares de expedición
+│   ├── BaseTask.jsx        Tarea a mano en la base: comandante manejable, lugares marcados, flecha, cámara
 │   ├── effects.jsx         Partículas: polvo, tormenta solar, fuga de aire, meteorito, alarma, fuego
 │   ├── cine.jsx            Reloj de la cinemática y animación de despliegue
 │   ├── Room.jsx            Nave de 3 módulos: muebles, objetos, jugador (click/WASD), cámara que sigue, tripulación
@@ -321,6 +338,7 @@ src/
     ├── LaunchUI.jsx        Cuenta regresiva y textos del despegue
     ├── Quiz.jsx            Preguntas de repaso al final de la misión
     ├── ItemCard.jsx        Ficha del objeto con el retrato del comandante
+    ├── TaskUI.jsx          Tarea a mano: objetivo, botón de acción y desafíos (grieta, cables, plantas)
     ├── Terminal.jsx        Terminal CRT de decisiones (pantalla + impresora + botón ✓)
     └── Console.jsx         Consola ámbar del reporte nocturno y final
 public/
@@ -338,6 +356,7 @@ tools/
 
 - **Dificultad y balance:** `src/game/content.js` → objeto `BASE` (oxígeno inicial, cuánto rinde cada ⚡, dosis de radiación, etc.), `CAPACITY` (masa máxima) y `SOLS` (duración).
 - **Agregar un evento:** sumarlo al array `EVENTS` en `content.js`. Cada evento tiene `scene` (a dónde mira la cámara), `incident` (qué animación muestra) y `choices` con `effects`, `fx` y `outcome`.
+- **Tareas a mano:** en `content.js`, una opción con `task: 'id'` se hace en la base. Lugares, tiempos y cómo el desempeño cambia los efectos están en `src/game/tasks.js`; los desafíos (grieta, cables, plantas) en `src/ui/TaskUI.jsx`.
 - **Obras, misiones del día y expediciones:** `BUILDS`, `MISSIONS` y `EXPEDITION_EVENT` en `content.js` (costos, premios y textos). Las condiciones de cada misión están en `missionMet`, en `src/game/store.js`.
 - **Textos y traducciones:** interfaz en `src/i18n/ui.js` (es/en); contenido en español en `content.js` y en inglés en `src/i18n/content_en.js`.
 - **Mover muebles o agregar lugares para objetos:** `src/game/shipLayout.js` (`FURN`, `SLOTS`, `OBSTACLES`).

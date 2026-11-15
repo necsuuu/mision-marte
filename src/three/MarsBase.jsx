@@ -9,6 +9,7 @@ import { Shield, SolarParticles, DustParticles, Meteor, OutcomeSparks, DustBurst
 import { Habitat, Greenhouse, SolarArray, Antenna, Rover, Discoveries, IceMine, Samples, Lander, Crew, POS, DOME_SPOTS, useActiveEvent } from './baseParts'
 import { cine, ease } from './cine'
 import Reflections from './Reflections'
+import BaseTask from './BaseTask'
 
 const BASE_TARGET = new THREE.Vector3(0, 1.5, 0)
 import { CINE_END } from '../game/clocks'
@@ -130,6 +131,8 @@ function Director({ controls }) {
   const v = useMemo(() => new THREE.Vector3(), [])
   useFrame((st, dt) => {
     const c = controls.current
+    // 🛠️ tarea física: la cámara la maneja BaseTask (sigue al comandante)
+    if (act?.phase === 'task') { if (c) c.enabled = false; return }
     const scripted = !!act
     if (!scripted) {
       if (c) {
@@ -242,9 +245,10 @@ const dustAmount = () => {
 export default function MarsBase({ cinematic = false, onCineDone }) {
   const controls = useRef()
   const night = useGame((s) => s.screen === 'sol' && s.phase === 'report')
+  const onTask = useGame((s) => s.phase === 'task')
   return (
     <>
-      <ViewShift enabled={!cinematic} />
+      <ViewShift enabled={!cinematic && !onTask} />
       <SkyAndLight cinematic={cinematic} />
       <Terrain />
       <Rocks />
@@ -271,6 +275,7 @@ export default function MarsBase({ cinematic = false, onCineDone }) {
           <Shield />
           <EventFx />
           <Supply />
+          <BaseTask />
           <OrbitControls
             ref={controls}
             makeDefault

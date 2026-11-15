@@ -4,6 +4,7 @@ import {
   BUILDS, BUILD_FX, BUILD_FROM_SOL, MISSION_FROM_SOL, MISSION_BONUS, EXPEDITION_EVENT, EXPEDITION_FROM_SOL, EXPEDITION_MAX,
 } from './content'
 import { loadSpaceWeather, buildSolWeather } from '../data/donki'
+import { taskEffects, taskSpots } from './tasks'
 import { randomLayout } from './shipLayout'
 
 const savedLang = (() => { try { return localStorage.getItem('mm-lang') || 'es' } catch { return 'es' } })()
@@ -205,6 +206,12 @@ export function makeRoomItems() {
 }
 export const MAX_CARRY = 2
 
+/** Pone primero en el mazo un evento que se resuelve a mano, así en los primeros soles se juega al menos uno. */
+function handsOnFirst(deck) {
+  const i = deck.findIndex((e) => ['leak', 'dust', 'panelbreak'].includes(e.id))
+  return i > 0 ? [deck[i], ...deck.slice(0, i), ...deck.slice(i + 1)] : deck
+}
+
 /** Lo que se conserva al volver a jugar: idioma, jugador y preferencias. */
 const keep = (s) => ({ lang: s.lang, player: s.player, voice: s.voice, lite: s.lite, sound: s.sound, seenIntro: s.seenIntro })
 
@@ -250,7 +257,7 @@ const initialState = {
   cargo: [],
   // estado de la base
   sol: 1,
-  // dawn → (event | incident → decision → outcome)* → plan → report
+  // dawn → (event | incident → decision → [task] → outcome)* → plan → report
   phase: 'dawn',
   o2: BASE.o2, food: BASE.food, health: BASE.health, science: 0, dose: 0,
   panels: BASE.panels, battery: 0,
@@ -264,6 +271,7 @@ const initialState = {
   mission: null, // 🎯 misión de hoy: { id }
   medals: 0, // 🏅 misiones cumplidas
   bonusNext: 0, // ⚡ extra para mañana (misión cumplida, expedición)
+  task: null, // 🛠️ tarea física en curso: { id, choiceIdx, elapsed, near, mini, busy, cleaned, sealed }
   visited: [], // 🚙 lugares ya explorados
   expeditions: 0,
   lastExpedition: 0,
@@ -405,7 +413,7 @@ export const useGame = create((set, get) => ({
       o2: clamp(BASE.o2 + bonus + 30 * (inv.o2tank || 0), 0, 100),
       food: clamp(BASE.food + bonus + 30 * (inv.rations || 0), 0, 100),
       plan,
-      eventDeck: shuffle(EVENTS.filter((e) => !e.requires || inv[e.requires])),
+      eventDeck: handsOnFirst(shuffle(EVENTS.filter((e) => !e.requires || inv[e.requires]))),
       screen: 'landing',
       sol: 1,
       learned: [],
@@ -459,7 +467,18 @@ export const useGame = create((set, get) => ({
     if (s.phase !== 'decision') return // evita doble click mientras se cierra la computadora
     const card = s.cards[0]
     const choiceIdx = card.event.choices.indexOf(choice)
-    let eff = choice.effects
+    // 🛠️ Esta opción se hace a mano: primero la tarea en la base, después se calculan los efectos
+    if (choice.task) {
+      return set({ phase: 'task', task: { id: choice.task, choiceIdx, elapsed: 0, near: null, mini: null, busy: null, cleaned: [], started: false } })
+    }
+    get().resolveChoice(choice, choiceIdx, choice.effects)
+  },
+
+  /** Aplica los efectos de una opción (o los que salieron de la tarea) y pasa a mostrar el resultado. */
+  resolveChoice: (choice, choiceIdx, effects, taskLine = null) => {
+    const s = get()
+    const card = s.cards[0]
+    let eff = effects
     let fx = choice.fx
     let ok = true
     if (eff.chance !== undefined) {
@@ -473,8 +492,30 @@ export const useGame = create((set, get) => ({
     const learned = factKey && !s.learned.includes(factKey) ? [...s.learned, factKey] : s.learned
     if (card.event.expedition) { patch.expeditions = s.expeditions + 1; if (choice.site) patch.visited = [...s.visited, choice.site] }
     const good = !BAD_FX.has(fx)
-    const decisions = [...s.decisions, { sol: s.sol, ev: card.event, choiceIdx, ok, fx, good }]
-    set({ ...patch, learned, decisions, phase: 'outcome', cardResult: { choiceIdx, ok, effects: eff, fx, good, t: Date.now() } })
+    const decisions = [...s.decisions, { sol: s.sol, ev: card.event, choiceIdx, ok, fx, good, taskLine }]
+    set({ ...patch, learned, decisions, task: null, phase: 'outcome', cardResult: { choiceIdx, ok, effects: eff, fx, good, taskLine, t: Date.now() } })
+  },
+
+  // ---- 🛠️ Tarea física en la base ----
+  /** Actualiza la tarea en curso (lo usan la escena 3D y los desafíos). */
+  taskPatch: (patch) => { const t = get().task; if (t) set({ task: { ...t, ...patch } }) },
+  /** El comandante llegó a un lugar de la tarea y lo usa (tecla E, botón o tocándolo). */
+  taskAct: (spotId) => {
+    const s = get()
+    const t = s.task
+    if (s.phase !== 'task' || !t || t.mini || t.busy) return
+    const spot = taskSpots(s).find((p) => p.id === spotId)
+    if (!spot || spot.done) return
+    if (spot.act === 'clean') set({ task: { ...t, busy: spotId, busyT: 0 } })
+    else set({ task: { ...t, mini: spot.act } })
+  },
+  /** Termina la tarea. result: lo que hizo el jugador (o { crew: true } si la deja a la tripulación). */
+  finishTask: (result) => {
+    const s = get()
+    if (s.phase !== 'task' || !s.task) return
+    const choice = s.cards[0].event.choices[s.task.choiceIdx]
+    const { effects, line } = taskEffects(s, choice, result)
+    get().resolveChoice(choice, s.task.choiceIdx, effects, line)
   },
 
   nextCard: () => {

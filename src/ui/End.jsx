@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { useGame } from '../game/store'
 import { BASE, SOLS, ICE_MINE_O2, LEAK_O2 } from '../game/content'
 import { fmtDate } from '../data/donki'
-import { t, locEvent, locStorm, outcomeText, locBuild, locMission, factText } from '../i18n/core'
+import { t, locEvent, locStorm, outcomeText, locBuild, locMission, factText, noteText } from '../i18n/core'
 import { useT } from '../i18n/useT'
 import Console from './Console'
 import Quiz from './Quiz'
@@ -106,7 +106,7 @@ export default function End({ onData }) {
                   }
                   decs.forEach((d) => {
                     const ev = locEvent(s.lang, d.ev)
-                    lines.push({ txt: `${ev.emoji} ${ev.title} → «${ev.choices[d.choiceIdx].label}» → ${outcomeText(s.lang, d.ev, d)}`, cls: d.good ? 'ok' : 'ko' })
+                    lines.push({ txt: `${ev.emoji} ${ev.title} → «${ev.choices[d.choiceIdx].label}» → ${outcomeText(s.lang, d.ev, d)}` + (d.taskLine ? ' ' + noteText(s.lang, d.taskLine[0], d.taskLine[1]) : ''), cls: d.good ? 'ok' : 'ko' })
                   })
                   if (l?.fixedLeak) lines.push({ txt: t(s.lang, 'log.fixedLeak'), cls: 'ok' })
                   if (l?.fixedPanel) lines.push({ txt: t(s.lang, 'log.fixedPanel'), cls: 'ok' })

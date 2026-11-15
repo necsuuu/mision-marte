@@ -258,6 +258,8 @@ export function initSound() {
       else if (s.phase === 'outcome') play(s.cardResult?.good ? 'good' : 'bad')
       else if (s.phase === 'report') play(s.health <= 0 ? 'bad' : 'night')
     }
+    // 🛠️ empieza una tarea física: alarma si se escapa el aire, si no un aviso
+    if (s.phase === 'task' && p.phase !== 'task') play(s.task?.id === 'seal' ? 'alarm' : 'open')
     // 🏗️ obra terminada y 🏅 misión cumplida (suenan un toque después del sonido de la noche)
     if (s.build.done.length > p.build.done.length) setTimeout(() => play('good'), 700)
     else if (s.medals > p.medals) setTimeout(() => play('pick'), 700)

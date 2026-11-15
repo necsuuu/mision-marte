@@ -213,6 +213,7 @@ function ChoicePaper({ s, option }) {
           <Tags f={f} lang={s.lang} />
         </>
       )}
+      {option.value.task && <div className="p-tag ok">{T('tag.task')}</div>}
     </>
   )
 }

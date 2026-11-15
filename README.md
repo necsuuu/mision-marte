@@ -61,6 +61,7 @@ Desde los **10 años** la base consume más aire y comida (27 y 13 por sol, cont
 - ✋ **Botón de acción en pantalla** (igual que la tecla E) para jugar en tablets o con un solo dedo.
 - ✨/🐢 **Gráficos livianos** para compus viejas: sin sombras y con menos resolución. Además, si el juego anda lento, baja la resolución solo.
 - Textos grandes en todo el juego.
+- **Texturas realistas:** el suelo de Marte tiene relieve, ondas de arena y piedritas; los metales están cepillados y rayados; la pintura tiene mugre, chorreaduras y saltaduras; el domo y el paracaídas tienen trama de tela. Todo se calcula en la placa de video, sin descargar imágenes. En modo liviano 🐢 se apagan.
 - **Se adapta a cualquier pantalla:** compu, tablet o celular acostado. El tamaño de todo se calcula según la pantalla, los textos de la computadora del juego nunca quedan ilegibles, y en celulares hay botón de **pantalla completa ⛶**. Si el celular está parado, el juego se pausa y pide girarlo.
 
 > El nombre y la edad **solo viven en la memoria del navegador** mientras se juega: no se guardan ni se envían a ningún lado.
@@ -265,6 +266,8 @@ src/
 │   └── core.js, useT.js    Funciones para traducir
 ├── three/
 │   ├── Planet.jsx          Marte girando (pantallas de inicio)
+│   ├── surfaces.js         Texturas reales sin imágenes: grano, relieve, desgaste y manchas para metal, pintura, roca y tela
+│   ├── Reflections.jsx     Entorno de reflejos para que los metales no se vean de plástico
 │   ├── Launch.jsx          Cinemática de despegue: plataforma, cuenta regresiva, nubes, espacio y la Tierra
 │   ├── MarsBase.jsx        Escena de la base: cielo, día/noche, director de cámara, cinemática
 │   ├── baseParts.jsx       Domo, invernadero, paneles, antena, rover, nave, mina, tripulación

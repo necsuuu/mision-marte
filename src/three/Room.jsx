@@ -12,6 +12,7 @@ import { findPath, walkable } from '../game/pathfinding'
 import { t, locItem } from '../i18n/core'
 import { ITEM_MODELS } from './items3d'
 import CharacterSprite from './CharacterSprite'
+import Reflections from './Reflections'
 
 const SPEED = 6.5
 const REACH = 2.1
@@ -785,6 +786,7 @@ export default function Room() {
       <CamRig playerRef={playerRef} />
       <color attach="background" args={['#14161f']} />
       <ambientLight intensity={0.55} />
+      <Reflections kind="ship" intensity={0.3} />
       <hemisphereLight args={['#f1e6c8', '#3a2f2a', 0.6]} />
       <directionalLight position={[6, 14, 8]} intensity={1.1} />
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, -0.4]} onPointerDown={onFloor}>

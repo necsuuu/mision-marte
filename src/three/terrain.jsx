@@ -36,7 +36,7 @@ export function Terrain() {
   }, [])
   return (
     <mesh geometry={geo} receiveShadow>
-      <meshStandardMaterial vertexColors roughness={1} flatShading />
+      <meshStandardMaterial vertexColors roughness={1} />
     </mesh>
   )
 }

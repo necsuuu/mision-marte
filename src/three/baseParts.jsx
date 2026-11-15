@@ -63,7 +63,7 @@ export function Habitat({ night }) {
       <Deploy start={8} dur={1.6} mode="inflate">
         <mesh castShadow receiveShadow>
           <sphereGeometry args={[R, 48, 24, 0, Math.PI * 2, 0, Math.PI / 2]} />
-          <meshStandardMaterial color="#ece6dc" roughness={0.55} metalness={0.1} />
+          <meshStandardMaterial color="#ece6dc" roughness={0.8} metalness={0} userData={{ surf: 'tela' }} />
         </mesh>
         {[0.6, 1.4, 2.2].map((y, i) => (
           <mesh key={i} position={[0, y, 0]} rotation={[Math.PI / 2, 0, 0]}>
@@ -469,7 +469,7 @@ export function Lander() {
         <group ref={chute} visible={false}>
           <mesh position={[0, 10, 0]}>
             <sphereGeometry args={[5, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2.6]} />
-            <meshStandardMaterial color="#f4f0e8" side={THREE.DoubleSide} />
+            <meshStandardMaterial color="#f4f0e8" side={THREE.DoubleSide} userData={{ surf: 'tela' }} />
           </mesh>
           {[0, 1, 2, 3, 4, 5].map((i) => {
             const a = (i / 6) * Math.PI * 2

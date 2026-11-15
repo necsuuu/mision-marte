@@ -7,6 +7,7 @@ import { Terrain, Rocks } from './terrain'
 import { Shield, SolarParticles, DustParticles, Meteor, OutcomeSparks, DustBurst } from './effects'
 import { Habitat, Greenhouse, SolarArray, Antenna, Rover, Discoveries, IceMine, Samples, Lander, Crew, POS, DOME_SPOTS, useActiveEvent } from './baseParts'
 import { cine, ease } from './cine'
+import Reflections from './Reflections'
 
 const BASE_TARGET = new THREE.Vector3(0, 1.5, 0)
 export const CINE_END = 17
@@ -86,6 +87,7 @@ function SkyAndLight({ cinematic }) {
     <>
       <hemisphereLight ref={hemi} args={['#ffd9b8', '#5a2a14', 0.65]} />
       <ambientLight intensity={0.08} />
+      <Reflections kind="mars" intensity={0.3} />
       <directionalLight
         ref={sun}
         position={[30, 40, 20]}

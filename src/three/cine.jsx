@@ -3,7 +3,8 @@ import { useFrame } from '@react-three/fiber'
 
 // Reloj compartido de la cinemática de aterrizaje.
 // Fuera de la cinemática (active=false) todo se muestra completo.
-export const cine = { active: false, t: 0 }
+import { cine } from '../game/clocks'
+export { cine }
 
 const clamp01 = (v) => Math.max(0, Math.min(1, v))
 export const ease = (v) => v * v * (3 - 2 * v)

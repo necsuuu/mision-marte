@@ -1,11 +1,6 @@
-import { Suspense, useEffect, useState } from 'react'
-import { Canvas } from '@react-three/fiber'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import { useGame } from './game/store'
-import Planet from './three/Planet'
-import MarsBase from './three/MarsBase'
-import Room from './three/Room'
-import Launch from './three/Launch'
 import LaunchUI from './ui/LaunchUI'
 import CharacterSelect from './ui/CharacterSelect'
 import ModeSelect from './ui/ModeSelect'
@@ -16,10 +11,11 @@ import Loading from './ui/Loading'
 import SolScreen from './ui/SolScreen'
 import End from './ui/End'
 import DataPanel from './ui/DataPanel'
-import Quality from './three/Quality'
-import PauseClock from './three/PauseClock'
 import PauseMenu from './ui/PauseMenu'
 import { Toolbar, RotateHint } from './ui/common'
+
+// El motor 3D (three.js y las escenas) se descarga aparte: el título aparece enseguida y el 3D llega mientras tanto.
+const Stage = lazy(() => import('./three/Stage'))
 
 export default function App() {
   const screen = useGame((s) => s.screen)
@@ -29,26 +25,10 @@ export default function App() {
     document.title = lang === 'en' ? 'Surviving on Mars · Junior Astronaut Mission Trainer' : 'Sobreviviendo en Marte · Entrenador de Astronautas Junior'
     document.documentElement.lang = lang
   }, [lang])
-  const onBase = screen === 'sol' || screen === 'end' || screen === 'landing'
-  const finishLanding = useGame((s) => s.finishLanding)
-  const finishLaunch = useGame((s) => s.finishLaunch)
-  const paused = useGame((s) => s.paused)
-  const inRoom = screen === 'loading' || screen === 'tutorial'
-  const planetOffset = screen === 'title' ? [2.4, -0.2, 0] : screen === 'character' ? [4.6, -2.2, -4] : [3.6, -1.6, -3]
-
   return (
     <div className="app">
       <div className="canvas-wrap">
-        <Canvas
-          shadows
-          frameloop={paused ? 'never' : 'always'}
-          dpr={[1, 1.75]}
-          camera={{ position: [0, 0, 8], fov: 45 }}
-        >
-          <Quality />
-          <PauseClock />
-          <Suspense fallback={null}>{screen === 'launch' ? <Launch onDone={finishLaunch} /> : onBase ? <MarsBase key={screen === 'landing' ? 'cine' : 'base'} cinematic={screen === 'landing'} onCineDone={finishLanding} /> : inRoom ? <Room /> : screen === 'title' ? null : <Planet offset={planetOffset} />}</Suspense>
-        </Canvas>
+        <Suspense fallback={null}><Stage /></Suspense>
       </div>
 
       <div className="ui">

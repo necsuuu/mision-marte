@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useGame } from '../game/store'
-import { launchClock, LAUNCH_END, LIFTOFF, SPACE_CUT } from '../three/Launch'
+import { launchClock, LAUNCH_END, LIFTOFF, SPACE_CUT } from '../game/clocks'
 import { useT } from '../i18n/useT'
 import { Tx } from './common'
 import { useSpeak } from '../game/voice'

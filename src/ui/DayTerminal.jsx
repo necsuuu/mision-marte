@@ -5,7 +5,8 @@
 // En el papel de la derecha se imprime cómo quedarían los recursos con cada decisión.
 import { useEffect, useMemo, useState } from 'react'
 import { useSpeak } from '../game/voice'
-import { motion } from 'framer-motion'
+import { motion, useIsPresent } from 'framer-motion'
+import { view } from '../game/clocks'
 import { useGame, forecast, forecastChoice, chipsAvailable, shieldFraction, project, recommendChoice } from '../game/store'
 import { BASE, SYSTEMS, ITEMS, LEAK_O2, ICE_MINE_O2 } from '../game/content'
 import { fmtDate } from '../data/donki'
@@ -313,6 +314,10 @@ export default function DayTerminal({ s }) {
   const mode = s.phase === 'decision' ? 'decision' : s.phase === 'plan' ? 'plan' : 'briefing'
   const { choose, nextCard, endSol } = useGame.getState()
   const [sel, setSel] = useState(null)
+  // Mientras la computadora tapa todo, la escena 3D de atrás no se dibuja; apenas empieza a cerrarse, vuelve.
+  const present = useIsPresent()
+  useEffect(() => { if (!present) view.covered = false }, [present])
+  useEffect(() => () => { view.covered = false }, [])
 
   const options = useMemo(() => {
     if (mode !== 'decision') return []
@@ -370,6 +375,7 @@ export default function DayTerminal({ s }) {
       initial={{ clipPath: 'circle(0% at 50% 50%)' }}
       animate={{ clipPath: 'circle(150% at 50% 50%)', transition: { duration: 0.7, ease: 'easeInOut' } }}
       exit={{ clipPath: 'circle(0% at 50% 45%)', transition: { duration: 0.6, ease: 'easeInOut' } }}
+      onAnimationComplete={() => { if (present) view.covered = true }}
     >
       <motion.img className="decision-bg" src={ch.interior} alt="" initial={{ scale: 1.12 }} animate={{ scale: 1.02, transition: { duration: 8, ease: 'easeOut' } }} />
       <div className="decision-shade dark" />

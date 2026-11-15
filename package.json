@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:single": "SINGLE=1 vite build --outDir dist-single",
     "lint": "oxlint",
     "preview": "vite preview"
   },

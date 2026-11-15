@@ -236,6 +236,14 @@ Abrí **http://localhost:5173** en el navegador.
 
 ---
 
+## ⚡ Rendimiento
+
+- **El título carga rápido:** el motor 3D (three.js y las escenas) va en un archivo aparte que se descarga mientras se ve el título, y las imágenes del resto del juego se precargan en segundo plano. La primera carga pasó de 2,4 MB a unos 0,5 MB.
+- **No se dibuja lo que no se ve:** cuando la computadora del juego tapa toda la pantalla, la escena 3D de atrás casi no se dibuja (las animaciones siguen corriendo, así que al volver todo está en su lugar).
+- **Texturas más baratas:** el ruido de las superficies se lee de una textura 3D chiquita generada una sola vez, en vez de calcularse píxel por píxel; y de lejos, el detalle fino no se calcula.
+- **Caché:** `vercel.json` marca los archivos de `assets/` como permanentes, así la segunda visita no descarga nada.
+- `npm run build` genera la versión para hosting. `npm run build:single` genera una versión con todo en un solo archivo JS (carpeta `dist-single`).
+
 ## 📁 Estructura del proyecto
 
 ```

@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useGame } from '../game/store'
-import { cine } from '../three/cine'
-import { CINE_END } from '../three/MarsBase'
+import { cine, CINE_END } from '../game/clocks'
 import { useT } from '../i18n/useT'
 import { Tx } from './common'
 

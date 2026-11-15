@@ -10,7 +10,7 @@ import { cine, ease } from './cine'
 import Reflections from './Reflections'
 
 const BASE_TARGET = new THREE.Vector3(0, 1.5, 0)
-export const CINE_END = 17
+import { CINE_END } from '../game/clocks'
 
 // ---------- Tomas de cámara para cada evento ----------
 const SHOTS = {

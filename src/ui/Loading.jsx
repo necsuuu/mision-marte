@@ -8,6 +8,7 @@ import { locItem } from '../i18n/core'
 import { useT } from '../i18n/useT'
 import { fade } from './common'
 import ItemCard from './ItemCard'
+import { useShallow } from 'zustand/react/shallow'
 
 const byId = (id) => ITEMS.find((i) => i.id === id)
 
@@ -54,7 +55,9 @@ function ActionButton() {
 }
 
 export default function Loading() {
-  const { cargo, launch, weatherLoading, goModes, roomItems, carrying, unload, player, lang, easy } = useGame()
+  const { cargo, launch, weatherLoading, goModes, roomItems, carrying, unload, player, lang, easy } = useGame(
+    useShallow((s) => ({ cargo: s.cargo, launch: s.launch, weatherLoading: s.weatherLoading, goModes: s.goModes, roomItems: s.roomItems, carrying: s.carrying, unload: s.unload, player: s.player, lang: s.lang, easy: s.easy }))
+  )
   const CAPACITY = capacityFor({ easy })
   const LOAD_SECONDS = loadSecondsFor({ easy })
   const T = useT()

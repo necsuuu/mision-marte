@@ -13,8 +13,10 @@ export function terrainHeight(x, z) {
   return h * t - 0.02
 }
 
-export function Terrain() {
-  const geo = useMemo(() => {
+let terrainGeo = null // se arma una sola vez y se reutiliza entre escenas
+function buildTerrain() {
+  if (terrainGeo) return terrainGeo
+  terrainGeo = (() => {
     const g = new THREE.PlaneGeometry(260, 260, 180, 180)
     g.rotateX(-Math.PI / 2)
     const pos = g.attributes.position
@@ -33,9 +35,14 @@ export function Terrain() {
     g.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3))
     g.computeVertexNormals()
     return g
-  }, [])
+  })()
+  return terrainGeo
+}
+
+export function Terrain() {
+  const geo = useMemo(buildTerrain, [])
   return (
-    <mesh geometry={geo} receiveShadow>
+    <mesh geometry={geo} receiveShadow dispose={null}>
       <meshStandardMaterial vertexColors roughness={1} />
     </mesh>
   )

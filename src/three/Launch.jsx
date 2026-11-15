@@ -5,11 +5,7 @@ import { RetroFlame, dotTexture } from './effects'
 
 // Cinemática de despegue desde la Tierra (va ANTES de la recolección de suministros).
 // Tiene su propio reloj, así no se mezcla con la de aterrizaje.
-export const launchClock = { t: 0 }
-if (typeof window !== 'undefined') window.__launch = launchClock // para pruebas automáticas
-export const LAUNCH_END = 13
-export const LIFTOFF = 3.6 // segundo en el que el cohete se despega
-export const SPACE_CUT = 8.2 // corte a la vista desde el espacio
+import { launchClock, LAUNCH_END, LIFTOFF, SPACE_CUT } from '../game/clocks'
 
 const clamp01 = (v) => Math.max(0, Math.min(1, v))
 const smooth = (v) => v * v * (3 - 2 * v)

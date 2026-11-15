@@ -1,6 +1,7 @@
 // Superficies "reales": en vez de colores lisos (que se ven como plástico), cada material recibe
 // grano, relieve, desgaste y manchas calculados en la placa de video (ruido 3D procedural).
 // No usa imágenes: funciona sin internet y sobre cualquier forma, sin costuras.
+import * as THREE from 'three'
 //
 // Tipos de superficie:
 //   1 metal    → cepillado, rayones finos y manchas de uso
@@ -10,6 +11,32 @@
 // Se elige solo según el material (metalness, flatShading...) o a mano con userData={{ surf: 'tela' }}.
 
 const KINDS = { metal: 1, pintura: 2, roca: 3, tela: 4 }
+
+// Optimización: el mismo ruido que antes se calculaba con cuentas en cada píxel, ahora se lee de una
+// textura 3D chiquita (64³, 256 KB) que se genera una sola vez. Mismos valores, una lectura en vez de 8 cuentas.
+// Solo las ondas grandes que dan relieve (roca, arrugas de tela) siguen calculándose, porque ahí hace falta precisión.
+const N = 64
+let noiseTex = null
+function getNoiseTexture() {
+  if (noiseTex) return noiseTex
+  const data = new Uint8Array(N * N * N)
+  const fr = (v) => v - Math.floor(v)
+  const f32 = Math.fround
+  let k = 0
+  for (let z = 0; z < N; z++) for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    // misma fórmula que sHash() del shader
+    let px = f32(fr(f32(x * 0.3183099 + 0.1)) * 17), py = f32(fr(f32(y * 0.3183099 + 0.1)) * 17), pz = f32(fr(f32(z * 0.3183099 + 0.1)) * 17)
+    data[k++] = Math.round(fr(f32(px * py * pz * (px + py + pz))) * 255)
+  }
+  noiseTex = new THREE.Data3DTexture(data, N, N, N)
+  noiseTex.format = THREE.RedFormat
+  noiseTex.type = THREE.UnsignedByteType
+  noiseTex.minFilter = noiseTex.magFilter = THREE.LinearFilter
+  noiseTex.wrapS = noiseTex.wrapT = noiseTex.wrapR = THREE.RepeatWrapping
+  noiseTex.unpackAlignment = 1
+  noiseTex.needsUpdate = true
+  return noiseTex
+}
 
 const VERT_DECL = /* glsl */ `
 varying vec3 vSurfPos;
@@ -32,6 +59,10 @@ float sNoise(vec3 x) {
              mix(mix(sHash(i + vec3(0, 0, 1)), sHash(i + vec3(1, 0, 1)), f.x), mix(sHash(i + vec3(0, 1, 1)), sHash(i + vec3(1, 1, 1)), f.x), f.y), f.z);
 }
 float sFbm(vec3 p) { float a = 0.5, s = 0.0; for (int i = 0; i < 4; i++) { s += a * sNoise(p); p = p * 2.03 + 7.1; a *= 0.5; } return clamp((s - 0.22) / 0.5, 0.0, 1.0); }
+// Lo mismo, leyendo la textura de ruido: la interpolación suave se hace corriendo la coordenada (una sola lectura).
+uniform highp sampler3D sNoiseTex;
+float sTex(vec3 x) { vec3 i = floor(x); vec3 f = fract(x); f = f * f * (3.0 - 2.0 * f); return textureLod(sNoiseTex, (i + f + 0.5) / 64.0, 0.0).r; }
+float sFbmT(vec3 p) { float a = 0.5, s = 0.0; for (int i = 0; i < 4; i++) { s += a * sTex(p); p = p * 2.03 + 7.1; a *= 0.5; } return clamp((s - 0.22) / 0.5, 0.0, 1.0); }
 `
 
 // Después de calcular el color base: variación de color, y se guarda el relieve (sH) y el cambio de rugosidad (sRough)
@@ -43,9 +74,12 @@ const FRAG_COLOR = /* glsl */ `
   float sBump = 0.0;                         // fuerza del relieve
   #if SURF_KIND == 1
     float sFade = clamp(1.0 - sPx * 30.0, 0.0, 1.0);
-    float streak = sNoise(vec3(sp.x * 5.0, sp.y * 90.0, sp.z * 5.0)) * 0.6 + sNoise(vec3(sp.x * 90.0, sp.y * 5.0, sp.z * 90.0)) * 0.4;
-    float grime = sFbm(sp * 1.6 + 11.0);
-    float scratch = smoothstep(0.80, 0.86, sNoise(vec3(sp.x * 6.0 + sp.y * 3.0, sp.y * 140.0, sp.z * 9.0)));
+    float streak = 0.5, scratch = 0.0;
+    if (sFade > 0.0) {   // de lejos el detalle fino no se ve: no se calcula
+      streak = sTex(vec3(sp.x * 5.0, sp.y * 90.0, sp.z * 5.0)) * 0.6 + sTex(vec3(sp.x * 90.0, sp.y * 5.0, sp.z * 90.0)) * 0.4;
+      scratch = smoothstep(0.80, 0.86, sTex(vec3(sp.x * 6.0 + sp.y * 3.0, sp.y * 140.0, sp.z * 9.0)));
+    }
+    float grime = sFbmT(sp * 1.6 + 11.0);
     float stain = smoothstep(0.4, 0.8, grime);
     diffuseColor.rgb *= mix(1.0, 0.86 + 0.26 * streak, sFade);
     diffuseColor.rgb *= mix(1.0, 0.72, stain * 0.8);
@@ -55,11 +89,14 @@ const FRAG_COLOR = /* glsl */ `
     sBump = sFade;
   #elif SURF_KIND == 2
     float sFade = clamp(1.0 - sPx * 22.0, 0.0, 1.0);
-    float fine = sFbm(sp * 48.0);
-    float grime = sFbm(sp * 1.1 + 3.0);
-    float chips = smoothstep(0.70, 0.76, sNoise(sp * 19.0) * 0.6 + sNoise(sp * 63.0) * 0.4);
+    float fine = 0.5, chips = 0.0;
+    if (sFade > 0.0) {
+      fine = sFbmT(sp * 48.0);
+      chips = smoothstep(0.70, 0.76, sTex(sp * 19.0) * 0.6 + sTex(sp * 63.0) * 0.4);
+    }
+    float grime = sFbmT(sp * 1.1 + 3.0);
     float stain = smoothstep(0.45, 0.9, grime);
-    float streaks = smoothstep(0.45, 0.9, sFbm(vec3(sp.x * 5.0, sp.y * 0.5, sp.z * 5.0) + 4.0));   // chorreaduras verticales
+    float streaks = smoothstep(0.45, 0.9, sFbmT(vec3(sp.x * 5.0, sp.y * 0.5, sp.z * 5.0) + 4.0));   // chorreaduras verticales
     diffuseColor.rgb *= mix(1.0, 0.86 + 0.26 * fine, sFade);
     diffuseColor.rgb *= mix(1.0, 0.76, stain * 0.8);
     diffuseColor.rgb *= 1.0 - streaks * 0.12;
@@ -71,10 +108,13 @@ const FRAG_COLOR = /* glsl */ `
     float sFade = clamp(1.0 - sPx * 5.0, 0.0, 1.0);
     float sFadeFine = clamp(1.0 - sPx * 20.0, 0.0, 1.0);
     float big = sFbm(sp * 0.9);
-    float med = sFbm(sp * 6.0 + 5.0);
-    float fine = sNoise(sp * 42.0);
-    float pebble = smoothstep(0.80, 0.86, sNoise(sp * 17.0)) * sFadeFine;
-    float dust = smoothstep(0.35, 0.7, sFbm(sp * 0.35 + 20.0));
+    float med = sFbmT(sp * 6.0 + 5.0);
+    float fine = 0.5, pebble = 0.0;
+    if (sFadeFine > 0.0) {
+      fine = sTex(sp * 42.0);
+      pebble = smoothstep(0.80, 0.86, sTex(sp * 17.0)) * sFadeFine;
+    }
+    float dust = smoothstep(0.35, 0.7, sFbmT(sp * 0.35 + 20.0));
     float ripple = sin(sp.x * 2.6 + sp.z * 1.1 + big * 5.0) * 0.5 + 0.5;            // ondas de arena
     float shade = big * 0.5 + med * 0.35 * sFade + fine * 0.15 * sFadeFine;
     diffuseColor.rgb *= 0.62 + 0.70 * shade;
@@ -89,7 +129,7 @@ const FRAG_COLOR = /* glsl */ `
     vec3 w = sp * 170.0;
     float weave = (sin(w.x) * sin(w.y) + sin(w.y) * sin(w.z) + sin(w.z) * sin(w.x)) / 3.0;
     float wrinkle = sFbm(sp * vec3(2.0, 7.0, 2.0) + 2.0);
-    float grime = smoothstep(0.4, 0.85, sFbm(sp * 0.8 + 9.0));
+    float grime = smoothstep(0.4, 0.85, sFbmT(sp * 0.8 + 9.0));
     diffuseColor.rgb *= mix(1.0, 0.93 + 0.12 * weave, sFade);
     diffuseColor.rgb *= 0.88 + 0.2 * wrinkle;
     diffuseColor.rgb *= mix(1.0, 0.74, grime * 0.8);
@@ -114,6 +154,7 @@ const FRAG_NORMAL = /* glsl */ `
 `
 
 function patch(shader) {
+  shader.uniforms.sNoiseTex = { value: getNoiseTexture() }
   shader.vertexShader = shader.vertexShader
     .replace('#include <common>', '#include <common>\n' + VERT_DECL)
     .replace('#include <begin_vertex>', '#include <begin_vertex>\n' + VERT_MAIN)

@@ -23,6 +23,7 @@ const isOpen = (furnId) => !CLOSED_KINDS.has(FURN[furnId].kind) || useGame.getSt
 
 // ---------- Texturas ----------
 function useTileTexture(base, line, repeat) {
+  const [rx, ry] = repeat
   return useMemo(() => {
     const c = document.createElement('canvas')
     c.width = c.height = 256
@@ -33,10 +34,10 @@ function useTileTexture(base, line, repeat) {
     ;[[24, 24], [232, 24], [24, 232], [232, 232]].forEach(([x, y]) => { g.beginPath(); g.arc(x, y, 5, 0, 7); g.fill() })
     const tx = new THREE.CanvasTexture(c)
     tx.wrapS = tx.wrapT = THREE.RepeatWrapping
-    tx.repeat.set(...repeat)
+    tx.repeat.set(rx, ry)
     tx.colorSpace = THREE.SRGBColorSpace
     return tx
-  }, [base, line, repeat])
+  }, [base, line, rx, ry])
 }
 
 function usePortholeTexture() {

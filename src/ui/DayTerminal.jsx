@@ -7,12 +7,12 @@ import { useEffect, useMemo, useState } from 'react'
 import { useSpeak } from '../game/voice'
 import { motion, useIsPresent } from 'framer-motion'
 import { view } from '../game/clocks'
-import { useGame, forecast, forecastChoice, chipsAvailable, shieldFraction, project, recommendChoice } from '../game/store'
-import { BASE, SYSTEMS, ITEMS, LEAK_O2, ICE_MINE_O2 } from '../game/content'
+import { useGame, forecast, forecastChoice, chipsAvailable, shieldFraction, project, recommendChoice, missionMet, canBuild, hasBuilt, buildLeft } from '../game/store'
+import { BASE, SYSTEMS, ITEMS, LEAK_O2, ICE_MINE_O2, BUILDS, BUILD_FROM_SOL, MISSION_BONUS } from '../game/content'
 import { fmtDate } from '../data/donki'
 import { earthMarsDistance } from '../data/marsDistance'
 import { getCharacter } from '../game/characters'
-import { t, locEvent, locSystem, locStorm, locRepair } from '../i18n/core'
+import { t, locEvent, locSystem, locStorm, locRepair, locBuild, locMission } from '../i18n/core'
 import { useT } from '../i18n/useT'
 import { Term, Tx } from './common'
 import TerminalFrame from './Terminal'
@@ -50,8 +50,21 @@ function Tags({ f, lang }) {
   if (f.noSci) tags.push(['ko', t(lang, 'tag.noSci')])
   if (f.mine) tags.push(['ok', t(lang, 'tag.mine', { n: ICE_MINE_O2 })])
   if (f.sample) tags.push(['ok', t(lang, 'tag.sample')])
+  if (f.bonus) tags.push(['ok', t(lang, 'tag.bonus', { n: f.bonus })])
   if (f.item) tags.push(['', t(lang, 'tag.item', { emoji: ITEMS.find((i) => i.id === f.item)?.emoji })])
   return tags.map(([c, txt], i) => <div key={i} className={'p-tag ' + c}>{txt}</div>)
+}
+
+/** 🎯 Misión de hoy. En el plan se pone en verde apenas el reparto la cumple. */
+function MissionLine({ s, prize = false, met = false }) {
+  const T = useT()
+  const m = locMission(s.lang, s.mission.id)
+  return (
+    <div className={'crt-mission' + (met ? ' ok' : '')}>
+      <b>{met ? '✅' : '🎯'} {T('mis.title')}:</b> {m.emoji} {m.text}
+      {prize && <small> · {T('mis.prize', { n: MISSION_BONUS })}</small>}
+    </div>
+  )
 }
 
 // ---------- 1) Informe del día ----------
@@ -109,8 +122,11 @@ function Briefing({ s, card }) {
           {card.warn.drill && <small> {T('warn.drill')}</small>}
         </div>
       )}
-      {(s.base.leak || s.base.brokenPanels > 0 || s.base.iceMine) && (
+      {s.sol === BUILD_FROM_SOL && <Tx as="div" className="crt-extra" k="brief.buildNew" />}
+      {s.mission && <MissionLine s={s} prize />}
+      {(s.base.leak || s.base.brokenPanels > 0 || s.base.iceMine || s.build.done.length > 0) && (
         <div className="crt-base">
+          {s.build.done.map((id) => { const b = locBuild(lang, id); return <span key={id} className="ok">{b.emoji} {b.gain}</span> })}
           {s.base.leak && <span className="ko">💨 {T('tag.leak', { n: LEAK_O2 })}</span>}
           {s.base.brokenPanels > 0 && <span className="ko">💥 {T('tag.panel')}</span>}
           {s.base.iceMine && <span className="ok">{T('tag.mine', { n: ICE_MINE_O2 })}</span>}
@@ -153,7 +169,7 @@ function Decision({ s, sel, setSel, options }) {
   useSpeak(ev.title + '. ' + ev.text + '. ' + options.map((o, i) => `${i + 1}: ${o.label}`).join('. '))
   return (
     <>
-      <div className="crt-header"><span className="blink">■</span> {T(ev.special ? 'term.mid' : 'term.alert', { n: s.sol })} · {ev.emoji}</div>
+      <div className="crt-header"><span className="blink">■</span> {T(ev.special ? 'term.mid' : ev.expedition ? 'term.exp' : 'term.alert', { n: s.sol })} · {ev.emoji}</div>
       <TypeTitle text={ev.title.toUpperCase()} />
       <p className="crt-text">{T('term.ask', { name: s.player.name.toUpperCase() })} {ev.text}</p>
       {ev.delayFact && <div className="crt-extra">{T('term.delay', { km: Math.round(d.km / 1e6), min: Math.round(d.minutes) })}</div>}
@@ -161,7 +177,7 @@ function Decision({ s, sel, setSel, options }) {
         {options.map((o, i) => (
           <button key={i} className={'crt-opt' + (sel === i ? ' on' : '') + (hint && best === i ? ' hint' : '')} onClick={() => setSel(i)}>
             <span className="crt-num">{sel === i ? '▶' : i + 1}</span>
-            <span>{o.label}</span>
+            <span>{o.label}{ev.expedition && o.hint ? <small className="crt-opt-hint"> · {o.hint}</small> : null}</span>
             {hint && best === i && <span className="crt-star">⭐ {T('hint.crew')}</span>}
           </button>
         ))}
@@ -217,9 +233,36 @@ function Chips({ value, max, color, onSet, disabledFrom }) {
   )
 }
 
+/** 🏗️ Lista para elegir qué construir. */
+function BuildChooser({ s, onClose }) {
+  const T = useT()
+  const { pickBuild } = useGame.getState()
+  return (
+    <>
+      <div className="crt-title small">{T('build.q')}</div>
+      <div className="crt-options builds">
+        {BUILDS.map((b) => {
+          const lb = locBuild(s.lang, b.id)
+          const done = hasBuilt(s, b.id)
+          const locked = !!b.requires && !s.inventory[b.requires]
+          return (
+            <button key={b.id} className={'crt-opt build' + (s.build.active === b.id ? ' on' : '')} disabled={done || locked} onClick={() => { pickBuild(b.id); onClose() }}>
+              <span className="crt-num">{b.emoji}</span>
+              <span><b>{lb.name}</b><small className="crt-opt-hint"> · {lb.gain}</small></span>
+              <em>{done ? '✅' : locked ? T('build.need') : `${s.build.progress[b.id] || 0}/${b.cost} ⚡`}</em>
+            </button>
+          )
+        })}
+      </div>
+      <button className="crt-back" onClick={onClose}>← {T('build.back')}</button>
+    </>
+  )
+}
+
 function Plan({ s }) {
   const T = useT()
   const { setAlloc, autoPlan } = useGame.getState()
+  const [choosing, setChoosing] = useState(false)
   useSpeak(s.helpReasons ? T('help.title') + ' ' + s.helpReasons.map(([k, v]) => T(k, v)).join('. ') : T('plan.q'))
   const avail = chipsAvailable(s)
   const p = project(s)
@@ -233,6 +276,17 @@ function Plan({ s }) {
   if (s.dust.sols > 0) notes.push(T('plan.dust', { pct: Math.round((1 - s.dust.level) * 100), n: s.dust.sols }))
   if (s.today.chipsPenalty) notes.push(T('plan.penalty', { n: s.today.chipsPenalty }))
   if (s.battery) notes.push(T('plan.battery', { n: s.battery }))
+  if (s.today.bonus) notes.push(T('plan.bonus', { n: s.today.bonus }))
+  const building = canBuild(s)
+  const ab = s.build.active ? locBuild(s.lang, s.build.active) : null
+  if (choosing) {
+    return (
+      <>
+        <div className="crt-header"><span className="blink">■</span> {T('plan.kicker', { n: s.sol }).toUpperCase()}</div>
+        <BuildChooser s={s} onClose={() => setChoosing(false)} />
+      </>
+    )
+  }
   return (
     <>
       <div className="crt-header"><span className="blink">■</span> {T('plan.kicker', { n: s.sol }).toUpperCase()}</div>
@@ -251,6 +305,7 @@ function Plan({ s }) {
         </div>
       )}
       {notes.length > 0 && <div className="crt-notes">{notes.map((n, i) => <span key={i}>{n}</span>)}</div>}
+      {s.mission && <MissionLine s={s} met={missionMet(s)} />}
       {repairs.length > 0 && (
         <div className="crt-repairs">
           {repairs.map((r) => (
@@ -273,6 +328,20 @@ function Plan({ s }) {
             </div>
           )
         })}
+        {building && (ab ? (
+          <div className="crt-sys build">
+            <span className="crt-sys-emoji">🏗️</span>
+            <button className="crt-build-name" onClick={() => setChoosing(true)}><b>{ab.name}</b> ▾</button>
+            <small>{p.build.after}/{ab.cost}</small>
+            <Chips value={s.alloc.build} max={Math.min(BASE.maxChipsPerSystem, buildLeft(s, ab.id))} color="#ff9d5c" onSet={(v) => setAlloc('build', v)} disabledFrom={s.alloc.build + free} />
+          </div>
+        ) : (
+          <button className="crt-sys build pick" onClick={() => setChoosing(true)}>
+            <span className="crt-sys-emoji">🏗️</span>
+            <b>{T('build.title')}</b>
+            <small>{T('build.pick')} ▸</small>
+          </button>
+        ))}
       </div>
     </>
   )
@@ -286,11 +355,14 @@ function PlanPaper({ s }) {
       <div className="ticket-head">*** {T('paper.endOfSol')} ***</div>
       <Rows s={s} after={f} />
       <div className="p-row same"><span>🔋</span><span /><span className="arrow">→</span><b>{f.battery} ⚡</b></div>
+      {f.p.build && <div className={'p-row ' + (f.p.build.after > f.p.build.before ? 'up' : 'same')}><span>🏗️</span><span>{f.p.build.before}</span><span className="arrow">→</span><b>{f.p.build.after}/{f.p.build.cost}</b></div>}
       <div className="ticket-sep">- - - - - - - - - -</div>
       {f.p.storm?.level > 0 && <div className={'p-tag ' + (f.stormHit ? 'ko' : 'ok')}>{f.stormHit ? T('paper.storm', { n: f.stormHit }) : T('paper.stormBlocked')}</div>}
       {f.p.leakLoss > 0 && <div className="p-tag ko">💨 −{f.p.leakLoss} 🫁</div>}
       {f.p.mine > 0 && <div className="p-tag ok">⛏️ +{f.p.mine} 🫁</div>}
       {f.p.wasted > 0 && <div className="p-tag ko">{T('plan.wasted', { n: f.p.wasted })}</div>}
+      {f.p.build?.done && s.alloc.build > 0 && <div className="p-tag ok">{T('paper.buildDone')}</div>}
+      {s.mission && <div className={'p-tag ' + (missionMet(s, f) ? 'ok' : '')}>{T(missionMet(s, f) ? 'paper.missionOk' : 'paper.missionKo')}</div>}
       {f.warn.map((w) => <div key={w} className="p-tag ko big">{T('warn.' + w)}</div>)}
     </>
   )
@@ -325,8 +397,8 @@ export default function DayTerminal({ s }) {
     const ev = locEvent(s.lang, raw)
     return raw.choices
       .map((c, i) => ({ c, i }))
-      .filter(({ c }) => !c.requires || s.inventory[c.requires])
-      .map(({ c, i }) => ({ value: c, label: ev.choices[i].label }))
+      .filter(({ c }) => (!c.requires || s.inventory[c.requires]) && (!c.site || !card.sites || card.sites.includes(c.site)))
+      .map(({ c, i }) => ({ value: c, label: ev.choices[i].label, hint: ev.choices[i].hint }))
   }, [mode, card, s.lang, s.inventory])
 
   useEffect(() => { setSel(null) }, [mode, card])

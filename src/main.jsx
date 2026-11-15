@@ -5,9 +5,11 @@ import App from './App.jsx'
 import { useGame } from './game/store'
 import { preloadAssets } from './preload'
 import { initSound } from './game/sfx'
+import * as content from './game/content'
 
 // Para depurar desde la consola del navegador: __game.getState()
 window.__game = useGame
+window.__content = content // para pruebas: forzar un evento desde la consola
 
 // 🎬 Demo para el jurado: abrir la página con ?demo salta directo al Sol 1 (tormenta real de mayo 2024)
 if (new URLSearchParams(location.search).has('demo')) {

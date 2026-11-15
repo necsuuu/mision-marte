@@ -1,5 +1,8 @@
 import { create } from 'zustand'
-import { ITEMS, CAPACITY, LOAD_SECONDS, BASE, EVENTS, SOLS, REPAIRS, LEAK_O2, ICE_MINE_O2, MID_SOL, SUPPLY_EVENT } from './content'
+import {
+  ITEMS, CAPACITY, LOAD_SECONDS, BASE, EVENTS, SOLS, REPAIRS, LEAK_O2, ICE_MINE_O2, MID_SOL, SUPPLY_EVENT,
+  BUILDS, BUILD_FX, BUILD_FROM_SOL, MISSION_FROM_SOL, MISSION_BONUS, EXPEDITION_EVENT, EXPEDITION_FROM_SOL, EXPEDITION_MAX,
+} from './content'
 import { loadSpaceWeather, buildSolWeather } from '../data/donki'
 import { randomLayout } from './shipLayout'
 
@@ -17,21 +20,30 @@ export const isCadet = (age) => !!age && age <= CADET_AGE
 export const capacityFor = (s) => (s.easy ? CAPACITY + 4 : CAPACITY)
 export const loadSecondsFor = (s) => (s.easy ? 90 : LOAD_SECONDS)
 
-const emptyAlloc = { life: 0, greenhouse: 0, shield: 0, science: 0, fixLeak: false, fixPanel: false }
+const emptyAlloc = { life: 0, greenhouse: 0, shield: 0, science: 0, build: 0, fixLeak: false, fixPanel: false }
 const repairChips = (a) => (a.fixLeak ? REPAIRS.leak.cost : 0) + (a.fixPanel ? REPAIRS.panel.cost : 0)
-export const chipsUsed = (a) => a.life + a.greenhouse + a.shield + a.science + repairChips(a)
+export const chipsUsed = (a) => a.life + a.greenhouse + a.shield + a.science + (a.build || 0) + repairChips(a)
+
+// 🏗️ Obras
+export const hasBuilt = (s, id) => s.build.done.includes(id)
+/** Obras que todavía se pueden hacer (no terminadas y con lo necesario para hacerlas). */
+export const availableBuilds = (s) => BUILDS.filter((b) => !hasBuilt(s, b.id) && (!b.requires || s.inventory[b.requires]))
+/** ¿Ya se puede construir? (desde el sol 2, mientras quede alguna obra por hacer) */
+export const canBuild = (s) => s.sol >= BUILD_FROM_SOL && (!!s.build.active || availableBuilds(s).length > 0)
+export const buildLeft = (s, id) => { const b = BUILDS.find((x) => x.id === id); return b ? b.cost - (s.build.progress[id] || 0) : 0 }
 
 /** Energía disponible este sol (fichas ⚡). */
 export function chipsAvailable(s) {
   const dustFactor = 1 - (s.dust.sols > 0 ? s.dust.level : 0)
   const solar = Math.round(s.panels * BASE.chipsPerPanel * dustFactor)
-  return Math.max(0, solar + s.battery - s.today.chipsPenalty)
+  return Math.max(0, solar + s.battery + (s.today.bonus || 0) - s.today.chipsPenalty)
 }
 
 export function shieldFraction(s, chips) {
   const water = s.inventory.water ? BASE.waterShieldBonus : 0
+  const shelter = hasBuilt(s, 'shelter') ? BUILD_FX.shelterShield : 0 // el refugio frena siempre, sin gastar ⚡
   const f = chips > 0 ? chips * BASE.shieldPerChip + water : water * 0.5
-  return clamp(f, 0, BASE.maxShield)
+  return clamp(f + shelter, 0, BASE.maxShield)
 }
 
 /** Calcula qué va a pasar al terminar el sol con la energía repartida así (la UI lo muestra como pronóstico). */
@@ -51,17 +63,25 @@ export function project(s, alloc = s.alloc) {
   const mine = s.base.iceMine ? ICE_MINE_O2 : 0
   const use = needs(s)
   const dO2 = alloc.life * o2PerChip - use.o2 - leakLoss + mine
-  const foodMade = s.inventory.seeds ? alloc.greenhouse * BASE.foodPerChip : 0
+  const foodPerChip = BASE.foodPerChip + (hasBuilt(s, 'farm') ? BUILD_FX.farmFood : 0)
+  const foodMade = s.inventory.seeds ? alloc.greenhouse * foodPerChip : 0
   const dFood = foodMade - use.food
   const sciMult = s.inventory.science ? 2 : 1
-  const dSci = s.today.blockScience ? 0 : alloc.science * sciMult
+  const lab = hasBuilt(s, 'lab') && !s.today.blockScience ? BUILD_FX.labScience : 0
+  const dSci = (s.today.blockScience ? 0 : alloc.science * sciMult) + lab
+  // obra en marcha: cuánto avanza hoy
+  const bid = s.build.active
+  const bdef = bid && BUILDS.find((b) => b.id === bid)
+  const bBefore = bdef ? s.build.progress[bid] || 0 : 0
+  const bAfter = bdef ? Math.min(bdef.cost, bBefore + (alloc.build || 0)) : 0
+  const build = bdef ? { id: bid, before: bBefore, after: bAfter, cost: bdef.cost, done: bAfter >= bdef.cost } : null
   const storm = s.plan[s.sol - 1] || { level: 0 }
   const blocked = shieldFraction(s, alloc.shield)
   const stormDose = storm.level ? BASE.stormDose[storm.level] * (1 - blocked) * (s.easy ? 0.5 : 1) : 0
   const dose = BASE.baseDose + stormDose
   return {
     used, avail, leftover, saved: Math.min(leftover, cap), wasted: Math.max(0, leftover - cap),
-    dO2, dFood, dSci, dose, stormDose, blocked, storm, foodMade, leakLoss, mine,
+    dO2, dFood, dSci, dose, stormDose, blocked, storm, foodMade, leakLoss, mine, build, lab,
   }
 }
 
@@ -92,7 +112,7 @@ export function forecastChoice(s, choice) {
     dose: s.dose + (eff.dose || 0),
     chips: eff.chipsPenalty || 0,
     leak: !!eff.leak, mine: !!eff.iceMine, panel: !!eff.breakPanel, dust: eff.dust || null,
-    noSci: !!eff.blockScience, item: eff.useItem || null, sample: !!eff.sample,
+    noSci: !!eff.blockScience, item: eff.useItem || null, sample: !!eff.sample, bonus: eff.bonusNext || 0,
   })
   const e = choice.effects
   if (e.chance !== undefined) return { chance: e.chance, success: one(e.success), fail: one(e.fail) }
@@ -125,7 +145,9 @@ export function recommendAlloc(s) {
   // 4) reparar lo roto
   if (s.base.leak && left >= REPAIRS.leak.cost) { a.fixLeak = true; left -= REPAIRS.leak.cost; reasons.push(['help.leak']) }
   if (s.base.brokenPanels > 0 && left >= REPAIRS.panel.cost) { a.fixPanel = true; left -= REPAIRS.panel.cost; reasons.push(['help.panel']) }
-  // 5) lo que sobra, a ciencia
+  // 5) un poco para la obra, si hay una en marcha
+  if (s.build.active && left > 0) { a.build = take(Math.min(2, buildLeft(s, s.build.active))); if (a.build) reasons.push(['help.build', { n: a.build }]) }
+  // 6) lo que sobra, a ciencia
   if (!s.today.blockScience && left > 0) { a.science = Math.min(BASE.maxChipsPerSystem, take(left)); if (a.science) reasons.push(['help.science', { n: a.science }]) }
   return { alloc: a, reasons }
 }
@@ -136,11 +158,41 @@ export function recommendChoice(s, choices) {
   choices.forEach((c, i) => {
     const f = forecastChoice(s, c)
     // lo que está escaso vale el doble (si queda poco aire, conviene la opción que da aire)
-    const sc = (x) => (x.o2 - s.o2) * (s.o2 < 45 ? 2 : 1) + (x.food - s.food) * (s.food < 45 ? 2 : 1) + (x.health - s.health) * 1.5 + (x.science - s.science) * 3 - (x.dose - s.dose) * 5 - x.chips * 4 - (x.leak ? 30 : 0) - (x.panel ? 25 : 0) + (x.mine ? 30 : 0) - (x.dust ? x.dust.sols * 4 : 0) - (x.noSci ? 2 : 0) + (x.sample ? 6 : 0)
+    const sc = (x) => (x.o2 - s.o2) * (s.o2 < 45 ? 2 : 1) + (x.food - s.food) * (s.food < 45 ? 2 : 1) + (x.health - s.health) * 1.5 + (x.science - s.science) * 3 - (x.dose - s.dose) * 5 - x.chips * 4 - (x.leak ? 30 : 0) - (x.panel ? 25 : 0) + (x.mine ? 30 : 0) - (x.dust ? x.dust.sols * 4 : 0) - (x.noSci ? 2 : 0) + (x.sample ? 6 : 0) + x.bonus * 4
     const score = f.chance !== undefined ? f.chance * sc(f.success) + (1 - f.chance) * sc(f.fail) : sc(f)
     if (score > bestScore) { bestScore = score; best = i }
   })
   return best
+}
+
+/** 🎯 ¿Se está cumpliendo la misión de hoy con la energía repartida así? */
+export function missionMet(s, f = forecast(s)) {
+  if (!s.mission) return false
+  const p = f.p, a = s.alloc
+  switch (s.mission.id) {
+    // Los números están pensados para que haya que cambiar el reparto de siempre (no se cumplen solas)
+    case 'shield': return p.blocked >= 0.85
+    case 'fix': return (a.fixLeak && s.base.leak) || (a.fixPanel && s.base.brokenPanels > 0)
+    case 'air': return p.dO2 >= 10
+    case 'food': return p.dFood >= 5
+    case 'science': return p.dSci >= 3
+    case 'save': return p.saved >= (s.inventory.battery ? 2 : 1)
+    case 'build': return !!p.build && (a.build >= 2 || (p.build.done && a.build > 0))
+    default: return false
+  }
+}
+/** Elige la misión del sol: con tormenta fuerte es frenarla; si no, una al azar entre las que se pueden cumplir. */
+function pickMission(s, storm) {
+  if (s.sol < MISSION_FROM_SOL) return null
+  if (storm?.level >= 2) return { id: 'shield' } // tormenta fuerte: la misión es frenarla
+  const pool = ['save', 'science']
+  if (storm?.level) pool.push('shield')
+  if (s.o2 <= 85) pool.push('air')
+  if (s.base.leak || s.base.brokenPanels > 0) pool.push('fix', 'fix')
+  if (s.inventory.seeds && s.food <= 85) pool.push('food')
+  if (s.build.active || availableBuilds(s).length) pool.push('build', 'build')
+  const fresh = pool.filter((id) => id !== s.mission?.id)
+  return { id: fresh[Math.floor(Math.random() * fresh.length)] }
 }
 
 // Objetos de la nave (las raciones aparecen 2 veces)
@@ -207,7 +259,14 @@ const initialState = {
   base: freshBase(),
   plan: [],
   alloc: { ...emptyAlloc },
-  today: { chipsPenalty: 0, blockScience: false },
+  today: { chipsPenalty: 0, blockScience: false, bonus: 0 },
+  build: { active: null, progress: {}, done: [] }, // 🏗️ obra elegida, avance de cada una y las terminadas
+  mission: null, // 🎯 misión de hoy: { id }
+  medals: 0, // 🏅 misiones cumplidas
+  bonusNext: 0, // ⚡ extra para mañana (misión cumplida, expedición)
+  visited: [], // 🚙 lugares ya explorados
+  expeditions: 0,
+  lastExpedition: 0,
   cards: [],
   cardResult: null,
   eventDeck: [],
@@ -218,7 +277,7 @@ const initialState = {
   loseReason: null,
 }
 
-export const BAD_FX = new Set(['leaking', 'dusty', 'worse', 'panelbroken'])
+export const BAD_FX = new Set(['leaking', 'dusty', 'worse', 'panelbroken', 'nothing'])
 const phaseFor = (card) => (!card ? 'plan' : card.type === 'event' ? 'incident' : 'event')
 
 export const useGame = create((set, get) => ({
@@ -361,9 +420,16 @@ export const useGame = create((set, get) => ({
     const cards = [{ type: 'briefing', storm: storm && storm.level > 0 ? storm : null, warn: storm?.warn || null, miss: storm?.miss || null, intro: s.sol === 1 }]
     const eventChance = storm && storm.level > 0 ? (s.easy ? 0.2 : 0.35) : s.sol === 1 ? 0 : s.easy ? 0.55 : 0.8
     let deck = s.eventDeck
+    // 🚙 Expedición: solo en días sin tormenta, dejando al menos un sol entre una y otra
+    const sites = EXPEDITION_EVENT.choices.map((c) => c.site).filter((x) => x && !s.visited.includes(x))
+    const canExplore = !(storm && storm.level > 0) && s.sol >= EXPEDITION_FROM_SOL && s.sol !== MID_SOL && s.expeditions < EXPEDITION_MAX && s.sol - s.lastExpedition >= 2 && sites.length > 0
+    let lastExpedition = s.lastExpedition
     if (s.sol === MID_SOL) {
       // 📦 Mitad de misión: siempre llega la cápsula de carga (y ese día no hay otro evento)
       cards.push({ type: 'event', event: SUPPLY_EVENT })
+    } else if (canExplore && Math.random() < (s.expeditions === 0 && s.sol >= 4 ? 0.85 : 0.5)) {
+      cards.push({ type: 'event', event: EXPEDITION_EVENT, sites: shuffle(sites).slice(0, 2) })
+      lastExpedition = s.sol
     } else if (Math.random() < eventChance) {
       if (!deck.length) deck = shuffle(EVENTS.filter((e) => !e.requires || s.inventory[e.requires]))
       // No repetir la fuga si ya hay una abierta
@@ -374,9 +440,11 @@ export const useGame = create((set, get) => ({
       deck = deck.filter((_, i) => i !== idx)
     }
     set({
-      cards, eventDeck: deck, cardResult: null,
+      cards, eventDeck: deck, cardResult: null, lastExpedition,
       phase: 'dawn',
-      today: { chipsPenalty: 0, blockScience: false },
+      today: { chipsPenalty: 0, blockScience: false, bonus: s.bonusNext },
+      bonusNext: 0,
+      mission: pickMission(s, storm),
       alloc: { ...emptyAlloc },
       helpReasons: null,
       report: null,
@@ -400,7 +468,10 @@ export const useGame = create((set, get) => ({
       fx = ok ? choice.fx.success : choice.fx.fail
     }
     const patch = applyEffects(s, eff, fx)
-    const learned = card.event?.fact && !s.learned.includes(card.event.fact) ? [...s.learned, card.event.fact] : s.learned
+    // dato aprendido: el del evento, o el del lugar explorado ("exp:N" = opción N de la expedición)
+    const factKey = choice.fact ? `exp:${choiceIdx}` : card.event?.fact
+    const learned = factKey && !s.learned.includes(factKey) ? [...s.learned, factKey] : s.learned
+    if (card.event.expedition) { patch.expeditions = s.expeditions + 1; if (choice.site) patch.visited = [...s.visited, choice.site] }
     const good = !BAD_FX.has(fx)
     const decisions = [...s.decisions, { sol: s.sol, ev: card.event, choiceIdx, ok, fx, good }]
     set({ ...patch, learned, decisions, phase: 'outcome', cardResult: { choiceIdx, ok, effects: eff, fx, good, t: Date.now() } })
@@ -423,8 +494,19 @@ export const useGame = create((set, get) => ({
     set({ alloc: r.alloc, helpReasons: r.reasons })
   },
 
+  /** 🏗️ Elegir qué obra construir (se puede cambiar: lo avanzado en cada una no se pierde). */
+  pickBuild: (id) => {
+    const s = get()
+    if (s.phase !== 'plan' || !canBuild(s) || !availableBuilds(s).some((b) => b.id === id)) return
+    set({ build: { ...s.build, active: id }, alloc: { ...s.alloc, build: Math.min(s.alloc.build, buildLeft(s, id)) }, helpReasons: null })
+  },
+
   setAlloc: (sys, val) => {
     const s = get()
+    if (sys === 'build') {
+      if (!s.build.active) return
+      val = Math.min(val, buildLeft(s, s.build.active))
+    }
     const v = typeof val === 'boolean' ? val : clamp(val, 0, BASE.maxChipsPerSystem)
     const next = { ...s.alloc, [sys]: v }
     if (chipsUsed(next) > chipsAvailable(s)) return
@@ -447,10 +529,31 @@ export const useGame = create((set, get) => ({
     if (f.warn.includes('noFood')) notes.push(['n.noFood'])
     if (f.stormHit) notes.push(['n.storm', { d: p.stormDose.toFixed(1), h: f.stormHit }])
     if (f.warn.includes('limit')) notes.push(['n.limit'])
+    // 🏗️ obra
+    let build = s.build
+    let learned = s.learned
+    let built = null
+    if (p.build && s.alloc.build > 0) {
+      const progress = { ...build.progress, [p.build.id]: p.build.after }
+      if (p.build.done) {
+        built = p.build.id
+        build = { active: null, progress, done: [...build.done, built] }
+        if (built === 'panel') panels += 1
+        notes.push(['n.built', { build: built }])
+        learned = [...learned, 'build:' + built]
+      } else {
+        build = { ...build, progress }
+        notes.push(['n.building', { build: p.build.id, a: p.build.after, b: p.build.cost }])
+      }
+    }
+    if (p.lab) notes.push(['n.lab', { n: p.lab }])
+    // 🎯 misión del día
+    const met = missionMet(s, f)
+    if (s.mission) notes.push([met ? 'n.missionOk' : 'n.missionKo', { mission: s.mission.id, n: MISSION_BONUS }])
     const dust = s.dust.sols > 0 ? { ...s.dust, sols: s.dust.sols - 1 } : s.dust
     const report = { ...p, notes, o2Before: s.o2, foodBefore: s.food, healthBefore: s.health }
-    const log = [...s.log, { sol: s.sol, storm: p.storm, alloc: s.alloc, dose: p.dose, stormDose: p.stormDose, blocked: p.blocked, health: f.health, fixedLeak: !!(s.alloc.fixLeak && s.base.leak), fixedPanel: !!(s.alloc.fixPanel && s.base.brokenPanels > 0) }]
-    set({ o2: f.o2, food: f.food, health: f.health, dose: f.dose, science: f.science, battery: f.battery, dust, base, panels, report, log, phase: 'report' })
+    const log = [...s.log, { sol: s.sol, storm: p.storm, alloc: s.alloc, dose: p.dose, stormDose: p.stormDose, blocked: p.blocked, health: f.health, fixedLeak: !!(s.alloc.fixLeak && s.base.leak), fixedPanel: !!(s.alloc.fixPanel && s.base.brokenPanels > 0), built, mission: s.mission?.id || null, missionMet: met }]
+    set({ build, learned, medals: s.medals + (met ? 1 : 0), bonusNext: s.bonusNext + (met ? MISSION_BONUS : 0), o2: f.o2, food: f.food, health: f.health, dose: f.dose, science: f.science, battery: f.battery, dust, base, panels, report, log, phase: 'report' })
   },
 
   nextSol: () => {
@@ -481,6 +584,7 @@ function applyEffects(s, e = {}, fx) {
       blockScience: s.today.blockScience || !!e.blockScience,
     }
   }
+  if (e.bonusNext) patch.bonusNext = s.bonusNext + e.bonusNext
   if (e.useItem) patch.inventory = { ...s.inventory, [e.useItem]: Math.max(0, (s.inventory[e.useItem] || 0) - 1) }
   // Cambios que quedan en la base
   if (e.leak) base.leak = true

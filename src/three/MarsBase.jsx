@@ -4,6 +4,7 @@ import { OrbitControls, Stars } from '@react-three/drei'
 import * as THREE from 'three'
 import { useGame } from '../game/store'
 import { Terrain, Rocks } from './terrain'
+import { Builds, ExpeditionSites, activeSite, sitePos } from './builds'
 import { Shield, SolarParticles, DustParticles, Meteor, OutcomeSparks, DustBurst, SupplyDrop } from './effects'
 import { Habitat, Greenhouse, SolarArray, Antenna, Rover, Discoveries, IceMine, Samples, Lander, Crew, POS, DOME_SPOTS, useActiveEvent } from './baseParts'
 import { cine, ease } from './cine'
@@ -18,6 +19,14 @@ const SHOTS = {
   panels: () => ({ target: [7.5, 1.2, -1], cam: [14, 6, 7] }),
   greenhouse: () => ({ target: [-7.5, 1, 1.5], cam: [-2.5, 4.5, 9] }),
   rover: (ev) => {
+    if (ev.expedition) {
+      // expedición: primero una vista amplia de los alrededores; en el resultado, el lugar elegido
+      const site = activeSite()
+      if (!site) return { target: [0, 2, 0], cam: [-20, 15, 24] }
+      const p = sitePos(site)
+      const k = 1 - (site === 'hill' ? 15 : 10) / Math.hypot(p[0], p[2]) // la cámara se para entre la base y el lugar, mirando hacia afuera
+      return { target: [p[0], p[1] + 1.2, p[2]], cam: [p[0] * k, p[1] + 4.5, p[2] * k] }
+    }
     const p = ev.id === 'ice' ? POS.ice : POS.rock
     return { target: [p[0], 0.8, p[2]], cam: [p[0] + 6, 4.5, p[2] + 7] }
   },
@@ -25,7 +34,7 @@ const SHOTS = {
   sky: () => ({ target: [30, 8, 20], cam: [-4, 4, -2] }),
   supply: () => ({ target: [POS.supply[0], 2.2, POS.supply[2]], cam: [POS.supply[0] + 7, 4.2, POS.supply[2] + 8] }),
 }
-const GOOD_FX = new Set(['supply', 'patched', 'cleaned', 'icemine', 'study', 'uv', 'healed', 'rest', 'reply', 'fixed', 'panelfixed', 'sample', 'sunset', 'fewerplants'])
+const GOOD_FX = new Set(['found', 'supply', 'patched', 'cleaned', 'icemine', 'study', 'uv', 'healed', 'rest', 'reply', 'fixed', 'panelfixed', 'sample', 'sunset', 'fewerplants'])
 
 // En pantallas anchas corre la imagen a la izquierda para que el panel no tape la base
 function ViewShift({ enabled }) {
@@ -247,6 +256,8 @@ export default function MarsBase({ cinematic = false, onCineDone }) {
       <Discoveries />
       <IceMine />
       <Samples />
+      <Builds />
+      <ExpeditionSites />
       <Lander />
       <Crew />
       {cinematic ? (

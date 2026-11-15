@@ -4,7 +4,7 @@ import { useGame } from '../game/store'
 import { BASE, SOLS, LEAK_O2, ICE_MINE_O2 } from '../game/content'
 import { fmtDate } from '../data/donki'
 import { getCharacter } from '../game/characters'
-import { t, locEvent, outcomeText } from '../i18n/core'
+import { locEvent, outcomeText, noteText } from '../i18n/core'
 import { useT } from '../i18n/useT'
 import { Bar, Delta, Term, fade } from './common'
 import DayTerminal from './DayTerminal'
@@ -130,7 +130,8 @@ function Outcome({ s }) {
   const r = s.cardResult
   const { nextCard } = useGame.getState()
   const [ready, setReady] = useState(false)
-  useSpeak(outcomeText(s.lang, raw, r) + '. ' + (ev.fact || ''))
+  const fact = ev.choices[r.choiceIdx]?.fact || ev.fact
+  useSpeak(outcomeText(s.lang, raw, r) + '. ' + (fact || ''))
   useEffect(() => {
     const tm = setTimeout(() => setReady(true), 2200)
     return () => clearTimeout(tm)
@@ -139,7 +140,7 @@ function Outcome({ s }) {
     <motion.div className={'panel card outcome ' + (r.good ? 'good' : 'bad')} initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0, transition: { delay: 0.8 } }} exit={{ opacity: 0 }}>
       <div className="kicker">{r.good ? T('out.good') : T('out.bad')}</div>
       <h2 className="outcome-text">{outcomeText(s.lang, raw, r)}</h2>
-      {ev.fact && <div className="fact">💡 {ev.fact}</div>}
+      {fact && <div className="fact">💡 {fact}</div>}
       <button className="btn primary" disabled={!ready} onClick={nextCard}>{ready ? T('continue') : '🎥 …'}</button>
     </motion.div>
   )
@@ -180,7 +181,7 @@ function Report({ s, onData }) {
           {todays.map((d, i) => (
             <div key={i} className={d.good ? 'ok' : 'ko'}>{d.ev.emoji} {outcomeText(s.lang, d.ev, d)}</div>
           ))}
-          {r.notes.map(([k, v], i) => <div key={'n' + i}>{t(s.lang, k, v)}</div>)}
+          {r.notes.map(([k, v], i) => <div key={'n' + i} className={k === 'n.built' || k === 'n.missionOk' ? 'ok' : ''}>{noteText(s.lang, k, v)}</div>)}
         </div>
       </Console>
     </motion.div>

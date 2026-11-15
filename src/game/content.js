@@ -49,7 +49,7 @@ export const BASE = {
   // Desde los 10 años (modo normal) la base gasta más: hay que pensar el reparto de verdad
   o2UseHard: 27,
   foodUseHard: 13,
-  scienceGoal: 10,
+  scienceGoal: 14, // para la estrella de ciencia hay que aprovechar obras, misiones y expediciones
   maxChipsPerSystem: 4,
   // Radiación (mSv). Dosis base real medida por el instrumento RAD de Curiosity: ~0.64 mSv por día.
   baseDose: 0.64,
@@ -202,6 +202,97 @@ export const SUPPLY_EVENT = {
     { label: 'La caja de oxígeno', hint: '+20 🫁', effects: { o2: 20 }, fx: 'supply', outcome: '🧪 ¡Aire fresco para la base! +20 🫁' },
     { label: 'La caja de comida', hint: '+20 🥔', effects: { food: 20 }, fx: 'supply', outcome: '🥫 ¡Comida de casa! +20 🥔' },
     { label: 'La caja de instrumentos', hint: '+3 🔬', effects: { science: 3 }, fx: 'supply', outcome: '🔬 ¡Instrumentos nuevos! +3 de ciencia' },
+  ],
+}
+
+/**
+ * 🏗️ OBRAS: mejoras que se construyen de a poco, poniendo ⚡ en "Construir" durante varios soles.
+ * Cuando se junta el costo, la obra queda para siempre en la base (y se ve en 3D).
+ *   cost     → ⚡ que hay que juntar
+ *   requires → objeto que hace falta haber traído
+ * El efecto de cada una está en BUILD_FX y se aplica en store.js.
+ */
+export const BUILD_FROM_SOL = 2 // el sol 1 es para aprender lo básico
+export const BUILDS = [
+  {
+    id: 'panel', emoji: '🔆', name: 'Panel solar nuevo', cost: 5, gain: '+2 ⚡ cada sol',
+    fact: 'En Marte el Sol llega con menos de la mitad de la fuerza que en la Tierra: por eso una base necesita muchos paneles.',
+  },
+  {
+    id: 'shelter', emoji: '🧱', name: 'Refugio de regolito', cost: 6, gain: '🛡️ frena 30% siempre',
+    fact: 'El regolito es el polvo y las piedras del suelo de Marte. Tapar la base con regolito frena la radiación sin gastar energía.',
+  },
+  {
+    id: 'farm', emoji: '🌿', name: 'Invernadero grande', cost: 5, gain: 'cada ⚡ da +3 🥔 más', requires: 'seeds',
+    fact: 'En la Estación Espacial ya se cultivaron lechuga, rabanitos y ajíes. En Marte habrá que cultivar mucho más.',
+  },
+  {
+    id: 'lab', emoji: '🌡️', name: 'Estación meteorológica', cost: 4, gain: '+1 🔬 sola, cada sol',
+    fact: 'El rover Perseverance lleva una estación meteorológica (MEDA) que mide el viento, la temperatura y el polvo de Marte.',
+  },
+]
+export const BUILD_FX = { shelterShield: 0.3, farmFood: 3, labScience: 1 }
+
+/**
+ * 🎯 MISIÓN DEL DÍA: un objetivo chico distinto cada sol. Si se cumple al terminar el sol,
+ * da una medalla 🏅 y +1 ⚡ para el sol siguiente. Las condiciones están en store.js (missionMet).
+ */
+export const MISSION_FROM_SOL = 2
+export const MISSION_BONUS = 1
+export const MISSIONS = [
+  { id: 'shield', emoji: '🛡️', text: 'Frená casi toda la tormenta (85% o más)' },
+  { id: 'fix', emoji: '🔧', text: 'Arreglá hoy algo roto de la base' },
+  { id: 'air', emoji: '🫁', text: 'Terminá el sol con 10 más de aire' },
+  { id: 'food', emoji: '🥔', text: 'Terminá el sol con 5 más de comida' },
+  { id: 'science', emoji: '🔬', text: 'Sumá 3 puntos de ciencia hoy' },
+  { id: 'save', emoji: '🔋', text: 'Guardá ⚡ para mañana (2 si tenés batería)' },
+  { id: 'build', emoji: '🏗️', text: 'Poné 2 ⚡ en la obra' },
+]
+
+/**
+ * 🚙 EXPEDICIONES: en un día sin tormenta solar, el rover puede salir a explorar.
+ * Se ofrecen 2 lugares (de los que todavía no se visitaron) + quedarse en la base.
+ * Es un evento más (mismas reglas de effects/fx/outcome), pero cada opción tiene su propio "fact"
+ * y "site" dice a qué lugar del mapa va el rover.
+ */
+export const EXPEDITION_FROM_SOL = 3
+export const EXPEDITION_MAX = 3
+export const EXPEDITION_EVENT = {
+  id: 'expedition', expedition: true, good: true, emoji: '🚙', title: 'Día tranquilo: ¿salimos a explorar?', scene: 'rover', incident: 'expedition',
+  text: 'Hoy no hay tormenta solar, así que se puede salir. Explorar gasta aire y puede salir mal. ¿A dónde mandamos el rover?',
+  choices: [
+    {
+      site: 'crater', label: '🧊 Al cráter con hielo', hint: 'cerca · 80%',
+      effects: { chance: 0.8, success: { o2: 14 }, fail: { o2: -6 } },
+      fx: { success: 'found', fail: 'nothing' },
+      outcome: { success: '🧊 ¡Trajeron hielo! Derretido da agua y aire: +14 🫁', fail: 'El hielo estaba muy hondo. Se gastó aire: −6 🫁' },
+      fact: 'En Marte hay hielo de agua bajo el suelo y en los polos. Con agua se puede hacer oxígeno para respirar y combustible para volver.',
+    },
+    {
+      site: 'cave', label: '🕳️ A la cueva de lava', hint: 'media · 70%',
+      effects: { chance: 0.7, success: { science: 3, o2: -6 }, fail: { o2: -6, health: -6 } },
+      fx: { success: 'found', fail: 'nothing' },
+      outcome: { success: '🕳️ ¡Una cueva enorme! +3 de ciencia (−6 🫁)', fail: 'El rover se trabó en la entrada. −6 🫁 y −6 ❤️ por el esfuerzo' },
+      fact: 'Los tubos de lava son cuevas que dejaron los volcanes de Marte. Adentro la roca tapa la radiación: podrían servir de casa para astronautas.',
+    },
+    {
+      site: 'oldrover', label: '🤖 Al rover viejo', hint: 'lejos · 65%',
+      effects: { chance: 0.65, success: { bonusNext: 3, o2: -8 }, fail: { o2: -8 } },
+      fx: { success: 'found', fail: 'nothing' },
+      outcome: { success: '🔋 ¡Sus baterías todavía sirven! +3 ⚡ mañana (−8 🫁)', fail: 'Estaba tapado de polvo y no se pudo sacar nada. −8 🫁' },
+      fact: 'El rover Opportunity estaba pensado para trabajar 90 días y anduvo más de 14 años en Marte.',
+    },
+    {
+      site: 'hill', label: '⛰️ Al cerro mirador', hint: 'cerca · seguro',
+      effects: { science: 2, o2: -5 }, fx: 'found',
+      outcome: '📸 ¡Qué vista! Fotos y mediciones: +2 de ciencia (−5 🫁)',
+      fact: 'En Marte está el Monte Olimpo, el volcán más alto del sistema solar: unas dos veces y media el Everest.',
+    },
+    {
+      label: '🏠 Quedarnos en la base', hint: 'sin riesgo',
+      effects: { health: 4 }, fx: 'rest',
+      outcome: '😴 La tripulación descansó: +4 ❤️',
+    },
   ],
 }
 

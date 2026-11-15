@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { useGame } from '../game/store'
 import { BASE, SOLS, ICE_MINE_O2, LEAK_O2 } from '../game/content'
 import { fmtDate } from '../data/donki'
-import { t, locEvent, locStorm, outcomeText } from '../i18n/core'
+import { t, locEvent, locStorm, outcomeText, locBuild, locMission, factText } from '../i18n/core'
 import { useT } from '../i18n/useT'
 import Console from './Console'
 import Quiz from './Quiz'
@@ -19,11 +19,7 @@ export default function End({ onData }) {
   const storms = s.log.filter((l) => l.storm?.level > 0)
   const good = s.decisions.filter((d) => d.good).length
   const bad = s.decisions.length - good
-  const facts = s.learned.filter((f) => f !== 'storm').map((f) => {
-    // traducir el dato si el evento tiene versión en inglés
-    const d = s.decisions.find((x) => x.ev.fact === f)
-    return d ? locEvent(s.lang, d.ev).fact : f
-  })
+  const facts = s.learned.filter((f) => f !== 'storm').map((f) => factText(s.lang, f, s.decisions)).filter(Boolean)
   const b = s.base
   // 📤 La imagen para compartir se arma apenas termina la misión, así el botón responde al instante
   const [card, setCard] = useState(null)
@@ -77,18 +73,21 @@ export default function End({ onData }) {
                   <div><b>{s.science}</b><span>{T('end.science')}</span></div>
                   <div className="ok"><b>{good}</b><span>{T('end.good')}</span></div>
                   <div className="ko"><b>{bad}</b><span>{T('end.bad')}</span></div>
+                  <div className="ok"><b>🏅 {s.medals}</b><span>{T('end.medals')}</span></div>
+                  <div className="ok"><b>🏗️ {s.build.done.length}</b><span>{T('end.builds')}</span></div>
                 </div>
                 {s.quiz.post?.length > 0 && (
                   <div className="amber-quiz">🧠 {T('end.quiz', { b: quizScore(s.quiz.post), n: QUIZ.length })}</div>
                 )}
                 <div className="amber-sub">{T('end.base')}</div>
                 <div className="amber-base">
+                  {s.build.done.map((id) => { const lb = locBuild(s.lang, id); return <span key={id} className="ok">{lb.emoji} {lb.name}</span> })}
                   {b.iceMine && <span className="ok">⛏️🧊 +{ICE_MINE_O2} 🫁/sol</span>}
                   {b.samples > 0 && <span className="ok">🪨 ×{b.samples}</span>}
                   {b.patches > 0 && <span>🩹 ×{b.patches}</span>}
                   {b.leak && <span className="ko">💨 −{LEAK_O2} 🫁/sol</span>}
                   {b.brokenPanels > 0 && <span className="ko">💥 ×{b.brokenPanels}</span>}
-                  {!b.iceMine && !b.samples && !b.patches && !b.leak && !b.brokenPanels && <span>{T('end.baseNone')}</span>}
+                  {!b.iceMine && !b.samples && !b.patches && !b.leak && !b.brokenPanels && !s.build.done.length && <span>{T('end.baseNone')}</span>}
                 </div>
                 {win && <p className="amber-small">{T('end.stars', { sci: BASE.scienceGoal, dose: BASE.doseLimit * 0.6 })}</p>}
               </>
@@ -111,6 +110,8 @@ export default function End({ onData }) {
                   })
                   if (l?.fixedLeak) lines.push({ txt: t(s.lang, 'log.fixedLeak'), cls: 'ok' })
                   if (l?.fixedPanel) lines.push({ txt: t(s.lang, 'log.fixedPanel'), cls: 'ok' })
+                  if (l?.built) { const lb = locBuild(s.lang, l.built); lines.push({ txt: t(s.lang, 'log.built', { name: `${lb.emoji} ${lb.name}` }), cls: 'ok' }) }
+                  if (l?.missionMet) lines.push({ txt: t(s.lang, 'log.mission', { text: locMission(s.lang, l.mission).text }), cls: 'ok' })
                   if (!lines.length) lines.push({ txt: t(s.lang, 'log.calm'), cls: '' })
                   return (
                     <div key={sol} className="log-sol">

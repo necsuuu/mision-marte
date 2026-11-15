@@ -34,6 +34,21 @@ export const CONTENT_EN = {
     2: { title: 'Strong solar storm' },
     3: { title: 'EXTREME solar storm!' },
   },
+  builds: {
+    panel: { name: 'New solar panel', gain: '+2 ⚡ every sol', fact: 'On Mars, sunlight is less than half as strong as on Earth: that is why a base needs many panels.' },
+    shelter: { name: 'Regolith shelter', gain: '🛡️ always blocks 30%', fact: 'Regolith is the dust and rocks of the Martian ground. Covering the base with regolith blocks radiation without using energy.' },
+    farm: { name: 'Big greenhouse', gain: 'each ⚡ gives +3 🥔 more', fact: 'Lettuce, radishes and chili peppers have already been grown on the Space Station. On Mars we will need to grow much more.' },
+    lab: { name: 'Weather station', gain: '+1 🔬 by itself, every sol', fact: 'The Perseverance rover carries a weather station (MEDA) that measures the wind, temperature and dust of Mars.' },
+  },
+  missions: {
+    shield: 'Block almost all of the storm (85% or more)',
+    fix: 'Fix something broken at the base today',
+    air: 'End the sol with 10 more air',
+    food: 'End the sol with 5 more food',
+    science: 'Earn 3 science points today',
+    save: 'Save ⚡ for tomorrow (2 if you have a battery)',
+    build: 'Put 2 ⚡ into the build',
+  },
   repairs: {
     leak: { label: 'Patch the leak' },
     panel: { label: 'Fix the panel' },
@@ -119,6 +134,33 @@ export const CONTENT_EN = {
       choices: [
         { label: 'Go get it (EVA)', outcome: '🪨📦 Sample stored at the base!' },
         { label: 'Take pictures', outcome: '📸 Better than nothing.' },
+      ],
+    },
+    expedition: {
+      title: 'Quiet day: shall we explore?',
+      text: 'No solar storm today, so we can go out. Exploring uses air and can go wrong. Where do we send the rover?',
+      choices: [
+        {
+          label: '🧊 To the icy crater', hint: 'near · 80%',
+          outcome: { success: '🧊 They brought ice! Melted, it gives water and air: +14 🫁', fail: 'The ice was too deep. Air was used up: −6 🫁' },
+          fact: 'Mars has water ice under the ground and at the poles. Water can be turned into oxygen to breathe and fuel to fly home.',
+        },
+        {
+          label: '🕳️ To the lava cave', hint: 'medium · 70%',
+          outcome: { success: '🕳️ A huge cave! +3 science (−6 🫁)', fail: 'The rover got stuck at the entrance. −6 🫁 and −6 ❤️ from the effort' },
+          fact: 'Lava tubes are caves left by the volcanoes of Mars. Inside, the rock blocks radiation: they could be homes for astronauts.',
+        },
+        {
+          label: '🤖 To the old rover', hint: 'far · 65%',
+          outcome: { success: '🔋 Its batteries still work! +3 ⚡ tomorrow (−8 🫁)', fail: 'It was buried in dust and nothing could be saved. −8 🫁' },
+          fact: 'The Opportunity rover was built to work for 90 days and kept going for more than 14 years on Mars.',
+        },
+        {
+          label: '⛰️ To the lookout hill', hint: 'near · safe',
+          outcome: '📸 What a view! Photos and measurements: +2 science (−5 🫁)',
+          fact: 'Mars has Olympus Mons, the tallest volcano in the solar system: about two and a half times Mount Everest.',
+        },
+        { label: '🏠 Stay at the base', hint: 'no risk', outcome: '😴 The crew rested: +4 ❤️' },
       ],
     },
     supply: {

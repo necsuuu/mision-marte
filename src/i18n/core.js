@@ -1,7 +1,7 @@
 // Traducciones: helpers puros (sin React) para textos de interfaz y de contenido.
 import { UI } from './ui'
 import { CONTENT_EN } from './content_en'
-import { GLOSSARY, STORM_TEXT, REPAIRS } from '../game/content'
+import { GLOSSARY, STORM_TEXT, REPAIRS, BUILDS, MISSIONS } from '../game/content'
 import { isTouch } from '../game/device'
 
 export const LANGS = ['es', 'en']
@@ -21,6 +21,8 @@ export const locSystem = (lang, sys) => (lang === 'en' ? pick(sys, CONTENT_EN.sy
 export const locGlossary = (lang, k) => (lang === 'en' ? CONTENT_EN.glossary[k] : GLOSSARY[k])
 export const locStorm = (lang, level) => ({ ...STORM_TEXT[level], ...(lang === 'en' ? CONTENT_EN.storms[level] : {}) })
 export const locRepair = (lang, k) => ({ ...REPAIRS[k], ...(lang === 'en' ? CONTENT_EN.repairs[k] : {}) })
+export const locBuild = (lang, id) => { const b = BUILDS.find((x) => x.id === id); return b && lang === 'en' ? pick(b, CONTENT_EN.builds[id]) : b }
+export const locMission = (lang, id) => { const m = MISSIONS.find((x) => x.id === id); return m && lang === 'en' ? { ...m, text: CONTENT_EN.missions[id] || m.text } : m }
 
 export function locEvent(lang, ev) {
   if (!ev || lang !== 'en') return ev
@@ -28,8 +30,24 @@ export function locEvent(lang, ev) {
   if (!o) return ev
   return {
     ...pick(ev, { title: o.title, text: o.text, fact: o.fact }),
-    choices: ev.choices.map((c, i) => pick(c, o.choices?.[i])),
+    choices: ev.choices.map((c, i) => pick(c, o.choices?.[i])), // label, hint, outcome y fact de cada opción
   }
+}
+
+/** Nota del reporte de la noche: completa el nombre de la obra o el texto de la misión. */
+export function noteText(lang, key, vars) {
+  const v = { ...vars }
+  if (v.build) { const b = locBuild(lang, v.build); v.name = `${b.emoji} ${b.name}`; v.gain = b.gain }
+  if (v.mission) v.text = locMission(lang, v.mission).text
+  return t(lang, key, v)
+}
+
+/** Dato aprendido guardado en la partida → texto en el idioma actual. */
+export function factText(lang, key, decisions = []) {
+  if (key.startsWith('build:')) return locBuild(lang, key.slice(6))?.fact
+  if (key.startsWith('exp:')) { const d = decisions.find((x) => x.ev.expedition); return d ? locEvent(lang, d.ev).choices[Number(key.slice(4))]?.fact : null }
+  const d = decisions.find((x) => x.ev.fact === key)
+  return d ? locEvent(lang, d.ev).fact : key
 }
 
 /** Texto del resultado de una elección ya tomada. */

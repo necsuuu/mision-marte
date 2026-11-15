@@ -258,6 +258,10 @@ export function initSound() {
       else if (s.phase === 'outcome') play(s.cardResult?.good ? 'good' : 'bad')
       else if (s.phase === 'report') play(s.health <= 0 ? 'bad' : 'night')
     }
+    // 🏗️ obra terminada y 🏅 misión cumplida (suenan un toque después del sonido de la noche)
+    if (s.build.done.length > p.build.done.length) setTimeout(() => play('good'), 700)
+    else if (s.medals > p.medals) setTimeout(() => play('pick'), 700)
+    if (s.build.active !== p.build.active && s.build.active) play('open')
     if (s.screen === 'sol' && s.phase === 'plan' && p.phase === 'plan' && s.alloc !== p.alloc) {
       const d = chipsUsed(s.alloc) - chipsUsed(p.alloc)
       if (d > 0) play('chip')

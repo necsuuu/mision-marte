@@ -9,6 +9,7 @@ import { getCharacter, CREW } from '../game/characters'
 import CharacterSprite from './CharacterSprite'
 import { Deploy, cine } from './cine'
 import { LeakJet, AlarmBeacon, RetroFlame } from './effects'
+import { activeSite, sitePos } from './builds'
 
 // ---------- Posiciones importantes ----------
 export const POS = {
@@ -170,7 +171,7 @@ export function Greenhouse({ night }) {
 }
 
 // ---------- Paneles solares ----------
-function OnePanel({ i, broken, shaking, color, dust }) {
+function OnePanel({ i, broken, shaking, color, dust, frame = false }) {
   const ref = useRef()
   const spark = useRef()
   useFrame((st) => {
@@ -188,7 +189,7 @@ function OnePanel({ i, broken, shaking, color, dust }) {
         <cylinderGeometry args={[0.07, 0.07, 1.2, 8]} />
         <meshStandardMaterial color="#8a8a8a" metalness={0.6} />
       </mesh>
-      <mesh ref={ref} position={[0, 1.25, 0]} castShadow>
+      <mesh ref={ref} position={[0, 1.25, 0]} castShadow visible={!frame}>
         <boxGeometry args={[1.9, 0.06, 1.3]} />
         <meshStandardMaterial color={broken ? '#2a2a2a' : color} metalness={0.5} roughness={0.25} emissive="#0b1f66" emissiveIntensity={broken ? 0 : 0.25 * (1 - dust)} />
       </mesh>
@@ -207,11 +208,14 @@ export function SolarArray() {
   const shaking = act?.ev.id === 'panelbreak' && act.phase !== 'outcome'
   const color = new THREE.Color('#1d3b8f').lerp(new THREE.Color('#9a5a34'), dust * 1.3)
   const total = panels + broken
+  // 🏗️ panel nuevo en obra: se ve el poste esperando su placa
+  const pending = useGame((s) => s.build.active === 'panel' || (s.build.progress.panel > 0 && !s.build.done.includes('panel')))
   return (
     <group position={POS.panels}>
       {Array.from({ length: total }).map((_, i) => (
         <OnePanel key={i} i={i} broken={i >= panels} shaking={shaking && i === panels - 1} color={color} dust={dust} />
       ))}
+      {pending && <OnePanel key="obra" i={total} broken={false} shaking={false} color={color} dust={dust} frame />}
     </group>
   )
 }
@@ -255,7 +259,8 @@ export function Rover() {
   const ref = useRef()
   const drill = useRef()
   const act = useActiveEvent()
-  const goal = act && (act.ev.id === 'ice' || act.ev.id === 'rock') ? (act.ev.id === 'ice' ? POS.ice : POS.rock) : null
+  const site = useGame((s) => activeSite(s)) // 🚙 expedición: el rover va al lugar elegido
+  const goal = site ? sitePos(site) : act && (act.ev.id === 'ice' || act.ev.id === 'rock') ? (act.ev.id === 'ice' ? POS.ice : POS.rock) : null
   const ang = useRef(0)
   useFrame((st, dt) => {
     const g = ref.current
@@ -266,7 +271,7 @@ export function Rover() {
       g.position.z += (tz - g.position.z) * Math.min(1, dt * 1.5)
       g.position.y = terrainHeight(g.position.x, g.position.z) + 0.35
       g.rotation.y = 0
-      if (drill.current) { drill.current.visible = true; drill.current.rotation.y += dt * 20 }
+      if (drill.current) { drill.current.visible = !site; drill.current.rotation.y += dt * 20 }
     } else {
       ang.current += dt * 0.08
       const r = 17

@@ -130,10 +130,25 @@ Cada sol tiene este ciclo:
 
 **📦 Cápsula de carga (sol 6):** justo a mitad de la misión baja con paracaídas una cápsula que mandó la Tierra. No es un problema sino un premio, pero el rover solo puede traer **una** de las tres cajas (oxígeno, comida o instrumentos de ciencia): hay que elegir según lo que más falta. La cápsula queda al lado de la base. Corta la rutina de los soles del medio y enseña un dato real: a Marte solo se puede despegar cada 26 meses.
 
-### 7. Informe final
-Se gana sobreviviendo los 12 soles. Hay hasta **3 estrellas**: ★ sobrevivir, ★ llegar a 10 puntos de ciencia, ★ recibir poca radiación. El informe aparece en la consola con 3 pestañas:
+**Para que cada sol sea distinto** (los tres sistemas se suman al plan de energía de siempre):
 
-- **Resumen:** soles, tormentas reales enfrentadas, radiación, ciencia, cuántas decisiones salieron bien y cuántas tuvieron costo, y el **estado final de la base** (mina, muestras, parches, fugas, paneles rotos).
+- **🏗️ Construir (desde el sol 2):** en el plan hay una fila más, "Construir". Se elige una obra y se le va poniendo ⚡ durante varios soles; cuando se junta el costo queda para siempre en la base y se ve en 3D (mientras tanto se ve la obra a medio hacer). Se puede cambiar de obra sin perder lo avanzado.
+
+  | Obra | Costo | Qué da |
+  |---|---|---|
+  | 🔆 Panel solar nuevo | 5 ⚡ | +2 ⚡ cada sol |
+  | 🧱 Refugio de regolito | 6 ⚡ | El escudo frena 30% siempre, sin gastar energía |
+  | 🌿 Invernadero grande (necesita plantines) | 5 ⚡ | Cada ⚡ del invernadero da 3 de comida más |
+  | 🌡️ Estación meteorológica | 4 ⚡ | +1 de ciencia cada sol, sola |
+
+  Es la decisión de fondo del juego: gastar hoy en lo urgente o invertir para estar mejor después.
+- **🎯 Misión del día (desde el sol 2):** cada sol trae un objetivo chico (por ejemplo "terminá el sol con 10 más de aire", "sumá 3 de ciencia", "poné 2 ⚡ en la obra", o frenar casi toda la tormenta si ese día hay una fuerte). En el plan se pone en verde apenas el reparto la cumple. Premio: una medalla 🏅 y +1 ⚡ para el sol siguiente. Los números están puestos para que no se cumplan solas: hay que cambiar el reparto de siempre.
+- **🚙 Expediciones (desde el sol 3):** en días **sin tormenta solar** se puede mandar el rover a explorar. Se ofrecen dos lugares de los cuatro que se ven alrededor de la base (cráter con hielo, cueva de lava, un rover viejo, cerro mirador) o quedarse a descansar. Salir gasta aire y puede salir mal; si sale bien da aire, ciencia o energía para mañana. Cada lugar enseña un dato real y, una vez visitado, queda con una banderita. Hay hasta 3 por misión.
+
+### 7. Informe final
+Se gana sobreviviendo los 12 soles. Hay hasta **3 estrellas**: ★ sobrevivir, ★ llegar a 14 puntos de ciencia (para eso conviene aprovechar obras, misiones y expediciones), ★ recibir poca radiación. El informe aparece en la consola con 3 pestañas:
+
+- **Resumen:** soles, tormentas reales enfrentadas, radiación, ciencia, cuántas decisiones salieron bien y cuántas tuvieron costo, misiones del día cumplidas, obras construidas, y el **estado final de la base** (mina, muestras, parches, fugas, paneles rotos).
 - **Bitácora:** sol por sol, cada tormenta (con fecha y velocidad real de la CME y cuánto bloqueó el escudo), cada evento con la opción elegida y su consecuencia, y las reparaciones.
 - **Aprendiste:** las **habilidades de astronauta** que practicó (administrar recursos, leer pronósticos, protegerse de la radiación, decidir en emergencias, trabajar con minutos de retraso) y los datos científicos que vio.
 
@@ -294,6 +309,7 @@ src/
 │   ├── Launch.jsx          Cinemática de despegue: plataforma, cuenta regresiva, nubes, espacio y la Tierra
 │   ├── MarsBase.jsx        Escena de la base: cielo, día/noche, director de cámara, cinemática
 │   ├── baseParts.jsx       Domo, invernadero, paneles, antena, rover, nave, mina, tripulación
+│   ├── builds.jsx          Obras que construye el jugador y lugares de expedición
 │   ├── effects.jsx         Partículas: polvo, tormenta solar, fuga de aire, meteorito, alarma, fuego
 │   ├── cine.jsx            Reloj de la cinemática y animación de despliegue
 │   ├── Room.jsx            Nave de 3 módulos: muebles, objetos, jugador (click/WASD), cámara que sigue, tripulación
@@ -321,11 +337,12 @@ tools/
 
 - **Dificultad y balance:** `src/game/content.js` → objeto `BASE` (oxígeno inicial, cuánto rinde cada ⚡, dosis de radiación, etc.), `CAPACITY` (masa máxima) y `SOLS` (duración).
 - **Agregar un evento:** sumarlo al array `EVENTS` en `content.js`. Cada evento tiene `scene` (a dónde mira la cámara), `incident` (qué animación muestra) y `choices` con `effects`, `fx` y `outcome`.
+- **Obras, misiones del día y expediciones:** `BUILDS`, `MISSIONS` y `EXPEDITION_EVENT` en `content.js` (costos, premios y textos). Las condiciones de cada misión están en `missionMet`, en `src/game/store.js`.
 - **Textos y traducciones:** interfaz en `src/i18n/ui.js` (es/en); contenido en español en `content.js` y en inglés en `src/i18n/content_en.js`.
 - **Mover muebles o agregar lugares para objetos:** `src/game/shipLayout.js` (`FURN`, `SLOTS`, `OBSTACLES`).
 - **Fotogramas de caminata dibujados a mano:** reemplazar los archivos de `src/assets/characters/walk/` (mismo tamaño) o regenerarlos con `python3 tools/generar_fotogramas.py` (necesita Pillow, numpy y scipy).
 - **Cambiar quién maneja el jugador:** `src/game/characters.js` (campo `sprite` de cada comandante).
-- **Depurar:** en la consola del navegador, `__game.getState()` muestra todo el estado del juego.
+- **Depurar:** en la consola del navegador, `__game.getState()` muestra todo el estado del juego y `__content` el contenido (sirve para forzar un evento).
 
 ---
 
@@ -350,6 +367,7 @@ También se explican dentro del juego:
 - Las **tormentas chicas** tienen más efecto que en la realidad, para que se noten. Las grandes (como mayo 2024, ≈ 8 mGy en un día) son parecidas a lo real. La dosis base (0,64 mSv/día) sí es real. La energía y los recursos son **números de juego**.
 - Los **plantines de papa** ya vienen germinados y crecen en hidroponía mucho más rápido que en la realidad.
 - Si los datos no traen una tormenta fuerte, se usa un **simulacro** con la de mayo 2024, y el juego lo dice.
+- Las **obras** se terminan en pocos soles y las **expediciones** duran un día y tienen resultados al azar: en la realidad construir un refugio o un invernadero lleva meses, y las salidas se planean con mucho más cuidado. Los lugares (hielo, tubos de lava, un rover viejo) existen en Marte, pero no están todos juntos al lado de una base.
 - La distancia Tierra–Marte usa órbitas simplificadas (error de unos pocos %).
 - Este proyecto **no es un producto oficial de la NASA** y no usa logos ni elementos de marca de la NASA.
 

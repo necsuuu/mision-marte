@@ -4,6 +4,7 @@ import { useGame } from '../game/store'
 import { QUIZ, quizScore } from '../game/quiz'
 import { useT } from '../i18n/useT'
 import { speak } from '../game/voice'
+import { play } from '../game/sfx'
 
 /** Quiz final: 4 preguntas para repasar lo que se vio en la misión, con la explicación de cada respuesta. */
 export default function Quiz({ onDone, onSkip }) {
@@ -21,6 +22,7 @@ export default function Quiz({ onDone, onSkip }) {
     if (picked !== null) return
     setPicked(opt)
     setAnswers([...answers, opt])
+    play(opt === 0 ? 'good' : 'deny')
     speak((opt === 0 ? T('quiz.right') : T('quiz.wrong')) + ' ' + q.why)
   }
   const next = () => {

@@ -4,7 +4,7 @@ import { OrbitControls, Stars } from '@react-three/drei'
 import * as THREE from 'three'
 import { useGame } from '../game/store'
 import { Terrain, Rocks } from './terrain'
-import { Shield, SolarParticles, DustParticles, Meteor, OutcomeSparks, DustBurst } from './effects'
+import { Shield, SolarParticles, DustParticles, Meteor, OutcomeSparks, DustBurst, SupplyDrop } from './effects'
 import { Habitat, Greenhouse, SolarArray, Antenna, Rover, Discoveries, IceMine, Samples, Lander, Crew, POS, DOME_SPOTS, useActiveEvent } from './baseParts'
 import { cine, ease } from './cine'
 import Reflections from './Reflections'
@@ -23,8 +23,9 @@ const SHOTS = {
   },
   antenna: () => ({ target: [3.5, 3.2, -6.5], cam: [10, 6, 1] }),
   sky: () => ({ target: [30, 8, 20], cam: [-4, 4, -2] }),
+  supply: () => ({ target: [POS.supply[0], 2.2, POS.supply[2]], cam: [POS.supply[0] + 7, 4.2, POS.supply[2] + 8] }),
 }
-const GOOD_FX = new Set(['patched', 'cleaned', 'icemine', 'study', 'uv', 'healed', 'rest', 'reply', 'fixed', 'panelfixed', 'sample', 'sunset', 'fewerplants'])
+const GOOD_FX = new Set(['supply', 'patched', 'cleaned', 'icemine', 'study', 'uv', 'healed', 'rest', 'reply', 'fixed', 'panelfixed', 'sample', 'sunset', 'fewerplants'])
 
 // En pantallas anchas corre la imagen a la izquierda para que el panel no tape la base
 function ViewShift({ enabled }) {
@@ -153,6 +154,15 @@ function Director({ controls }) {
   return null
 }
 
+// 📦 Cápsula de carga: cae en el evento de mitad de misión y después queda en la base
+function Supply() {
+  const act = useActiveEvent()
+  const arrived = useGame((s) => s.screen !== 'landing' && s.decisions.some((d) => d.ev.id === 'supply'))
+  const dropping = act?.ev.incident === 'supply'
+  if (!dropping && !arrived) return null
+  return <SupplyDrop position={POS.supply} drop={dropping} />
+}
+
 // Efectos puntuales del evento (meteorito, brillitos del resultado)
 function EventFx() {
   const act = useActiveEvent()
@@ -249,6 +259,7 @@ export default function MarsBase({ cinematic = false, onCineDone }) {
         <>
           <Shield />
           <EventFx />
+          <Supply />
           <OrbitControls
             ref={controls}
             makeDefault

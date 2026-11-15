@@ -116,8 +116,8 @@ function Incident({ s }) {
     return () => clearTimeout(tm)
   }, [toDecision, paused])
   return (
-    <motion.div className="incident-caption" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-      <span className="pulse-dot" /> {ev.emoji} {ev.title}
+    <motion.div className={'incident-caption' + (ev.good ? ' good' : '')} initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+      {!ev.good && <span className="pulse-dot" />} {ev.emoji} {ev.title}
     </motion.div>
   )
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useGame } from '../game/store'
 import { BASE, SOLS, ICE_MINE_O2, LEAK_O2 } from '../game/content'
@@ -8,6 +8,7 @@ import { useT } from '../i18n/useT'
 import Console from './Console'
 import Quiz from './Quiz'
 import { QUIZ, quizScore, SKILLS } from '../game/quiz'
+import { makeShareCard, shareCard } from '../game/shareCard'
 
 export default function End({ onData }) {
   const s = useGame()
@@ -24,6 +25,22 @@ export default function End({ onData }) {
     return d ? locEvent(s.lang, d.ev).fact : f
   })
   const b = s.base
+  // 📤 La imagen para compartir se arma apenas termina la misión, así el botón responde al instante
+  const [card, setCard] = useState(null)
+  const [saved, setSaved] = useState(false)
+  const solsDone = Math.min(s.sol, SOLS)
+  useEffect(() => {
+    let live = true
+    makeShareCard({ lang: s.lang, win, stars, sol: solsDone, storms: storms.length, dose: s.dose, science: s.science, character: s.player.character })
+      .then((blob) => live && setCard(blob))
+      .catch(() => {})
+    return () => { live = false }
+  }, [s.lang]) // eslint-disable-line react-hooks/exhaustive-deps
+  const share = async () => {
+    if (!card) return
+    const r = await shareCard(card, T(win ? 'share.win' : 'share.lose', { n: solsDone }) + ' ' + T('share.dare'))
+    if (r === 'saved') { setSaved(true); setTimeout(() => setSaved(false), 2500) }
+  }
   // Al terminar: 4 preguntas para repasar (se puede saltear)
   if (!s.quiz.post) return <Quiz onDone={s.finishQuizPost} onSkip={() => s.finishQuizPost([])} />
 
@@ -46,6 +63,7 @@ export default function End({ onData }) {
             {['summary', 'log', 'learned'].map((k) => (
               <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{T('end.tab.' + k)}</button>
             ))}
+            <button className="amber-share" onClick={share} disabled={!card}>{saved ? T('share.saved') : '📤 ' + T('share.btn')}</button>
           </div>
 
           <div className="amber-scroll">

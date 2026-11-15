@@ -5,6 +5,7 @@ import { launchClock, LAUNCH_END, LIFTOFF, SPACE_CUT } from '../game/clocks'
 import { useT } from '../i18n/useT'
 import { Tx } from './common'
 import { useSpeak } from '../game/voice'
+import { play } from '../game/sfx'
 
 const STEPS = [
   [0, '🌍', 'launch.1'],
@@ -26,6 +27,10 @@ export default function LaunchUI() {
   // cuenta regresiva 3, 2, 1 antes del despegue
   const count = t > 0.6 && t < LIFTOFF ? Math.max(1, Math.ceil(LIFTOFF - t)) : null
   useSpeak(T(step[2], { name }))
+  // 🔊 pitido en cada número y trueno del cohete al despegar
+  useEffect(() => { if (count) play('beep') }, [count])
+  const lifted = t >= LIFTOFF && t < LIFTOFF + 1
+  useEffect(() => { if (lifted) play('liftoff') }, [lifted])
   const flash = Math.max(0, 1 - Math.abs(t - SPACE_CUT) / 0.45)
   const fadeOut = Math.max(0, Math.min(1, (t - (LAUNCH_END - 0.8)) / 0.8))
 

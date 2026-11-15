@@ -20,6 +20,7 @@ export const POS = {
   ice: [9.5, 0, 8.5],
   rock: [-4, 0, 11],
   home: [5.2, 0, 4.6], // donde se para el comandante
+  supply: [1.5, 0, 9.5], // donde cae la cápsula de carga de mitad de misión
 }
 // Puntos del domo donde pegan meteoritos / van los parches
 const R = 3.2

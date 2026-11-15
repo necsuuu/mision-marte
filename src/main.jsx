@@ -4,6 +4,7 @@ import './styles.css'
 import App from './App.jsx'
 import { useGame } from './game/store'
 import { preloadAssets } from './preload'
+import { initSound } from './game/sfx'
 
 // Para depurar desde la consola del navegador: __game.getState()
 window.__game = useGame
@@ -22,3 +23,4 @@ createRoot(document.getElementById('root')).render(
 )
 
 preloadAssets()
+initSound()

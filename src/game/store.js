@@ -1,9 +1,10 @@
 import { create } from 'zustand'
-import { ITEMS, CAPACITY, LOAD_SECONDS, BASE, EVENTS, SOLS, REPAIRS, LEAK_O2, ICE_MINE_O2 } from './content'
+import { ITEMS, CAPACITY, LOAD_SECONDS, BASE, EVENTS, SOLS, REPAIRS, LEAK_O2, ICE_MINE_O2, MID_SOL, SUPPLY_EVENT } from './content'
 import { loadSpaceWeather, buildSolWeather } from '../data/donki'
 import { randomLayout } from './shipLayout'
 
 const savedLang = (() => { try { return localStorage.getItem('mm-lang') || 'es' } catch { return 'es' } })()
+const savedSound = (() => { try { return localStorage.getItem('mm-sound') !== '0' } catch { return true } })()
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v))
 const shuffle = (arr) => [...arr].sort(() => Math.random() - 0.5)
@@ -134,7 +135,8 @@ export function recommendChoice(s, choices) {
   let best = 0, bestScore = -Infinity
   choices.forEach((c, i) => {
     const f = forecastChoice(s, c)
-    const sc = (x) => (x.o2 - s.o2) + (x.food - s.food) + (x.health - s.health) * 1.5 + (x.science - s.science) * 3 - (x.dose - s.dose) * 5 - x.chips * 4 - (x.leak ? 30 : 0) - (x.panel ? 25 : 0) + (x.mine ? 30 : 0) - (x.dust ? x.dust.sols * 4 : 0) - (x.noSci ? 2 : 0) + (x.sample ? 6 : 0)
+    // lo que está escaso vale el doble (si queda poco aire, conviene la opción que da aire)
+    const sc = (x) => (x.o2 - s.o2) * (s.o2 < 45 ? 2 : 1) + (x.food - s.food) * (s.food < 45 ? 2 : 1) + (x.health - s.health) * 1.5 + (x.science - s.science) * 3 - (x.dose - s.dose) * 5 - x.chips * 4 - (x.leak ? 30 : 0) - (x.panel ? 25 : 0) + (x.mine ? 30 : 0) - (x.dust ? x.dust.sols * 4 : 0) - (x.noSci ? 2 : 0) + (x.sample ? 6 : 0)
     const score = f.chance !== undefined ? f.chance * sc(f.success) + (1 - f.chance) * sc(f.fail) : sc(f)
     if (score > bestScore) { bestScore = score; best = i }
   })
@@ -152,7 +154,7 @@ export function makeRoomItems() {
 export const MAX_CARRY = 2
 
 /** Lo que se conserva al volver a jugar: idioma, jugador y preferencias. */
-const keep = (s) => ({ lang: s.lang, player: s.player, voice: s.voice, lite: s.lite })
+const keep = (s) => ({ lang: s.lang, player: s.player, voice: s.voice, lite: s.lite, sound: s.sound, seenIntro: s.seenIntro })
 
 // Estado físico de la base: cambia con las decisiones y se ve en 3D
 const freshBase = () => ({
@@ -172,6 +174,8 @@ const initialState = {
   lang: savedLang,
   voice: null, // 🔊 null = automático (prendida en modo cadete); true/false si el jugador la tocó
   lite: savedLite, // ⚙️ gráficos livianos para compus viejas
+  sound: savedSound, // 🎵 efectos de sonido y ambiente
+  seenIntro: false, // este comandante ya vio el despegue y el tutorial: al volver a jugar va directo a la nave
   paused: false, // ⏸️ menú de pausa (tecla Esc)
   quiz: { pre: null, post: null }, // respuestas del quiz final (solo en memoria)
   layout: {}, // objeto → lugar en la nave (al azar en cada partida)
@@ -225,14 +229,16 @@ export const useGame = create((set, get) => ({
     set({ lang })
   },
   goTitle: () => set({ ...initialState, ...keep(get()) }),
-  goCharacter: () => set({ screen: 'character' }),
+  goCharacter: () => set({ screen: 'character', seenIntro: false }), // otro comandante (otro chico): vuelve a ver todo
   setPlayer: (patch) => set({ player: { ...get().player, ...patch } }),
   goModes: () => set({ ...initialState, ...keep(get()), screen: 'mode' }),
 
   // Modo elegido → cinemática de despegue (mientras tanto se consulta a la NASA)
   startLoading: (mode) => {
     const roomItems = makeRoomItems()
-    set({ ...initialState, ...keep(get()), screen: 'launch', mode, easy: isCadet(get().player.age), weatherLoading: true, roomItems, layout: randomLayout(roomItems.map((r) => r.key)) })
+    // La primera vez: despegue + tutorial. Si este comandante ya los vio, va directo a cargar la cápsula.
+    const screen = get().seenIntro ? 'loading' : 'launch'
+    set({ ...initialState, ...keep(get()), screen, mode, easy: isCadet(get().player.age), weatherLoading: true, roomItems, layout: randomLayout(roomItems.map((r) => r.key)) })
     loadSpaceWeather(mode).then((weather) => set({ weather, weatherLoading: false }))
   },
   // Quiz final (4 preguntas para repasar lo aprendido). Se puede saltear.
@@ -263,7 +269,14 @@ export const useGame = create((set, get) => ({
   },
   // Orden: despegue (Tierra) → tutorial → recolección en la nave → aterrizaje (Marte) → Sol 1
   finishLaunch: () => { if (get().screen === 'launch') set({ screen: 'tutorial' }) },
-  finishTutorial: () => { if (get().screen === 'tutorial') set({ screen: 'loading' }) },
+  finishTutorial: () => { if (get().screen === 'tutorial') set({ screen: 'loading', seenIntro: true }) },
+  /** Volver a mirar el tutorial desde la nave (antes de arrancar el reloj). */
+  watchTutorial: () => { if (get().screen === 'loading') set({ screen: 'tutorial' }) },
+  toggleSound: () => {
+    const sound = !get().sound
+    try { localStorage.setItem('mm-sound', sound ? '1' : '0') } catch { /* nada */ }
+    set({ sound })
+  },
   finishLanding: () => {
     if (get().screen !== 'landing') return
     set({ screen: 'sol' })
@@ -348,7 +361,10 @@ export const useGame = create((set, get) => ({
     const cards = [{ type: 'briefing', storm: storm && storm.level > 0 ? storm : null, warn: storm?.warn || null, miss: storm?.miss || null, intro: s.sol === 1 }]
     const eventChance = storm && storm.level > 0 ? (s.easy ? 0.2 : 0.35) : s.sol === 1 ? 0 : s.easy ? 0.55 : 0.8
     let deck = s.eventDeck
-    if (Math.random() < eventChance) {
+    if (s.sol === MID_SOL) {
+      // 📦 Mitad de misión: siempre llega la cápsula de carga (y ese día no hay otro evento)
+      cards.push({ type: 'event', event: SUPPLY_EVENT })
+    } else if (Math.random() < eventChance) {
       if (!deck.length) deck = shuffle(EVENTS.filter((e) => !e.requires || s.inventory[e.requires]))
       // No repetir la fuga si ya hay una abierta
       let idx = deck.findIndex((e) => !(e.id === 'leak' && s.base.leak))

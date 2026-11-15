@@ -295,3 +295,69 @@ export function DustBurst({ position, amountRef }) {
     </points>
   )
 }
+
+/**
+ * 📦 Cápsula de carga de mitad de misión: baja con paracaídas y queda apoyada al lado de la base.
+ * drop=true la hace caer desde el cielo; si no, aparece ya apoyada.
+ */
+export function SupplyDrop({ position, drop = true }) {
+  const grp = useRef()
+  const chute = useRef()
+  const t = useRef(drop ? 0 : 99)
+  const FALL = 2.8
+  useFrame((_, dt) => {
+    t.current += Math.min(dt, 0.1)
+    const p = Math.min(1, t.current / FALL)
+    const g = grp.current
+    if (!g) return
+    g.position.y = 26 * (1 - p) * (1 - p * 0.35) // frena al llegar
+    g.rotation.z = p < 1 ? Math.sin(t.current * 2.4) * 0.09 : 0
+    if (chute.current) {
+      // el paracaídas se desinfla y cae a un costado después de tocar el suelo
+      const k = Math.max(0, Math.min(1, (t.current - FALL) / 1.2))
+      chute.current.scale.set(1 + k * 0.25, 1 - k * 0.88, 1 + k * 0.25)
+      chute.current.position.set(k * 1.9, 4.2 - k * 4.0, -k * 0.6)
+      chute.current.rotation.z = -k * 0.5
+    }
+  })
+  const crates = [['#5ad1ff', -0.42, -0.3], ['#7be07b', 0.42, -0.3], ['#ffd166', 0, 0.38]]
+  return (
+    <group position={[position[0], 0, position[2]]}>
+      <group ref={grp}>
+        {/* plataforma */}
+        <mesh position={[0, 0.2, 0]} castShadow receiveShadow>
+          <boxGeometry args={[1.9, 0.4, 1.7]} />
+          <meshStandardMaterial color="#d9d4c8" roughness={0.7} metalness={0.2} />
+        </mesh>
+        <mesh position={[0, 0.2, 0.86]}>
+          <boxGeometry args={[1.9, 0.14, 0.02]} />
+          <meshStandardMaterial color="#e2683a" roughness={0.6} />
+        </mesh>
+        {/* las tres cajas: aire, comida, instrumentos */}
+        {crates.map(([c, x, z]) => (
+          <mesh key={c} position={[x, 0.72, z]} castShadow>
+            <boxGeometry args={[0.66, 0.62, 0.6]} />
+            <meshStandardMaterial color={c} roughness={0.55} metalness={0.1} />
+          </mesh>
+        ))}
+        {/* paracaídas con sus cuerdas */}
+        <group ref={chute} position={[0, 4.2, 0]}>
+          <mesh castShadow>
+            <sphereGeometry args={[1.9, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2]} />
+            <meshStandardMaterial color="#f4f0e8" side={THREE.DoubleSide} roughness={0.9} userData={{ surf: 'tela' }} />
+          </mesh>
+          <mesh position={[0, 0.02, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[1.9, 0.05, 6, 24]} />
+            <meshStandardMaterial color="#e2683a" roughness={0.8} />
+          </mesh>
+          {[[1.3, 1.3], [-1.3, 1.3], [1.3, -1.3], [-1.3, -1.3]].map(([x, z], i) => (
+            <mesh key={i} position={[x / 2, -1.6, z / 2]} rotation={[Math.atan2(z, 3.2) * -1, 0, Math.atan2(x, 3.2)]}>
+              <cylinderGeometry args={[0.012, 0.012, 3.5, 4]} />
+              <meshBasicMaterial color="#3b3b3b" />
+            </mesh>
+          ))}
+        </group>
+      </group>
+    </group>
+  )
+}

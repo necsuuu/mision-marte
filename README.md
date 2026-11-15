@@ -23,7 +23,8 @@ Las **tormentas solares del juego son reales**: salen de la base de datos **DONK
 9. [Cómo modificar el juego](#%EF%B8%8F-cómo-modificar-el-juego)
 10. [Notas técnicas de las APIs](#-notas-técnicas-de-las-apis)
 11. [Simplificaciones honestas](#-simplificaciones-honestas)
-12. [Créditos](#-créditos)
+12. [Uso de inteligencia artificial](#-uso-de-inteligencia-artificial)
+13. [Créditos](#-créditos)
 
 ---
 
@@ -57,7 +58,8 @@ Estas ayudas son **solo para el modo cadete**: los jugadores de 10 años o más 
 Desde los **10 años** la base consume más aire y comida (27 y 13 por sol, contra 20 y 10 de los cadetes): la energía no alcanza para todo y hay que pensar el reparto. Lo probamos con partidas simuladas: una estrategia fija ("siempre 2⚡ a cada cosa") ya no saca 3 estrellas y, si la carga fue mala, pierde; con buen reparto se gana con 3 estrellas.
 
 **Accesibilidad**
-- 🔊 **Lectura en voz alta** (voz del navegador, sin internet): se prende sola en modo cadete y se puede prender o apagar en cualquier momento con el botón de abajo a la izquierda. Lee los avisos, las decisiones, el plan, los resultados y las preguntas de repaso.
+- 🗣️ **Lectura en voz alta** (voz del navegador, sin internet): se prende sola en modo cadete y se puede prender o apagar en cualquier momento con el botón de abajo a la izquierda. Lee los avisos, las decisiones, el plan, los resultados y las preguntas de repaso.
+- 🔊 **Sonido:** efectos (agarrar, guardar, alarma, despegue, resultado bueno o malo) y ambiente (zumbido de la nave, viento de Marte). No hay archivos de audio: todo se genera con código (Web Audio). Se apaga con el botón 🔊 y se frena con la pausa.
 - ✋ **Botón de acción en pantalla** (igual que la tecla E) para jugar en tablets o con un solo dedo.
 - ✨/🐢 **Gráficos livianos** para compus viejas: sin sombras y con menos resolución. Además, si el juego anda lento, baja la resolución solo.
 - Textos grandes en todo el juego.
@@ -80,6 +82,8 @@ Desde los **10 años** la base consume más aire y comida (27 y 13 por sol, cont
 
 ### 3. Despegue desde la Tierra
 Cuenta regresiva 3, 2, 1: el cohete se enciende y despega entre el humo, atraviesa las nubes, el cielo se pone negro y aparecen las estrellas. Desde el espacio se ve la Tierra y el camino hacia Marte (el viaje dura unos 7 meses). Se puede saltear. **La carga de suministros empieza recién cuando termina el despegue** y un tutorial corto, que también se puede saltear.
+
+> **Volver a jugar es más rápido:** el despegue y el tutorial se ven la primera vez. Si el mismo comandante juega de nuevo, va directo a la nave (el tutorial sigue disponible con el botón 🎬). Si se elige otro comandante, se vuelve a mostrar todo.
 
 ### 4. Interior de la nave: 60 segundos
 ¡Ya casi llegamos a Marte! Hay que cargar la cápsula de aterrizaje con lo que va a necesitar la base.
@@ -124,6 +128,8 @@ Cada sol tiene este ciclo:
 
 **Giro a mitad de misión:** dos soles antes de la tormenta más fuerte llega un **aviso de pronóstico** ("en 2 soles llega una GRAN TORMENTA"), como hace la oficina de clima espacial de la NASA para las misiones a la Luna y Marte. Hay que guardar energía en la batería y preparar el escudo. Si los datos reales no traen ninguna tormenta fuerte, se hace un **simulacro de entrenamiento** con la tormenta real del 14/05/2024, y el juego avisa que es un simulacro.
 
+**📦 Cápsula de carga (sol 6):** justo a mitad de la misión baja con paracaídas una cápsula que mandó la Tierra. No es un problema sino un premio, pero el rover solo puede traer **una** de las tres cajas (oxígeno, comida o instrumentos de ciencia): hay que elegir según lo que más falta. La cápsula queda al lado de la base. Corta la rutina de los soles del medio y enseña un dato real: a Marte solo se puede despegar cada 26 meses.
+
 ### 7. Informe final
 Se gana sobreviviendo los 12 soles. Hay hasta **3 estrellas**: ★ sobrevivir, ★ llegar a 10 puntos de ciencia, ★ recibir poca radiación. El informe aparece en la consola con 3 pestañas:
 
@@ -132,6 +138,8 @@ Se gana sobreviviendo los 12 soles. Hay hasta **3 estrellas**: ★ sobrevivir, �
 - **Aprendiste:** las **habilidades de astronauta** que practicó (administrar recursos, leer pronósticos, protegerse de la radiación, decidir en emergencias, trabajar con minutos de retraso) y los datos científicos que vio.
 
 Antes del informe hay **4 preguntas de repaso** (radiación, hacia dónde van las tormentas, qué cuidar primero, retraso de los mensajes), cada una con su explicación. El resumen muestra cuántas acertó. Se pueden saltear y las respuestas no se guardan. Si se pierde (sin oxígeno, sin comida o demasiada radiación) se explica por qué, sin castigar: la idea es volver a intentar con otra estrategia.
+
+**📤 Compartir:** el informe tiene un botón que arma una imagen con el logo, las estrellas y los números de la misión, para mandársela a alguien. En celulares abre el menú de compartir; en compus la descarga. La imagen se dibuja en el navegador, no se sube a ningún lado y **no lleva el nombre del jugador**.
 
 ### 🌐 Idiomas
 Botón **🇦🇷 ES / 🇬🇧 EN** en la pantalla de inicio, en la selección de personaje y en el panel de datos. Todo el juego está traducido (interfaz, objetos, eventos, glosario) y la elección se recuerda.
@@ -271,6 +279,8 @@ src/
 │   ├── pathfinding.js      Grilla + A*: el astronauta rodea los muebles
 │   ├── quiz.js             Preguntas de repaso y habilidades de astronauta
 │   ├── voice.js            Lectura en voz alta (Web Speech API)
+│   ├── sfx.js              Sonido: efectos y ambiente generados por código (Web Audio)
+│   ├── shareCard.js        Imagen para compartir el resultado (se dibuja en el navegador)
 │   ├── device.js           Detecta pantalla táctil, iPhone y si se puede usar pantalla completa
 │   └── store.js            Lógica: energía, recursos, radiación, eventos, estado de la base, bitácora
 ├── i18n/
@@ -342,6 +352,18 @@ También se explican dentro del juego:
 - Si los datos no traen una tormenta fuerte, se usa un **simulacro** con la de mayo 2024, y el juego lo dice.
 - La distancia Tierra–Marte usa órbitas simplificadas (error de unos pocos %).
 - Este proyecto **no es un producto oficial de la NASA** y no usa logos ni elementos de marca de la NASA.
+
+---
+
+## 🤖 Uso de inteligencia artificial
+
+Declaramos dónde usamos herramientas de IA en este proyecto:
+
+- **Código y textos del juego:** se escribieron con ayuda de un asistente de IA generativa. El equipo puso la idea y las mecánicas, lo hizo probar a mucha gente y fue pidiendo y revisando cada cambio.
+- **Texturas, sonidos e ícono:** no salen de modelos de imagen ni de audio. Las texturas y los sonidos los calcula el código del juego, y el ícono se arma a partir de la ilustración del comandante.
+- **Ilustraciones (personajes, cabina, computadoras, portada y logos):** _(completar: quién las hizo y con qué herramienta)_.
+- **Datos:** las tormentas solares y la radiación vienen de la NASA (DONKI y Curiosity RAD). La IA no generó datos.
+- No se generó ni modificó ningún elemento de marca de la NASA.
 
 ---
 

@@ -121,6 +121,16 @@ export const CONTENT_EN = {
         { label: 'Take pictures', outcome: '📸 Better than nothing.' },
       ],
     },
+    supply: {
+      title: 'A capsule from Earth has arrived!',
+      text: 'Halfway through the mission: Earth sent cargo. The rover can only bring ONE crate before night. Which one?',
+      fact: 'Cargo for Mars is sent long in advance: launches are only possible every 26 months, when Earth and Mars are close.',
+      choices: [
+        { label: 'The oxygen crate', outcome: '🧪 Fresh air for the base! +20 🫁' },
+        { label: 'The food crate', outcome: '🥫 Food from home! +20 🥔' },
+        { label: 'The instruments crate', outcome: '🔬 New instruments! +3 science' },
+      ],
+    },
     sunset: {
       title: 'Blue sunset',
       text: 'On Mars the sunset is blue! Everyone goes out to watch.',

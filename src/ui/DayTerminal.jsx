@@ -153,7 +153,7 @@ function Decision({ s, sel, setSel, options }) {
   useSpeak(ev.title + '. ' + ev.text + '. ' + options.map((o, i) => `${i + 1}: ${o.label}`).join('. '))
   return (
     <>
-      <div className="crt-header"><span className="blink">■</span> {T('term.alert', { n: s.sol })} · {ev.emoji}</div>
+      <div className="crt-header"><span className="blink">■</span> {T(ev.special ? 'term.mid' : 'term.alert', { n: s.sol })} · {ev.emoji}</div>
       <TypeTitle text={ev.title.toUpperCase()} />
       <p className="crt-text">{T('term.ask', { name: s.player.name.toUpperCase() })} {ev.text}</p>
       {ev.delayFact && <div className="crt-extra">{T('term.delay', { km: Math.round(d.km / 1e6), min: Math.round(d.minutes) })}</div>}

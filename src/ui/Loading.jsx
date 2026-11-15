@@ -55,8 +55,8 @@ function ActionButton() {
 }
 
 export default function Loading() {
-  const { cargo, launch, weatherLoading, goModes, roomItems, carrying, unload, player, lang, easy } = useGame(
-    useShallow((s) => ({ cargo: s.cargo, launch: s.launch, weatherLoading: s.weatherLoading, goModes: s.goModes, roomItems: s.roomItems, carrying: s.carrying, unload: s.unload, player: s.player, lang: s.lang, easy: s.easy }))
+  const { cargo, launch, weatherLoading, goModes, roomItems, carrying, unload, player, lang, easy, watchTutorial } = useGame(
+    useShallow((s) => ({ cargo: s.cargo, launch: s.launch, weatherLoading: s.weatherLoading, goModes: s.goModes, roomItems: s.roomItems, carrying: s.carrying, unload: s.unload, player: s.player, lang: s.lang, easy: s.easy, watchTutorial: s.watchTutorial }))
   )
   const CAPACITY = capacityFor({ easy })
   const LOAD_SECONDS = loadSecondsFor({ easy })
@@ -108,6 +108,7 @@ export default function Loading() {
               </div>
               <div className="row center-row">
                 <button className="btn ghost" onClick={goModes}>←</button>
+                <button className="btn ghost" onClick={watchTutorial} title={T('room.tutorial')}>🎬 {T('room.tutorial')}</button>
                 <motion.button className="btn primary play-btn" onClick={() => setStarted(true)} whileTap={{ scale: 0.95 }}>{T('room.go')}</motion.button>
               </div>
             </div>

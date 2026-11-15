@@ -189,6 +189,22 @@ export const EVENTS = [
   },
 ]
 
+/**
+ * 📦 Evento especial de mitad de misión: no sale al azar, llega siempre en el sol MID_SOL.
+ * Es distinto a los demás: no hay un problema, hay un premio… pero solo se puede elegir una caja.
+ */
+export const MID_SOL = 6
+export const SUPPLY_EVENT = {
+  id: 'supply', special: true, good: true, emoji: '📦', title: '¡Llegó una cápsula de la Tierra!', scene: 'supply', incident: 'supply',
+  text: 'Mitad de la misión: la Tierra mandó carga. El rover solo puede traer UNA caja antes de la noche. ¿Cuál?',
+  fact: 'La carga para Marte se manda con mucha anticipación: solo se puede despegar cada 26 meses, cuando la Tierra y Marte quedan cerca.',
+  choices: [
+    { label: 'La caja de oxígeno', hint: '+20 🫁', effects: { o2: 20 }, fx: 'supply', outcome: '🧪 ¡Aire fresco para la base! +20 🫁' },
+    { label: 'La caja de comida', hint: '+20 🥔', effects: { food: 20 }, fx: 'supply', outcome: '🥫 ¡Comida de casa! +20 🥔' },
+    { label: 'La caja de instrumentos', hint: '+3 🔬', effects: { science: 3 }, fx: 'supply', outcome: '🔬 ¡Instrumentos nuevos! +3 de ciencia' },
+  ],
+}
+
 // Reparaciones que se pueden pagar con energía en el plan del sol
 export const REPAIRS = {
   leak: { label: 'Parchar la fuga', emoji: '🩹', cost: 2 },

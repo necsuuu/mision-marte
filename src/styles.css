@@ -345,6 +345,7 @@ p { margin: 0 0 0.8em; line-height: 1.5; }
 
 .incident-caption { margin: 0 auto auto; align-self: center; font: 600 clamp(1.2rem, 2.6vw, 1.7rem) 'Fredoka', sans-serif; background: rgba(120, 10, 10, 0.78); border: 2px solid #ff6b6b; padding: 12px 24px; border-radius: 999px; display: flex; align-items: center; gap: 10px; box-shadow: 0 0 40px rgba(255, 60, 60, 0.35); }
 .sol-main:has(.incident-caption) { justify-content: center; }
+.incident-caption.good { background: rgba(20, 90, 40, 0.82); border-color: #7be07b; box-shadow: 0 0 40px rgba(123, 224, 123, 0.35); }
 .pulse-dot { width: 14px; height: 14px; border-radius: 50%; background: #ff3b3b; animation: blink 0.5s infinite alternate; }
 
 .decision { position: absolute; inset: 0; pointer-events: auto; overflow: hidden; z-index: 30; background: #000; }
@@ -472,6 +473,8 @@ p { margin: 0 0 0.8em; line-height: 1.5; }
 .console-phone:hover { background: radial-gradient(circle, rgba(255, 209, 102, 0.35), transparent 70%); }
 .amber-tabs { display: flex; gap: 0.6cqw; }
 .amber-tabs button { font: 700 max(1.41cqw, 10px) 'Space Mono', monospace; color: #ffbf5c; border: 1px solid rgba(255, 191, 92, 0.4); padding: 0.4cqw 1cqw; border-radius: 0.4cqw; }
+.amber-tabs .amber-share { margin-left: auto; background: #ffd166; color: #1d140a; border-color: #ffd166; text-shadow: none; font-family: 'Fredoka', sans-serif; white-space: nowrap; }
+.amber-tabs .amber-share:disabled { opacity: 0.5; }
 .amber-tabs button.on { background: #ffbf5c; color: #1d140a; text-shadow: none; }
 .amber-scroll { flex: 1; overflow-y: auto; padding-right: 0.6cqw; display: grid; align-content: start; gap: 0.8cqw; }
 .amber-p { font-size: max(1.38cqw, 10px); line-height: 1.35; margin: 0; }
@@ -621,6 +624,7 @@ p { margin: 0 0 0.8em; line-height: 1.5; }
 /* ---------- v0.7: quiz, voz, demo, botón de acción ---------- */
 .toolbar { position: fixed; left: 14px; bottom: 14px; z-index: 40; display: flex; gap: 8px; }
 .toolbar button { width: 2.7rem; height: 2.7rem; border-radius: 50%; font-size: 1.35rem; display: grid; place-items: center; padding: 0; background: rgba(10, 12, 20, 0.75); border: 2px solid rgba(255, 255, 255, 0.2); color: #fff; cursor: pointer; }
+.toolbar button.off { filter: grayscale(1); opacity: 0.6; }
 .toolbar button.on { border-color: var(--gold); box-shadow: 0 0 12px rgba(255, 209, 102, 0.5); }
 .quiz-screen { z-index: 25; }
 .quiz-card { width: min(760px, 94vw); background: rgba(12, 14, 24, 0.92); border: 2px solid rgba(255, 209, 102, 0.4); border-radius: 22px; padding: 28px 30px; text-align: center; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5); }

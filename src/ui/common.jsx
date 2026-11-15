@@ -4,6 +4,7 @@ import { useGame } from '../game/store'
 import { t, locGlossary } from '../i18n/core'
 import { useT } from '../i18n/useT'
 import { voiceSupported, stopSpeaking } from '../game/voice'
+import { soundSupported } from '../game/sfx'
 import { isTouch, isStandalone, canFullscreen, fullscreenOn, enterFullscreen, exitFullscreen } from '../game/device'
 
 export const fade = {
@@ -122,10 +123,11 @@ export function Toolbar() {
   const T = useT()
   const voiceOn = useGame((s) => s.voice ?? s.easy)
   const lite = useGame((s) => s.lite)
+  const sound = useGame((s) => s.sound)
   const canPause = useGame((s) => ['launch', 'tutorial', 'loading', 'landing', 'sol'].includes(s.screen))
-  const { toggleVoice, toggleLite, setPaused } = useGame.getState()
+  const { toggleVoice, toggleLite, toggleSound, setPaused } = useGame.getState()
   const big = useBigScreen()
-  const count = (canPause ? 1 : 0) + (voiceSupported() ? 1 : 0) + 1 + (big.available ? 1 : 0)
+  const count = (canPause ? 1 : 0) + (voiceSupported() ? 1 : 0) + (soundSupported ? 1 : 0) + 1 + (big.available ? 1 : 0)
   useEffect(() => { document.documentElement.style.setProperty('--tools', count) }, [count])
   return (
     <>
@@ -133,8 +135,13 @@ export function Toolbar() {
         {big.available && <button className={big.full ? 'on' : ''} onClick={big.toggle} title={T('tool.full')} aria-label={T('tool.full')}><FullIcon on={big.full} /></button>}
         {canPause && <button onClick={() => setPaused(true)} title={T('pause.title') + ' (Esc)'} aria-label={T('pause.title')}>⏸️</button>}
         {voiceSupported() && (
-          <button className={voiceOn ? 'on' : ''} onClick={() => { if (voiceOn) stopSpeaking(); toggleVoice() }} title={T('tool.voice')} aria-label={T('tool.voice')}>
-            {voiceOn ? '🔊' : '🔇'}
+          <button className={voiceOn ? 'on' : 'off'} onClick={() => { if (voiceOn) stopSpeaking(); toggleVoice() }} title={T('tool.voice')} aria-label={T('tool.voice')} aria-pressed={voiceOn}>
+            🗣️
+          </button>
+        )}
+        {soundSupported && (
+          <button className={sound ? 'on' : 'off'} onClick={toggleSound} title={T('tool.sound')} aria-label={T('tool.sound')} aria-pressed={sound}>
+            {sound ? '🔊' : '🔇'}
           </button>
         )}
         <button className={lite ? 'on' : ''} onClick={toggleLite} title={T('tool.lite')} aria-label={T('tool.lite')}>

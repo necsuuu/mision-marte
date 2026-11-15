@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useGame } from '../game/store'
 import { t, locGlossary } from '../i18n/core'
@@ -46,14 +46,54 @@ export function LangToggle({ className = '' }) {
 }
 
 /** Botones fijos: 🔊 leer en voz alta y ⚙️ gráficos livianos. */
+/** En celulares parados: pide girar el teléfono (el juego está pensado acostado). Se muestra solo por CSS. */
+export function RotateHint() {
+  const T = useT()
+  // si el celular está parado, se pausa el juego (así no corre el reloj); al girarlo aparece el menú de pausa
+  useEffect(() => {
+    const mql = matchMedia('(orientation: portrait) and (max-width: 760px)')
+    const check = () => { if (mql.matches) useGame.getState().setPaused(true) }
+    check()
+    mql.addEventListener('change', check)
+    return () => mql.removeEventListener('change', check)
+  }, [])
+  return (
+    <div className="rotate-hint" aria-live="polite">
+      <div className="rotate-phone">📱</div>
+      <b>{T('rotate')}</b>
+      <small>{T('rotateSub')}</small>
+    </div>
+  )
+}
+
 export function Toolbar() {
   const T = useT()
   const voiceOn = useGame((s) => s.voice ?? s.easy)
   const lite = useGame((s) => s.lite)
   const canPause = useGame((s) => ['launch', 'tutorial', 'loading', 'landing', 'sol'].includes(s.screen))
   const { toggleVoice, toggleLite, setPaused } = useGame.getState()
+  // ⛶ pantalla completa: en celulares y tablets gana el espacio que ocupa la barra del navegador
+  const [full, setFull] = useState(() => typeof document !== 'undefined' && !!document.fullscreenElement)
+  const canFull = typeof document !== 'undefined' && document.fullscreenEnabled && typeof matchMedia !== 'undefined' && matchMedia('(pointer: coarse)').matches
+  useEffect(() => {
+    const on = () => setFull(!!document.fullscreenElement)
+    document.addEventListener('fullscreenchange', on)
+    return () => document.removeEventListener('fullscreenchange', on)
+  }, [])
+  const toggleFull = async () => {
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen()
+      else {
+        await document.documentElement.requestFullscreen()
+        await screen.orientation?.lock?.('landscape').catch(() => {})
+      }
+    } catch { /* el navegador no lo permite */ }
+  }
+  const count = (canPause ? 1 : 0) + (voiceSupported() ? 1 : 0) + 1 + (canFull ? 1 : 0)
+  useEffect(() => { document.documentElement.style.setProperty('--tools', count) }, [count])
   return (
     <div className="toolbar">
+      {canFull && <button className={full ? 'on' : ''} onClick={toggleFull} title={T('tool.full')} aria-label={T('tool.full')}>{full ? '🗗' : '⛶'}</button>}
       {canPause && <button onClick={() => setPaused(true)} title={T('pause.title') + ' (Esc)'} aria-label={T('pause.title')}>⏸️</button>}
       {voiceSupported() && (
         <button className={voiceOn ? 'on' : ''} onClick={() => { if (voiceOn) stopSpeaking(); toggleVoice() }} title={T('tool.voice')} aria-label={T('tool.voice')}>

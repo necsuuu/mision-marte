@@ -19,7 +19,7 @@ import DataPanel from './ui/DataPanel'
 import Quality from './three/Quality'
 import PauseClock from './three/PauseClock'
 import PauseMenu from './ui/PauseMenu'
-import { Toolbar } from './ui/common'
+import { Toolbar, RotateHint } from './ui/common'
 
 export default function App() {
   const screen = useGame((s) => s.screen)
@@ -66,6 +66,7 @@ export default function App() {
       </div>
 
       {screen !== 'title' && <Toolbar />}
+      {['launch', 'tutorial', 'loading', 'landing', 'sol', 'end'].includes(screen) && <RotateHint />}
       <PauseMenu />
       <AnimatePresence>{dataOpen && <DataPanel onClose={() => setDataOpen(false)} />}</AnimatePresence>
     </div>

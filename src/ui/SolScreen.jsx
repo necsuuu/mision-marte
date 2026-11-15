@@ -18,7 +18,7 @@ export default function SolScreen({ onData }) {
   const s = useGame()
   const card = s.cards[0]
   return (
-    <motion.div className="screen sol-screen" {...fade}>
+    <motion.div className={'screen sol-screen phase-' + s.phase} {...fade}>
       <Hud s={s} onData={onData} />
       <div className="sol-main">
         <AnimatePresence mode="wait">

@@ -61,6 +61,7 @@ Desde los **10 años** la base consume más aire y comida (27 y 13 por sol, cont
 - ✋ **Botón de acción en pantalla** (igual que la tecla E) para jugar en tablets o con un solo dedo.
 - ✨/🐢 **Gráficos livianos** para compus viejas: sin sombras y con menos resolución. Además, si el juego anda lento, baja la resolución solo.
 - Textos grandes en todo el juego.
+- **Se adapta a cualquier pantalla:** compu, tablet o celular acostado. El tamaño de todo se calcula según la pantalla, los textos de la computadora del juego nunca quedan ilegibles, y en celulares hay botón de **pantalla completa ⛶**. Si el celular está parado, el juego se pausa y pide girarlo.
 
 > El nombre y la edad **solo viven en la memoria del navegador** mientras se juega: no se guardan ni se envían a ningún lado.
 

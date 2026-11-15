@@ -62,7 +62,11 @@ Desde los **10 años** la base consume más aire y comida (27 y 13 por sol, cont
 - ✨/🐢 **Gráficos livianos** para compus viejas: sin sombras y con menos resolución. Además, si el juego anda lento, baja la resolución solo.
 - Textos grandes en todo el juego.
 - **Texturas realistas:** el suelo de Marte tiene relieve, ondas de arena y piedritas; los metales están cepillados y rayados; la pintura tiene mugre, chorreaduras y saltaduras; el domo y el paracaídas tienen trama de tela. Todo se calcula en la placa de video, sin descargar imágenes. En modo liviano 🐢 se apagan.
-- **Se adapta a cualquier pantalla:** compu, tablet o celular acostado. El tamaño de todo se calcula según la pantalla, los textos de la computadora del juego nunca quedan ilegibles, y en celulares hay botón de **pantalla completa ⛶**. Si el celular está parado, el juego se pausa y pide girarlo.
+- **Se adapta a cualquier pantalla:** compu, tablet o celular acostado. El tamaño de todo se calcula según la pantalla y los textos de la computadora del juego nunca quedan ilegibles. Si el celular está parado, el juego se pausa y pide girarlo.
+- **Celulares (iPhone y Android):**
+  - En un celular acostado queda muy poco alto (Safari en un iPhone deja unos 280 a 340 px; Android, entre 300 y 410), así que la pantalla se reacomoda sola: los botones fijos van en columna a la izquierda, la barra de la nave y el mapa entran en una fila, el tutorial pone el video al lado del texto, y la computadora y la consola se muestran sin el dibujo del gabinete para usar todo el ancho. En tablets y compus se ve el diseño completo.
+  - **Pantalla grande:** en Android y iPad el botón pone el juego en pantalla completa. El iPhone no deja que una página se ponga en pantalla completa, así que ahí el botón explica cómo agregar el juego a la pantalla de inicio (Compartir → «Agregar a inicio»): abierto desde ese ícono se ve sin las barras de Safari.
+  - En pantallas táctiles el tutorial y las ayudas hablan de **tocar** (no de clic, W A S D ni la tecla E), y si un texto de la computadora no entra aparece una flechita ▼ para deslizar.
 
 > El nombre y la edad **solo viven en la memoria del navegador** mientras se juega: no se guardan ni se envían a ningún lado.
 
@@ -267,6 +271,7 @@ src/
 │   ├── pathfinding.js      Grilla + A*: el astronauta rodea los muebles
 │   ├── quiz.js             Preguntas de repaso y habilidades de astronauta
 │   ├── voice.js            Lectura en voz alta (Web Speech API)
+│   ├── device.js           Detecta pantalla táctil, iPhone y si se puede usar pantalla completa
 │   └── store.js            Lógica: energía, recursos, radiación, eventos, estado de la base, bitácora
 ├── i18n/
 │   ├── ui.js               Textos de la interfaz (es / en)
@@ -292,8 +297,12 @@ src/
     ├── ItemCard.jsx        Ficha del objeto con el retrato del comandante
     ├── Terminal.jsx        Terminal CRT de decisiones (pantalla + impresora + botón ✓)
     └── Console.jsx         Consola ámbar del reporte nocturno y final
+public/
+├── manifest.webmanifest    Para abrir el juego como app desde la pantalla de inicio del celular
+└── icon-*.png, favicon.png Ícono del juego (el comandante en Marte)
 tools/
-└── generar_fotogramas.py   Genera los fotogramas de caminata a partir de los dibujos originales
+├── generar_fotogramas.py   Genera los fotogramas de caminata a partir de los dibujos originales
+└── armar_icono.py          Arma el ícono del juego a partir de la ilustración del comandante
 ```
 
 ---

@@ -1,7 +1,8 @@
 import { motion } from 'framer-motion'
 import { useGame } from '../game/store'
 import { useT } from '../i18n/useT'
-import { fade, LangToggle } from './common'
+import { fade, LangToggle, useBigScreen, FullIcon } from './common'
+import { isTouch, enterFullscreen } from '../game/device'
 import bg from '../assets/title/title_bg.webp'
 import logoEs from '../assets/title/logo_es.webp'
 import logoEn from '../assets/title/logo_en.webp'
@@ -11,6 +12,7 @@ export default function Title({ onData }) {
   const goCharacter = useGame((s) => s.goCharacter)
   const lang = useGame((s) => s.lang)
   const T = useT()
+  const big = useBigScreen()
   return (
     <motion.div className="screen title-screen" {...fade}>
       <div className="title-bg" style={{ backgroundImage: `url(${bg})` }} aria-hidden />
@@ -36,7 +38,7 @@ export default function Title({ onData }) {
         <p className="big-icons title-icons">🚀 → 🔴 → 🏠 → ☀️🛡️ → 🏆</p>
         <motion.button
           className="btn primary play-btn"
-          onClick={goCharacter}
+          onClick={() => { if (isTouch) enterFullscreen(); goCharacter() }}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           animate={{ boxShadow: ['0 8px 24px rgba(226,104,58,.4)', '0 8px 44px rgba(226,104,58,.8)', '0 8px 24px rgba(226,104,58,.4)'] }}
@@ -45,7 +47,9 @@ export default function Title({ onData }) {
           {T('play')}
         </motion.button>
         <button className="link-btn" onClick={onData}>{T('nasaData')}</button>
+        {big.available && !big.full && <button className="link-btn big-btn" onClick={big.toggle}><FullIcon /> {T('full.big')}</button>}
       </motion.div>
+      {big.dialog}
     </motion.div>
   )
 }

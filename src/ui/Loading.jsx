@@ -117,6 +117,7 @@ export default function Loading() {
 
       {started && (
         <>
+          <div className="room-head">
           <div className="room-top">
             <div className={'timer' + (urgent ? ' urgent' : '')}>
               <span>{String(Math.max(0, left)).padStart(2, '0')}</span>
@@ -137,6 +138,7 @@ export default function Loading() {
           </div>
 
           <MiniMap />
+          </div>
 
           <ItemCard />
           <div className="room-bottom">

@@ -6,6 +6,7 @@ import { getCharacter, WALK_SEQUENCE } from '../game/characters'
 import { useT } from '../i18n/useT'
 import { fade } from './common'
 import { useSpeak } from '../game/voice'
+import { isTouch } from '../game/device'
 
 const STEP_MS = 4200
 const D = STEP_MS / 1000
@@ -35,7 +36,7 @@ function Walker({ frames, walking, x, y, flip }) {
 function Cursor({ x, y, clickAt }) {
   return (
     <>
-      <motion.div className="tut-cursor" animate={{ left: x, top: y }} transition={loop}>🖱️</motion.div>
+      <motion.div className="tut-cursor" animate={{ left: x, top: y }} transition={loop}>{isTouch ? '👆' : '🖱️'}</motion.div>
       <motion.div className="tut-ripple" style={{ left: x[x.length - 2], top: y[y.length - 2] }} animate={{ scale: [0, 0, 1.6, 1.6], opacity: [0, 0, 0.9, 0] }} transition={{ ...loop, times: [0, clickAt, clickAt + 0.08, clickAt + 0.25] }} />
     </>
   )
@@ -77,7 +78,7 @@ function Scene({ step, frames }) {
         </div>
         <Walker frames={frames} walking={false} x={['30%', '30%']} y={['30%', '30%']} />
         <Cursor x={['70%', '58%', '58%', '58%']} y={['85%', '40%', '40%', '40%']} clickAt={0.2} />
-        <div className="tut-keys right"><div className="tut-keyrow"><Key k="E" glow={[0, 0, 0, 0, 1, 1, 0, 0]} /></div></div>
+        {!isTouch && <div className="tut-keys right"><div className="tut-keyrow"><Key k="E" glow={[0, 0, 0, 0, 1, 1, 0, 0]} /></div></div>}
       </>
     )
   }
@@ -101,7 +102,9 @@ function Scene({ step, frames }) {
   )
 }
 
-const STEPS = ['tut.s1', 'tut.s2', 'tut.s3', 'tut.s4', 'tut.s5']
+// En pantallas táctiles no hay teclado: se saltea el paso de W A S D (los textos cambian solos a "tocá")
+const STEPS = isTouch ? ['tut.s2', 'tut.s3', 'tut.s4', 'tut.s5'] : ['tut.s1', 'tut.s2', 'tut.s3', 'tut.s4', 'tut.s5']
+const sceneOf = (key) => Number(key.slice(-1)) - 1
 
 function Say({ text }) { useSpeak(text); return null }
 
@@ -130,7 +133,7 @@ export default function Tutorial() {
           <div className="tut-rec"><span className="pulse-dot" /> REC</div>
           <AnimatePresence mode="wait">
             <motion.div key={step} className="tut-scene" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <Scene step={step} frames={frames} />
+              <Scene step={sceneOf(STEPS[step])} frames={frames} />
             </motion.div>
           </AnimatePresence>
         </div>

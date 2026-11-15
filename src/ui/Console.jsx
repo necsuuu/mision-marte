@@ -1,6 +1,7 @@
 // Consola verde con pantalla ámbar: reporte de cada noche y del final de la misión.
 // Pantalla grande: datos. Pantallita: sol / estrellas. Botón ✓: continuar. Teléfono: "llamar a la Tierra" (datos NASA).
 import consoleImg from '../assets/ui/console.webp'
+import { ScrollArea } from './common'
 
 const MAIN = { left: '38.6%', top: '15%', width: '45.4%', height: '54.5%' }
 const MINI = { left: '87.52%', top: '61.9%', width: '8.3%', height: '12.46%' }
@@ -14,7 +15,7 @@ export default function Console({ children, mini, onOk, okLabel, onPhone, phoneL
       <img className="console-img" src={consoleImg} alt="" draggable={false} />
       <div className={'bulb' + (alarm ? ' alarm' : '')} style={BULB} />
       <div className="amber" style={MAIN}>
-        <div className="amber-inner">{children}</div>
+        <ScrollArea className="amber-inner">{children}</ScrollArea>
         <div className="scanlines" />
       </div>
       <div className="mini-screen" style={MINI}>{mini}</div>

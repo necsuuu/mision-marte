@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useGame } from '../game/store'
 import { t, locGlossary } from '../i18n/core'
 import { useT } from '../i18n/useT'
 import { voiceSupported, stopSpeaking } from '../game/voice'
+import { isTouch, isStandalone, canFullscreen, fullscreenOn, enterFullscreen, exitFullscreen } from '../game/device'
 
 export const fade = {
   initial: { opacity: 0, y: 16 },
@@ -45,7 +46,6 @@ export function LangToggle({ className = '' }) {
   )
 }
 
-/** Botones fijos: 🔊 leer en voz alta y ⚙️ gráficos livianos. */
 /** En celulares parados: pide girar el teléfono (el juego está pensado acostado). Se muestra solo por CSS. */
 export function RotateHint() {
   const T = useT()
@@ -66,44 +66,110 @@ export function RotateHint() {
   )
 }
 
+/** Ícono de pantalla completa dibujado (el símbolo ⛶ no existe en todas las tipografías de celular). */
+export function FullIcon({ on }) {
+  const d = on ? 'M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5' : 'M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5'
+  return <svg className="full-icon" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d={d} /></svg>
+}
+
+/** Aviso para aparatos que no dejan poner la página en pantalla completa (iPhone): cómo abrir el juego como app. */
+function BigScreenHelp({ onClose }) {
+  const T = useT()
+  const ios = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+  return (
+    <div className="pause-overlay full-help" onClick={onClose}>
+      <div className="pause-card full-card" onClick={(e) => e.stopPropagation()}>
+        <h2><FullIcon /> {T('full.title')}</h2>
+        {ios ? (
+          <ol className="full-steps">
+            <li><Tx k="full.ios1" /></li>
+            <li><Tx k="full.ios2" /></li>
+            <li><Tx k="full.ios3" /></li>
+          </ol>
+        ) : <p>{T('full.other')}</p>}
+        <button className="btn primary" onClick={onClose}>{T('full.ok')}</button>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * ⛶ Pantalla grande, para celulares y tablets (gana el espacio que ocupan las barras del navegador).
+ * Donde el navegador lo permite, pone la página en pantalla completa; en iPhone explica cómo abrirla como app.
+ * Si el juego ya está abierto como app no hace falta y no se muestra.
+ */
+export function useBigScreen() {
+  const [full, setFull] = useState(fullscreenOn)
+  const [help, setHelp] = useState(false)
+  useEffect(() => {
+    const on = () => setFull(fullscreenOn())
+    document.addEventListener('fullscreenchange', on)
+    document.addEventListener('webkitfullscreenchange', on)
+    return () => { document.removeEventListener('fullscreenchange', on); document.removeEventListener('webkitfullscreenchange', on) }
+  }, [])
+  const available = isTouch && !isStandalone
+  const toggle = () => {
+    if (!canFullscreen) setHelp(true)
+    else if (fullscreenOn()) exitFullscreen()
+    else enterFullscreen()
+  }
+  const dialog = help ? <BigScreenHelp onClose={() => setHelp(false)} /> : null
+  return { available, full, toggle, dialog }
+}
+
+/** Botones fijos: ⛶ pantalla grande, ⏸️ pausa, 🔊 leer en voz alta y ✨/🐢 gráficos livianos. */
 export function Toolbar() {
   const T = useT()
   const voiceOn = useGame((s) => s.voice ?? s.easy)
   const lite = useGame((s) => s.lite)
   const canPause = useGame((s) => ['launch', 'tutorial', 'loading', 'landing', 'sol'].includes(s.screen))
   const { toggleVoice, toggleLite, setPaused } = useGame.getState()
-  // ⛶ pantalla completa: en celulares y tablets gana el espacio que ocupa la barra del navegador
-  const [full, setFull] = useState(() => typeof document !== 'undefined' && !!document.fullscreenElement)
-  const canFull = typeof document !== 'undefined' && document.fullscreenEnabled && typeof matchMedia !== 'undefined' && matchMedia('(pointer: coarse)').matches
-  useEffect(() => {
-    const on = () => setFull(!!document.fullscreenElement)
-    document.addEventListener('fullscreenchange', on)
-    return () => document.removeEventListener('fullscreenchange', on)
-  }, [])
-  const toggleFull = async () => {
-    try {
-      if (document.fullscreenElement) await document.exitFullscreen()
-      else {
-        await document.documentElement.requestFullscreen()
-        await screen.orientation?.lock?.('landscape').catch(() => {})
-      }
-    } catch { /* el navegador no lo permite */ }
-  }
-  const count = (canPause ? 1 : 0) + (voiceSupported() ? 1 : 0) + 1 + (canFull ? 1 : 0)
+  const big = useBigScreen()
+  const count = (canPause ? 1 : 0) + (voiceSupported() ? 1 : 0) + 1 + (big.available ? 1 : 0)
   useEffect(() => { document.documentElement.style.setProperty('--tools', count) }, [count])
   return (
-    <div className="toolbar">
-      {canFull && <button className={full ? 'on' : ''} onClick={toggleFull} title={T('tool.full')} aria-label={T('tool.full')}>{full ? '🗗' : '⛶'}</button>}
-      {canPause && <button onClick={() => setPaused(true)} title={T('pause.title') + ' (Esc)'} aria-label={T('pause.title')}>⏸️</button>}
-      {voiceSupported() && (
-        <button className={voiceOn ? 'on' : ''} onClick={() => { if (voiceOn) stopSpeaking(); toggleVoice() }} title={T('tool.voice')} aria-label={T('tool.voice')}>
-          {voiceOn ? '🔊' : '🔇'}
+    <>
+      <div className="toolbar">
+        {big.available && <button className={big.full ? 'on' : ''} onClick={big.toggle} title={T('tool.full')} aria-label={T('tool.full')}><FullIcon on={big.full} /></button>}
+        {canPause && <button onClick={() => setPaused(true)} title={T('pause.title') + ' (Esc)'} aria-label={T('pause.title')}>⏸️</button>}
+        {voiceSupported() && (
+          <button className={voiceOn ? 'on' : ''} onClick={() => { if (voiceOn) stopSpeaking(); toggleVoice() }} title={T('tool.voice')} aria-label={T('tool.voice')}>
+            {voiceOn ? '🔊' : '🔇'}
+          </button>
+        )}
+        <button className={lite ? 'on' : ''} onClick={toggleLite} title={T('tool.lite')} aria-label={T('tool.lite')}>
+          {lite ? '🐢' : '✨'}
         </button>
-      )}
-      <button className={lite ? 'on' : ''} onClick={toggleLite} title={T('tool.lite')} aria-label={T('tool.lite')}>
-        {lite ? '🐢' : '✨'}
-      </button>
-    </div>
+      </div>
+      {big.dialog}
+    </>
+  )
+}
+
+/**
+ * Zona con scroll que avisa con una flechita ▼ cuando queda texto más abajo
+ * (en pantallas chicas no siempre entra todo y no se nota que se puede deslizar).
+ */
+export function ScrollArea({ className, children }) {
+  const ref = useRef(null)
+  const [more, setMore] = useState(false)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const check = () => setMore(el.scrollHeight - el.scrollTop - el.clientHeight > 8)
+    check()
+    el.addEventListener('scroll', check, { passive: true })
+    const ro = new ResizeObserver(check)
+    ro.observe(el)
+    const mo = new MutationObserver(check)
+    mo.observe(el, { childList: true, subtree: true, characterData: true })
+    return () => { el.removeEventListener('scroll', check); ro.disconnect(); mo.disconnect() }
+  }, [])
+  return (
+    <>
+      <div ref={ref} className={className}>{children}</div>
+      {more && <button className="scroll-cue" aria-hidden tabIndex={-1} onClick={() => ref.current?.scrollBy({ top: ref.current.clientHeight * 0.7, behavior: 'smooth' })}>▼</button>}
+    </>
   )
 }
 

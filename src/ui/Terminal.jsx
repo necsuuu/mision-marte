@@ -2,6 +2,7 @@
 // screen = lo que se ve en la pantalla verde · paper = el ticket de la impresora · onOk = botón ✓
 import { motion, AnimatePresence } from 'framer-motion'
 import terminalImg from '../assets/ui/terminal.webp'
+import { ScrollArea } from './common'
 
 // Zonas medidas sobre la imagen (en % del ancho/alto)
 const SCREEN = { left: '4.25%', top: '11.69%', width: '58.13%', height: '79.61%' }
@@ -13,7 +14,7 @@ export default function TerminalFrame({ screen, paper, paperKey, onOk, okReady =
     <div className="terminal-wrap">
       <img className="terminal-img" src={terminalImg} alt="" draggable={false} />
       <div className="crt" style={SCREEN}>
-        <div className="crt-inner">{screen}</div>
+        <ScrollArea className="crt-inner">{screen}</ScrollArea>
         <div className="scanlines" />
       </div>
       <div className="paper" style={PAPER}>

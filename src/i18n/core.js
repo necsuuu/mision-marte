@@ -2,11 +2,14 @@
 import { UI } from './ui'
 import { CONTENT_EN } from './content_en'
 import { GLOSSARY, STORM_TEXT, REPAIRS } from '../game/content'
+import { isTouch } from '../game/device'
 
 export const LANGS = ['es', 'en']
 
 export function t(lang, key, vars) {
-  let s = UI[lang]?.[key] ?? UI.es[key] ?? key
+  // En pantallas táctiles, si existe la versión "clave@touch" se usa esa (habla de tocar, no de clic ni teclas)
+  const k = isTouch && UI.es[key + '@touch'] !== undefined ? key + '@touch' : key
+  let s = UI[lang]?.[k] ?? UI.es[k] ?? key
   if (vars) for (const k in vars) s = s.split(`{${k}}`).join(vars[k])
   return s
 }

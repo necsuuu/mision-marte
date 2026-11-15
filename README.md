@@ -1,4 +1,6 @@
-# 🚀 Misión Marte: Entrenador de Astronautas Junior
+# 🚀 Sobreviviendo en Marte (*Surviving on Mars*)
+
+**Entrenador de Astronautas Junior**
 
 > Proyecto del equipo **Código Cuántico** (Santiago del Estero, Argentina) para el **NASA Space Apps Challenge 2026**, desafío [*Build a Junior Astronaut Mission Trainer*](https://www.spaceappschallenge.org/2026/challenges/junior-astronaut-mission-trainer/).
 
@@ -29,7 +31,7 @@ Las **tormentas solares del juego son reales**: salen de la base de datos **DONK
 
 El contenido espacial para chicos suele ser **demasiado abstracto** (pósters, datos sueltos) o **demasiado técnico**. Casi nunca muestra lo más importante de una misión real: **cada decisión tiene un costo**. Proteger a la tripulación de la radiación gasta energía que no va al oxígeno; salir a reparar algo gasta aire; esperar instrucciones de la Tierra hace perder tiempo.
 
-*Misión Marte* convierte esas restricciones reales en un juego: **ninguna opción es gratis**, y el jugador ve en la base qué pasó con lo que eligió.
+*Sobreviviendo en Marte* convierte esas restricciones reales en un juego: **ninguna opción es gratis**, y el jugador ve en la base qué pasó con lo que eligió.
 
 ---
 
@@ -38,6 +40,9 @@ El contenido espacial para chicos suele ser **demasiado abstracto** (pósters, d
 ```
 Comandante → Misión → 🚀 Despegue → Tutorial → 📦 Carga en la nave (60 s) → 🪂 Aterrizaje en Marte → 12 soles → 🧠 Preguntas de repaso → Resultado
 ```
+
+### Pantalla de inicio
+La ilustración de la tripulación en Marte con el logo **Sobreviviendo en Marte** (o **Surviving on Mars** si el juego está en inglés). El fondo se extendió a los costados y hacia arriba para que entre en cualquier pantalla sin tapar a los personajes, y el logo se recoloreó en tonos crema y óxido para que resalte sobre el cielo rojo.
 
 ### 1. Elegí tu comandante
 Dos comandantes para elegir. Se escribe el **nombre** y se toca la **edad** (6 a 13+). Si el jugador tiene **9 años o menos**, se activa el **⭐ modo cadete**, pensado para los más chicos:

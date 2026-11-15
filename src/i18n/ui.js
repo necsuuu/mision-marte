@@ -3,8 +3,7 @@ export const UI = {
   es: {
     // inicio
     'title.kicker': 'Entrenador de Astronautas Junior',
-    'title.mission': 'Misión',
-    'title.mars': 'Marte',
+    'title.name': 'Sobreviviendo en Marte',
     'title.question': '¿Podés mantener viva tu base en Marte por 12 días?',
     play: '▶ JUGAR',
     nasaData: '🔎 Datos reales de la NASA',
@@ -291,8 +290,7 @@ export const UI = {
   },
   en: {
     'title.kicker': 'Junior Astronaut Mission Trainer',
-    'title.mission': 'Mission',
-    'title.mars': 'Mars',
+    'title.name': 'Surviving on Mars',
     'title.question': 'Can you keep your Mars base alive for 12 days?',
     play: '▶ PLAY',
     nasaData: '🔎 Real NASA data',

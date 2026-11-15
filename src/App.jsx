@@ -1,4 +1,4 @@
-import { Suspense, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { AnimatePresence } from 'framer-motion'
 import { useGame } from './game/store'
@@ -24,6 +24,11 @@ import { Toolbar } from './ui/common'
 export default function App() {
   const screen = useGame((s) => s.screen)
   const [dataOpen, setDataOpen] = useState(false)
+  const lang = useGame((s) => s.lang)
+  useEffect(() => {
+    document.title = lang === 'en' ? 'Surviving on Mars · Junior Astronaut Mission Trainer' : 'Sobreviviendo en Marte · Entrenador de Astronautas Junior'
+    document.documentElement.lang = lang
+  }, [lang])
   const onBase = screen === 'sol' || screen === 'end' || screen === 'landing'
   const finishLanding = useGame((s) => s.finishLanding)
   const finishLaunch = useGame((s) => s.finishLaunch)
@@ -42,7 +47,7 @@ export default function App() {
         >
           <Quality />
           <PauseClock />
-          <Suspense fallback={null}>{screen === 'launch' ? <Launch onDone={finishLaunch} /> : onBase ? <MarsBase key={screen === 'landing' ? 'cine' : 'base'} cinematic={screen === 'landing'} onCineDone={finishLanding} /> : inRoom ? <Room /> : <Planet offset={planetOffset} />}</Suspense>
+          <Suspense fallback={null}>{screen === 'launch' ? <Launch onDone={finishLaunch} /> : onBase ? <MarsBase key={screen === 'landing' ? 'cine' : 'base'} cinematic={screen === 'landing'} onCineDone={finishLanding} /> : inRoom ? <Room /> : screen === 'title' ? null : <Planet offset={planetOffset} />}</Suspense>
         </Canvas>
       </div>
 

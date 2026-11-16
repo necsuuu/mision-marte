@@ -7,7 +7,8 @@ import { loadSpaceWeather, buildSolWeather } from '../data/donki'
 import { taskEffects, taskSpots } from './tasks'
 import { randomLayout } from './shipLayout'
 
-const savedLang = (() => { try { return localStorage.getItem('mm-lang') || 'es' } catch { return 'es' } })()
+// El juego arranca en inglés; si alguien eligió otro idioma con el botón ES / EN, se respeta
+const savedLang = (() => { try { return localStorage.getItem('mm-lang') || 'en' } catch { return 'en' } })()
 const savedSound = (() => { try { return localStorage.getItem('mm-sound') !== '0' } catch { return true } })()
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v))

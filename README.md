@@ -187,7 +187,7 @@ Antes del informe hay **4 preguntas de repaso** (radiación, hacia dónde van la
 **📤 Compartir:** el informe tiene un botón que arma una imagen con el logo, las estrellas y los números de la misión, para mandársela a alguien. En celulares abre el menú de compartir; en compus la descarga. La imagen se dibuja en el navegador, no se sube a ningún lado y **no lleva el nombre del jugador**.
 
 ### 🌐 Idiomas
-Botón **ES / EN** en la pantalla de inicio, en la selección de personaje y en el panel de datos. Todo el juego está traducido (interfaz, objetos, eventos, glosario) y la elección se recuerda.
+Botón **ES / EN** en la pantalla de inicio, en la selección de personaje y en el panel de datos. Todo el juego está traducido (interfaz, objetos, eventos, glosario). **Arranca en inglés**; si se elige español con el botón, la elección se recuerda.
 
 ---
 

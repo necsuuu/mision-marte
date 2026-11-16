@@ -1,7 +1,7 @@
 {
-  "name": "Sobreviviendo en Marte",
-  "short_name": "Marte",
-  "description": "Entrenador de astronautas junior con datos reales de la NASA",
+  "name": "Surviving on Mars",
+  "short_name": "Mars",
+  "description": "Junior astronaut mission trainer with real NASA data",
   "start_url": "./",
   "scope": "./",
   "display": "fullscreen",

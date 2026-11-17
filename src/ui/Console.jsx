@@ -3,11 +3,12 @@
 import consoleImg from '../assets/ui/console.webp'
 import { ScrollArea } from './common'
 
-const MAIN = { left: '38.6%', top: '15%', width: '45.4%', height: '54.5%' }
-const MINI = { left: '87.52%', top: '61.9%', width: '8.3%', height: '12.46%' }
-const OK = { left: '89.48%', top: '78.29%', width: '6.39%', height: '5.18%' }
-const PHONE = { left: '0%', top: '83.7%', width: '12.2%', height: '16.1%' }
-const BULB = { left: '44.5%', top: '0%', width: '9%', height: '9%' }
+// Posiciones sobre console.webp (1600 × 1250, armada con tools/armar_consola.py)
+const MAIN = { left: '38.66%', top: '23.48%', width: '45.04%', height: '48.56%' }
+const MINI = { left: '87.19%', top: '65.28%', width: '8.25%', height: '11.03%' }
+const OK = { left: '89.35%', top: '79.85%', width: '6%', height: '4.5%' }
+const PHONE = { left: '0%', top: '84%', width: '15%', height: '15.5%' }
+const BULB = { left: '42.9%', top: '0.5%', width: '13%', height: '16.6%' }
 
 export default function Console({ children, mini, onOk, okLabel, onPhone, phoneLabel, alarm }) {
   return (

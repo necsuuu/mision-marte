@@ -445,7 +445,7 @@ p { margin: 0 0 0.8em; line-height: 1.5; }
 /* ---------- Consola (reporte nocturno y final) ---------- */
 .console-overlay { position: absolute; inset: 0; display: grid; place-items: end center; padding: 10px; pointer-events: none; z-index: 25; }
 .console-overlay.end-console { place-items: center; position: relative; inset: auto; width: 100%; }
-.console-wrap { position: relative; width: min(1300px, 98vw, calc(calc(var(--vh) * 86) * 1.425)); aspect-ratio: 1600 / 1123; container-type: inline-size; pointer-events: auto; filter: drop-shadow(0 30px 50px rgba(0, 0, 0, 0.65)); }
+.console-wrap { position: relative; width: min(1300px, 98vw, calc(calc(var(--vh) * 82) * 1.28)); aspect-ratio: 1600 / 1250; container-type: inline-size; pointer-events: auto; filter: drop-shadow(0 30px 50px rgba(0, 0, 0, 0.65)); }
 .console-img { position: absolute; inset: 0; width: 100%; height: 100%; user-select: none; }
 .bulb { position: absolute; border-radius: 50%; pointer-events: none; }
 .bulb.alarm { background: radial-gradient(circle, rgba(255, 60, 60, 0.95), rgba(255, 60, 60, 0) 70%); animation: blink 0.4s infinite alternate; }
@@ -467,7 +467,7 @@ p { margin: 0 0 0.8em; line-height: 1.5; }
 .mini-stars { display: grid; font-size: max(2.3cqw, 11.5px); line-height: 1; }
 .mini-stars span { color: rgba(255, 191, 92, 0.2); } .mini-stars span.on { color: #ffd166; text-shadow: 0 0 1cqw #ffd166; }
 .console-ok { position: absolute; border-radius: 22%; animation: okpulse 1s infinite alternate; }
-.console-ok-label { position: absolute; right: 12.5%; top: 79%; font: 700 max(2.07cqw, 11.5px) 'Fredoka', sans-serif; color: #fff; background: #2f9e44; padding: 0.5cqw 1.6cqw; border-radius: 999px; box-shadow: 0 0.6cqw 1.6cqw rgba(0, 0, 0, 0.4); }
+.console-ok-label { position: absolute; right: 12.5%; top: 80.6%; font: 700 max(2.07cqw, 11.5px) 'Fredoka', sans-serif; color: #fff; background: #2f9e44; padding: 0.5cqw 1.6cqw; border-radius: 999px; box-shadow: 0 0.6cqw 1.6cqw rgba(0, 0, 0, 0.4); }
 .console-ok-label:hover { background: #37b04f; }
 .console-phone { position: absolute; border-radius: 12%; }
 .console-phone:hover { background: radial-gradient(circle, rgba(255, 209, 102, 0.35), transparent 70%); }
@@ -782,7 +782,7 @@ p { margin: 0 0 0.8em; line-height: 1.5; }
   .sol-badge { width: 3rem; height: 3rem; }
   .sol-screen.phase-report .hud { display: none; }
   .terminal-wrap { width: min(99vw, calc(calc(var(--vh) * 97) * 1.432)); }
-  .console-wrap { width: min(99vw, calc(calc(var(--vh) * 97) * 1.425)); }
+  .console-wrap { width: min(99vw, calc(calc(var(--vh) * 97) * 1.28)); }
 
   /* Preguntas y pausa: todo entra en la pantalla */
   .quiz-card { padding: 10px 16px; max-height: calc(var(--vh) * 96); overflow-y: auto; }

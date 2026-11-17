@@ -3,6 +3,7 @@ import { useGame } from '../game/store'
 import { getCharacter } from '../game/characters'
 import { useT } from '../i18n/useT'
 import { fade } from './common'
+import charBg from '../assets/title/char_bg.webp' // mismo fondo borroso que la selección de personaje
 
 const MODES = [
   { id: 'recent', emoji: '🛰️' },
@@ -15,7 +16,7 @@ export default function ModeSelect() {
   const T = useT()
   const ch = getCharacter(player.character)
   return (
-    <motion.div className="screen center" {...fade}>
+    <motion.div className="screen center mode-screen" style={{ '--char-bg': `url(${charBg})` }} {...fade}>
       <div className="mode-head">
         <img className="avatar-lg" src={ch.select} alt="" />
         <div>

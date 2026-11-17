@@ -12,6 +12,7 @@ import { terrainHeight } from './terrain'
 import { t } from '../i18n/core'
 import CharacterSprite from './CharacterSprite'
 import { OutcomeSparks } from './effects'
+import { PartBoundary } from '../ui/ErrorBoundary'
 
 const SPEED = 5.2
 const REACH = 1.6 // a esta distancia del lugar ya se puede usar
@@ -164,7 +165,7 @@ function TaskPlayer() {
         const cleaned = spot ? [...task.cleaned, spot.panel] : task.cleaned
         s.taskPatch({ busy: null, cleaned, lastClean: spot?.panel ?? null })
         const total = s.panels
-        if (cleaned.length >= total) setTimeout(() => useGame.getState().finishTask({ cleaned: cleaned.length, total }), 700)
+        if (cleaned.length >= total) setTimeout(() => useGame.getState().finishTask({ cleaned: cleaned.length, total }, task.key), 700)
       }
     }
 
@@ -265,7 +266,7 @@ function Spot({ spot, icon, label, current }) {
 function Spots() {
   const s = useGame()
   const spots = taskSpots(s)
-  const def = TASKS[s.task.id]
+  const def = TASKS[s.task?.id] || {}
   const n = nearestSpot(spots, taskPlayer)
   const icons = { collect: '🪨', talk: '💬', arrive: '🚩', pick: '🪨', home: '🏠' }
   return spots.filter((sp) => !sp.done).map((sp) => (
@@ -344,15 +345,17 @@ function CleanSparks() {
 /** Todo lo de la tarea física (se monta solo mientras dura). */
 export default function BaseTask() {
   const id = useGame((s) => (s.phase === 'task' ? s.task?.id : null))
+  const key = useGame((s) => s.task?.key)
   if (!id) return null
+  // 🛟 si algo de la tarea falla al dibujarse en 3D, la termina la tripulación y la base sigue en pie
   return (
-    <>
+    <PartBoundary key={key} name={'tarea3d:' + id} onError={() => useGame.getState().recover(false)}>
       <TaskCamera />
       <Ground />
       <Spots />
       <GuideArrow />
       <TaskPlayer />
       {id === 'clean' && <CleanSparks />}
-    </>
+    </PartBoundary>
   )
 }

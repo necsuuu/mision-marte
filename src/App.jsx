@@ -24,6 +24,7 @@ export default function App() {
   useEffect(() => {
     document.title = lang === 'en' ? 'Surviving on Mars · Junior Astronaut Mission Trainer' : 'Sobreviviendo en Marte · Entrenador de Astronautas Junior'
     document.documentElement.lang = lang
+    document.documentElement.setAttribute('translate', 'no') // el idioma se cambia con el botón ES / EN, no con el traductor del navegador
   }, [lang])
   return (
     <div className="app">

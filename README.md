@@ -189,6 +189,14 @@ Antes del informe hay **4 preguntas de repaso** (radiación, hacia dónde van la
 ### 🌐 Idiomas
 Botón **ES / EN** en la pantalla de inicio, en la selección de personaje y en el panel de datos. Todo el juego está traducido (interfaz, objetos, eventos, glosario). **Arranca en inglés**; si se elige español con el botón, la elección se recuerda.
 
+El idioma se cambia **solo con ese botón**: la página le pide al navegador que no la traduzca (`translate="no"`). Los traductores automáticos (Chrome, Brave, Edge) reescriben los textos de la página por su cuenta y eso rompía el juego: la pantalla quedaba en negro en medio de la partida.
+
+### 🛟 Si algo falla, la partida sigue
+- **Traductores y extensiones:** aunque alguien fuerce la traducción, el juego lo tolera (`src/domGuard.js`).
+- **Red de seguridad:** si una parte del juego falla al dibujarse, no queda la pantalla en negro. Un desafío que falla lo termina la tripulación; cualquier otro error repara la partida y la vuelve a mostrar sin perder el progreso. Si el error insiste, aparece un cartel con "Seguir la misión" o "Volver al inicio" (`src/ui/ErrorBoundary.jsx`).
+- **Relojes atados a su tarea:** el aviso de fin de un desafío solo puede cerrar su propia tarea, nunca una posterior.
+- El último error queda guardado en el navegador (`localStorage`, clave `mm-crash`) para poder investigarlo.
+
 ---
 
 ## ⚖️ La mecánica de compromiso (trade-offs)
@@ -307,6 +315,7 @@ Abrí **http://localhost:5173** en el navegador.
 src/
 ├── App.jsx                 Pantallas y escena 3D según el momento del juego
 ├── main.jsx
+├── domGuard.js             Evita que un traductor del navegador rompa la página
 ├── styles.css
 ├── assets/
 │   ├── characters/         Comandantes y tripulación (recortados, fondo transparente)
@@ -354,6 +363,7 @@ src/
     ├── Quiz.jsx            Preguntas de repaso al final de la misión
     ├── ItemCard.jsx        Ficha del objeto con el retrato del comandante
     ├── TaskUI.jsx          Tarea a mano: objetivo, botón de acción, charla con el compañero y desafíos (grieta, cables, plantas, riego, antena, enfermería, bici, hielo, obra y compañero del rover)
+    ├── ErrorBoundary.jsx   Red de seguridad: repara la partida si algo falla al dibujarse
     ├── Terminal.jsx        Terminal CRT de decisiones (pantalla + impresora + botón ✓)
     └── Console.jsx         Consola ámbar del reporte nocturno y final
 public/

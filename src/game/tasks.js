@@ -144,7 +144,7 @@ export function taskSpots(s) {
     }
     case 'assemble': {
       const id = s.build?.active
-      if (!id) return []
+      if (!id || !BUILD_POS[id]) return []
       const [x, , z] = BUILD_POS[id]
       const st = [x + (x > 0 ? -2.6 : 2.6), 0, z + 1.4]
       if (!t.talked) return [{ id: 'crew', stand: st, at: [x, 1.6, z], act: 'talk' }]
@@ -166,6 +166,7 @@ export function taskSpots(s) {
 /** Lo que pasa si se termina el tiempo de una tarea con apuro. */
 export function timeUpResult(s) {
   const t = s.task
+  if (!t) return { crew: true }
   if (t.id === 'clean') return { cleaned: t.cleaned.length, total: s.panels }
   if (t.id === 'drive') return { arrived: !!t.arrived, found: t.found.length }
   return { crew: true }
@@ -182,7 +183,7 @@ export const taskLimit = (s) => {
 export function helperSpot(s) {
   const t = s.task
   if (!t) return null
-  if (t.id === 'assemble' && s.build?.active) {
+  if (t.id === 'assemble' && BUILD_POS[s.build?.active]) {
     const [x, , z] = BUILD_POS[s.build.active]
     return [x + (x > 0 ? -1.4 : 1.4), 0, z + 2.2]
   }
@@ -231,8 +232,14 @@ export function leakLoss(s, sec) {
  * result.crew = true → la hizo la tripulación sola (más lento y menos prolijo que hacerlo uno).
  * Devuelve { effects, line: [clave de texto, variables] } para el resultado y la bitácora.
  */
-export function taskEffects(s, choice, result) {
+export function taskEffects(s, choice, raw) {
   const base = { ...choice.effects }
+  // lo que mide cada desafío siempre llega como número válido (si falta algo, cuenta como 0)
+  const result = { ...raw }
+  for (const k of ['time', 'cleaned', 'total', 'shorts', 'right', 'wrong', 'missed', 'found', 'inBand', 'spills', 'ratio', 'hits']) {
+    if (k in result || !result.crew) result[k] = Number.isFinite(result[k]) ? Math.max(0, result[k]) : 0
+  }
+  if (!result.total) result.total = s.panels || 1
   const crew = !!result.crew
   switch (s.task.id) {
     case 'seal': {

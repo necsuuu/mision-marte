@@ -10,10 +10,20 @@ import { isTouch } from '../game/device'
 import { play } from '../game/sfx'
 import { useSpeak } from '../game/voice'
 import { useT } from '../i18n/useT'
+import { PartBoundary } from './ErrorBoundary'
 
 export default function TaskUI() {
   const task = useGame((s) => s.task)
   if (!task) return null
+  // 🛟 si un desafío falla al dibujarse, la tarea la termina la tripulación y la partida sigue
+  return (
+    <PartBoundary key={task.key} name={'tarea:' + task.id + '/' + (task.mini || '')} onError={() => useGame.getState().recover(false)}>
+      <TaskParts task={task} />
+    </PartBoundary>
+  )
+}
+
+function TaskParts({ task }) {
   return (
     <>
       <TaskBanner />
@@ -41,8 +51,8 @@ export default function TaskUI() {
 function TaskBanner() {
   const T = useT()
   const s = useGame()
-  const task = s.task
-  const def = TASKS[task.id]
+  const task = s.task || {}
+  const def = TASKS[task.id] || {}
   const spots = taskSpots(s)
   const near = spots.find((p) => p.id === task.near)
   const lim = taskLimit(s)
@@ -50,7 +60,8 @@ function TaskBanner() {
   const ev = s.cards[0]?.event
   const stage = task.id === 'drive' ? (task.arrived ? '.found' : '') : task.id === 'rock' ? (task.arrived ? '.back' : '') : def.talk ? (task.talked ? '.work' : '') : ''
   const goal = near ? T('task.at', { act: T('task.act.' + near.act) }) : T('task.goal.' + task.id + stage)
-  useSpeak(T('task.goal.' + task.id + stage))
+  useSpeak(task.id ? T('task.goal.' + task.id + stage) : '')
+  if (!task.id || !def.icon) return null
   const crewLabel = ev?.direct ? '🙅 ' + T('task.notNow') : task.id === 'drive' ? '🤖 ' + T('task.autopilot') : '🤖 ' + T('task.crewDo')
   return (
     <motion.div className="task-banner" initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>
@@ -78,7 +89,7 @@ function TaskBanner() {
 function ActButton() {
   const T = useT()
   const s = useGame()
-  const spot = taskSpots(s).find((p) => p.id === s.task.near)
+  const spot = s.task ? taskSpots(s).find((p) => p.id === s.task.near) : null
   if (!spot) return null
   return (
     <motion.button className="btn primary act-btn task-act" initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.6, opacity: 0 }}
@@ -94,7 +105,8 @@ function useFinishAfter(done, ms, result) {
   fn.current = result
   useEffect(() => {
     if (!done) return
-    const tm = setTimeout(() => useGame.getState().finishTask(fn.current()), ms)
+    const key = useGame.getState().task?.key
+    const tm = setTimeout(() => useGame.getState().finishTask(fn.current(), key), ms)
     return () => clearTimeout(tm)
   }, [done, ms])
 }
@@ -380,6 +392,7 @@ function PlantsGame() {
   const [looks] = useState(() => plants.map((sk) => makePlantLook(sk, easy)))
   const [removed, setRemoved] = useState(() => plants.map(() => false))
   const [checked, setChecked] = useState(false)
+  const [result, setResult] = useState(null)
   const toggle = (i) => {
     if (checked) return
     play(removed[i] ? 'unload' : 'pick')
@@ -392,8 +405,9 @@ function PlantsGame() {
     const wrong = plants.filter((sk, i) => !sk && removed[i]).length
     const missed = plants.filter((sk, i) => sk && !removed[i]).length
     play(wrong || missed ? 'deny' : 'good')
-    setTimeout(() => useGame.getState().finishTask({ right, wrong, missed }), 1600)
+    setResult({ right, wrong, missed })
   }
+  useFinishAfter(!!result, 1600, () => result)
   const mark = (i) => {
     if (!checked) return null
     if (plants[i] && removed[i]) return '✅'
@@ -422,9 +436,10 @@ function PlantsGame() {
 function TalkCard() {
   const T = useT()
   const s = useGame()
-  const ev = locEvent(s.lang, s.cards[0].event)
-  const crew = CREW.find((c) => c.id === ev.crew) || CREW[0]
-  useSpeak(ev.talk)
+  const ev = locEvent(s.lang, s.cards[0]?.event)
+  const crew = CREW.find((c) => c.id === ev?.crew) || CREW[0]
+  useSpeak(ev?.talk)
+  if (!ev?.talk || !ev.choices?.[1]) return null
   return (
     <motion.div className="mini-overlay talk-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
       <motion.div className="talk-card" initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ type: 'spring', damping: 18 }}>
@@ -757,7 +772,8 @@ function DrillGame() {
 function AssembleGame() {
   const T = useT()
   const easy = useGame((s) => s.easy)
-  const id = useGame((s) => s.build.active) || 'shelter'
+  const active = useGame((s) => s.build.active)
+  const id = LAYERS[active] ? active : 'shelter'
   const layers = LAYERS[id]
   const [pieces] = useState(() => [...layers].sort(() => Math.random() - 0.5))
   const [placed, setPlaced] = useState(0)

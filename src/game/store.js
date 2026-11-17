@@ -212,7 +212,8 @@ export const MAX_CARRY = 2
 const ALL_EVENTS = [...EVENTS, ...HELP_EVENTS]
 /** Una tarea nueva, recién empezada. */
 // en la expedición, antes de salir se elige quién acompaña en el rover
-const newTask = (id, choiceIdx) => ({ id, choiceIdx, elapsed: 0, near: null, mini: id === 'drive' ? 'mate' : null, busy: null, cleaned: [], found: [], arrived: false, talked: false, mate: null })
+let taskSeq = 0 // cada tarea tiene su número: así un reloj viejo no puede terminar una tarea que no es la suya
+const newTask = (id, choiceIdx) => ({ key: ++taskSeq, id, choiceIdx, elapsed: 0, near: null, mini: id === 'drive' ? 'mate' : null, busy: null, cleaned: [], found: [], arrived: false, talked: false, mate: null })
 
 /** Pone primero en el mazo un evento que se resuelve a mano, así en los primeros soles se juega al menos uno. */
 function handsOnFirst(deck) {
@@ -473,12 +474,14 @@ export const useGame = create((set, get) => ({
     })
   },
 
-  afterDawn: () => set({ phase: phaseFor(get().cards[0]) }),
+  afterDawn: () => { if (get().phase === 'dawn') set({ phase: phaseFor(get().cards[0]) }) },
   toDecision: () => {
     const s = get()
     const ev = s.cards[0]?.event
+    // solo desde el aviso del problema (un reloj atrasado no puede reabrir una decisión ya tomada)
+    if (!ev || (s.phase !== 'incident' && s.phase !== 'event')) return
     // 🙋 pedido de ayuda: no pasa por la computadora, se sale directo a la base a hablar con el compañero
-    if (ev?.direct) return set({ phase: 'task', task: newTask(ev.choices[0].task, 0) })
+    if (ev.direct) return set({ phase: 'task', task: newTask(ev.choices[0].task, 0) })
     set({ phase: 'decision' })
   },
 
@@ -486,7 +489,8 @@ export const useGame = create((set, get) => ({
     const s = get()
     if (s.phase !== 'decision') return // evita doble click mientras se cierra la computadora
     const card = s.cards[0]
-    const choiceIdx = card.event.choices.indexOf(choice)
+    const choiceIdx = card?.event?.choices.indexOf(choice) ?? -1
+    if (choiceIdx < 0) return // opción que no es de este evento: no se hace nada
     // 🛠️ Esta opción se hace a mano: primero la tarea en la base, después se calculan los efectos
     if (choice.task) {
       return set({ phase: 'task', task: newTask(choice.task, choiceIdx) })
@@ -498,14 +502,16 @@ export const useGame = create((set, get) => ({
   resolveChoice: (choice, choiceIdx, effects, taskLine = null) => {
     const s = get()
     const card = s.cards[0]
-    let eff = effects
+    if (!card?.event) return
+    let eff = effects || {}
     let fx = choice.fx
     let ok = true
     if (eff.chance !== undefined) {
       ok = Math.random() < eff.chance
-      eff = ok ? eff.success : eff.fail
-      fx = ok ? choice.fx.success : choice.fx.fail
+      eff = (ok ? eff.success : eff.fail) || {}
     }
+    // el efecto visual siempre es un nombre (si la opción tiene uno para cada resultado, se elige)
+    if (fx && typeof fx === 'object') fx = ok ? fx.success : fx.fail
     const patch = applyEffects(s, eff, fx)
     // dato aprendido: el del evento, o el del lugar explorado ("exp:N" = opción N de la expedición)
     const factKey = choice.fact ? `exp:${choiceIdx}` : card.event?.fact
@@ -532,19 +538,47 @@ export const useGame = create((set, get) => ({
     else if (spot.act === 'collect') {
       const found = [...t.found, Number(spotId.slice(6))]
       set({ task: { ...t, found, near: null } })
-      if (found.length >= 3) setTimeout(() => get().finishTask({ arrived: true, found: found.length }), 600)
+      if (found.length >= 3) setTimeout(() => get().finishTask({ arrived: true, found: found.length }, t.key), 600)
     } else set({ task: { ...t, mini: spot.act } })
   },
   /** Termina la tarea. result: lo que hizo el jugador (o { crew: true } si la deja a la tripulación). */
-  finishTask: (result) => {
+  finishTask: (result, key) => {
     const s = get()
     if (s.phase !== 'task' || !s.task) return
-    const ev = s.cards[0].event
+    if (key !== undefined && key !== s.task.key) return // aviso de una tarea anterior: se ignora
+    const ev = s.cards[0]?.event
+    const res = result || { crew: true }
+    if (!ev) return get().recover(false)
     // pedido de ayuda que no se acepta (o "ahora no"): es la segunda opción del evento, tal cual
-    if (ev.direct && result.crew) return get().resolveChoice(ev.choices[1], 1, ev.choices[1].effects)
+    if (ev.direct && res.crew) return get().resolveChoice(ev.choices[1], 1, ev.choices[1].effects)
     const choice = ev.choices[s.task.choiceIdx]
-    const { effects, line } = taskEffects(s, choice, result)
-    get().resolveChoice(choice, s.task.choiceIdx, effects, line)
+    if (!choice) return get().recover(false)
+    let out
+    try { out = taskEffects(s, choice, res) } catch { out = null }
+    // si el resultado no se pudo calcular, vale la opción tal como estaba escrita
+    if (!out || !out.effects) out = { effects: choice.effects, line: null }
+    get().resolveChoice(choice, s.task.choiceIdx, out.effects, out.line)
+  },
+
+  /**
+   * 🛟 Deja la partida en un estado sano después de un error. Sin `force` solo arregla lo que esté roto
+   * (una tarea a medias la termina la tripulación); con `force` además saltea la tarjeta actual.
+   */
+  recover: (force) => {
+    const s = get()
+    if (s.screen !== 'sol') return
+    if (s.paused) set({ paused: false })
+    const skip = () => { const rest = get().cards.slice(1); set({ task: null, cardResult: null, cards: rest, phase: phaseFor(rest[0]) }) }
+    if (s.phase === 'task') {
+      try { get().finishTask({ crew: true }) } catch { /* se saltea abajo */ }
+      if (get().phase === 'task') skip()
+      return
+    }
+    const card = s.cards[0]
+    if (s.phase === 'outcome' && (force || !card?.event || !s.cardResult)) return skip()
+    if (['incident', 'decision', 'event'].includes(s.phase) && (force || !card)) return skip()
+    if (s.phase === 'report' && !s.report) return set({ phase: 'plan' })
+    if (s.phase === 'dawn' && force) return set({ phase: phaseFor(card) })
   },
 
   nextCard: () => {

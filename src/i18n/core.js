@@ -37,8 +37,8 @@ export function locEvent(lang, ev) {
 /** Nota del reporte de la noche: completa el nombre de la obra o el texto de la misión. */
 export function noteText(lang, key, vars) {
   const v = { ...vars }
-  if (v.build) { const b = locBuild(lang, v.build); v.name = `${b.emoji} ${b.name}`; v.gain = b.gain }
-  if (v.mission) v.text = locMission(lang, v.mission).text
+  if (v.build) { const b = locBuild(lang, v.build); if (b) { v.name = `${b.emoji} ${b.name}`; v.gain = b.gain } }
+  if (v.mission) v.text = locMission(lang, v.mission)?.text || ''
   return t(lang, key, v)
 }
 
@@ -54,6 +54,7 @@ export function factText(lang, key, decisions = []) {
 export function outcomeText(lang, ev, result) {
   if (!ev || !result) return ''
   const c = locEvent(lang, ev).choices[result.choiceIdx]
+  if (!c) return ''
   const out = c.outcome
   return typeof out === 'object' ? (result.ok ? out.success : out.fail) : out
 }

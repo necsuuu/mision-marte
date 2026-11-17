@@ -1,8 +1,10 @@
+import './domGuard' // primero: que un traductor del navegador no pueda romper la página
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './styles.css'
 import App from './App.jsx'
 import { useGame } from './game/store'
+import { AppBoundary } from './ui/ErrorBoundary'
 import { preloadAssets } from './preload'
 import { initSound } from './game/sfx'
 import * as content from './game/content'
@@ -20,7 +22,9 @@ if (new URLSearchParams(location.search).has('demo')) {
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <App />
+    <AppBoundary>
+      <App />
+    </AppBoundary>
   </StrictMode>
 )
 

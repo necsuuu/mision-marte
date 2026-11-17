@@ -24,8 +24,8 @@ export default function SolScreen({ onData }) {
       <div className="sol-main">
         <AnimatePresence mode="wait">
           {s.phase === 'dawn' && <Dawn key={'d' + s.sol} s={s} />}
-          {s.phase === 'incident' && card && <Incident key={'i' + s.sol} s={s} />}
-          {s.phase === 'outcome' && card && <Outcome key={'o' + s.sol} s={s} />}
+          {s.phase === 'incident' && card?.event && <Incident key={'i' + s.sol + ':' + s.decisions.length} s={s} />}
+          {s.phase === 'outcome' && card?.event && s.cardResult && <Outcome key={'o' + s.sol + ':' + s.decisions.length} s={s} />}
         </AnimatePresence>
       </div>
       {s.phase === 'task' && <TaskUI />}
@@ -127,9 +127,9 @@ function Incident({ s }) {
 // ---------- 3) Paneo por la base: la consecuencia ----------
 function Outcome({ s }) {
   const T = useT()
-  const raw = s.cards[0].event
-  const ev = locEvent(s.lang, raw)
-  const r = s.cardResult
+  const raw = s.cards[0]?.event
+  const ev = locEvent(s.lang, raw) || { choices: [] }
+  const r = s.cardResult || {}
   const { nextCard } = useGame.getState()
   const [ready, setReady] = useState(false)
   const fact = ev.choices[r.choiceIdx]?.fact || ev.fact

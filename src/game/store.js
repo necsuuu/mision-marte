@@ -4,7 +4,7 @@ import {
   BUILDS, BUILD_FX, BUILD_FROM_SOL, MISSION_FROM_SOL, MISSION_BONUS, EXPEDITION_EVENT, EXPEDITION_FROM_SOL, EXPEDITION_MAX,
 } from './content'
 import { loadSpaceWeather, buildSolWeather } from '../data/donki'
-import { taskEffects, taskSpots } from './tasks'
+import { taskEffects, taskSpots, LAYERS } from './tasks'
 import { randomLayout } from './shipLayout'
 import { startGfxTier } from './device'
 
@@ -460,7 +460,7 @@ export const useGame = create((set, get) => ({
     } else if (canExplore && Math.random() < (s.expeditions === 0 && s.sol >= 4 ? 0.85 : 0.5)) {
       cards.push({ type: 'event', event: EXPEDITION_EVENT, sites: shuffle(sites).slice(0, 2) })
       lastExpedition = s.sol
-    } else if (s.build.active && buildLeft(s, s.build.active) >= 2 && s.sol - s.lastBuildHelp >= 3 && Math.random() < 0.5) {
+    } else if (s.build.active && LAYERS[s.build.active] && buildLeft(s, s.build.active) >= 2 && s.sol - s.lastBuildHelp >= 3 && Math.random() < 0.5) {
       // 🏗️ hay una obra a medio hacer: el ingeniero pide una mano
       cards.push({ type: 'event', event: BUILD_HELP_EVENT })
       lastBuildHelp = s.sol

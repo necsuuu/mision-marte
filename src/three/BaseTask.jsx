@@ -126,7 +126,8 @@ function TaskPlayer() {
     } else if (!locked && target.current) {
       const dx = target.current[0] - p.x, dz = target.current[1] - p.z
       const dist = Math.hypot(dx, dz)
-      const stop = pending.current ? 0.25 : 0.1
+      // yendo a usar algo alcanza con llegar cerca (por si el punto exacto queda pegado a una pared)
+      const stop = pending.current ? 0.9 : 0.1
       // no pasarse del punto (con pocos cuadros por segundo un paso puede ser más largo que el margen)
       if (dist > stop) dir = new THREE.Vector3(dx / dist, 0, dz / dist).multiplyScalar(Math.min(1, dist / (speed * dt)))
       else {
@@ -178,7 +179,7 @@ function TaskPlayer() {
       const near = n && !n.spot.auto && n.dist < REACH + 0.4 ? n.spot.id : null
       s.taskPatch({ elapsed: clock.current, near })
       // llegar al lugar o pasar por una muestra se activa solo, sin apretar nada
-      if (n?.spot.auto && n.dist < (n.spot.small ? 1.5 : 2.2)) { target.current = null; pending.current = null; s.taskAct(n.spot.id) }
+      if (!task.mini && n?.spot.auto && n.dist < (n.spot.small ? 1.5 : 2.2)) { target.current = null; pending.current = null; s.taskAct(n.spot.id) }
       const lim = taskLimit(s)
       if (lim && clock.current >= lim && !task.mini) s.finishTask(timeUpResult(useGame.getState()))
     }

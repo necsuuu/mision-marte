@@ -23,6 +23,11 @@ export const BUILD_POS = {
   farm: [-8.2, 0, 6.8],
   lab: [11.6, 0, 5.4],
 }
+/** Dónde está la obra en curso: el panel solar nuevo va al lado del último panel; las demás, en BUILD_POS. */
+export function buildSite(s, id) {
+  if (id === 'panel') return panelPos((s.panels || 0) + (s.base?.brokenPanels || 0))
+  return BUILD_POS[id] || null
+}
 /** Dónde aparecen el hielo y la roca rara que encuentra el rover. */
 export const FIND_POS = { ice: [9.5, 0, 8.5], rock: [-4, 0, 11] }
 
@@ -143,17 +148,20 @@ export function taskSpots(s) {
       return [{ id: 'ice', stand: [x - 1.1, 0, z - 1], at: [x, 0.8, z], act: 'drill' }]
     }
     case 'assemble': {
-      const id = s.build?.active
-      if (!id || !BUILD_POS[id]) return []
-      const [x, , z] = BUILD_POS[id]
-      const st = [x + (x > 0 ? -2.6 : 2.6), 0, z + 1.4]
-      if (!t.talked) return [{ id: 'crew', stand: st, at: [x, 1.6, z], act: 'talk' }]
+      const site = buildSite(s, s.build?.active)
+      if (!site) return []
+      const [x, , z] = site
+      // el panel nuevo se arma parado adelante (al costado quedaría dentro del domo)
+      const st = s.build.active === 'panel' ? [x, 0, z + 1.9] : [x + (x > 0 ? -2.6 : 2.6), 0, z + 1.4]
+      const [hx, , hz] = helperSpot(s)
+      // acercarse al ingeniero abre la charla sola
+      if (!t.talked) return [{ id: 'crew', stand: [hx, 0, hz], at: [hx, 1.6, hz], act: 'talk', auto: true }]
       return [{ id: 'site', stand: st, at: [x, 1.2, z], act: 'assemble' }]
     }
     case 'water':
     case 'aim': {
       const d = TASKS[t.id]
-      if (!t.talked) return [{ id: 'crew', stand: [d.helperAt[0], 0, d.helperAt[2] + 1.4], at: [d.helperAt[0], 1.6, d.helperAt[2]], act: 'talk' }]
+      if (!t.talked) return [{ id: 'crew', stand: [d.helperAt[0], 0, d.helperAt[2] + 1.4], at: [d.helperAt[0], 1.6, d.helperAt[2]], act: 'talk', auto: true }]
       return t.id === 'water'
         ? [{ id: 'valves', stand: [-7.5, 0, 4.5], at: [-7.5, 1.4, 1.5], act: 'water' }]
         : [{ id: 'antenna', stand: [3.5, 0, -4.4], at: [3.5, 2.6, -6.5], act: 'aim' }]
@@ -183,8 +191,10 @@ export const taskLimit = (s) => {
 export function helperSpot(s) {
   const t = s.task
   if (!t) return null
-  if (t.id === 'assemble' && BUILD_POS[s.build?.active]) {
-    const [x, , z] = BUILD_POS[s.build.active]
+  const site = t.id === 'assemble' ? buildSite(s, s.build?.active) : null
+  if (site) {
+    const [x, , z] = site
+    if (s.build.active === 'panel') return [x + 1.5, 0, z + 2.2]
     return [x + (x > 0 ? -1.4 : 1.4), 0, z + 2.2]
   }
   return TASKS[t.id]?.helperAt || null
@@ -210,8 +220,9 @@ export const LAYERS = {
   shelter: ['floor', 'wall', 'bags', 'roof'],
   farm: ['floor', 'beds', 'frame', 'glass'],
   lab: ['floor', 'pole', 'sensors', 'vane'],
+  panel: ['floor', 'pole', 'frame', 'cells'],
 }
-export const PIECES = { floor: '▬', wall: '🧱', bags: '🪨', roof: '⛺', beds: '🪴', frame: '🔲', glass: '🫧', pole: '📏', sensors: '🌡️', vane: '🌬️' }
+export const PIECES = { floor: '▬', wall: '🧱', bags: '🪨', roof: '⛺', beds: '🪴', frame: '🔲', glass: '🫧', pole: '📏', sensors: '🌡️', vane: '🌬️', cells: '🔆' }
 
 // ---------- Desafíos: tamaños según la edad ----------
 export const CIRCUIT_WIRES = (easy) => (easy ? 3 : 4)

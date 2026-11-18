@@ -68,7 +68,7 @@ export function colliders(s) {
 }
 
 // ---------- Definición de cada tarea ----------
-// crew: qué compañero avisa y ayuda (engineer = ingeniera 🔧, botanist = botánico 🌱)
+// crew: qué compañero avisa y ayuda (engineer = ingeniero 🔧, botanist = botánica 🌱)
 // mini: el desafío que se abre al llegar (si no tiene, se hace caminando entre varios lugares)
 // limit: segundos que hay (solo algunas)
 export const TASKS = {
@@ -89,11 +89,11 @@ export const TASKS = {
   rock: { icon: '🪨', crew: 'engineer', helperAt: [-1.8, 0, 9.4] },
   // 🧊 perforar el hielo para la mina: frenar la mecha en la zona verde
   drill: { icon: '🧊', crew: 'engineer', mini: 'drill', helperAt: [7.4, 0, 9.6] },
-  // 🏗️ ayudar a la ingeniera con la obra: poner las piezas de abajo hacia arriba
+  // 🏗️ ayudar al ingeniero con la obra: poner las piezas de abajo hacia arriba
   assemble: { icon: '🏗️', crew: 'engineer', mini: 'assemble', talk: true },
 }
 
-/** Compañero que va en el rover: la ingeniera rinde la batería y el botánico encuentra mejores muestras. */
+/** Compañero que va en el rover: el ingeniero rinde la batería y la botánica encuentra mejores muestras. */
 export const MATES = {
   engineer: { battery: 30, perSample: 0.08 },
   botanist: { battery: 0, perSample: 0.12 },
@@ -176,7 +176,7 @@ export function timeUpResult(s) {
 export const taskLimit = (s) => {
   const d = TASKS[s.task?.id]
   if (!d?.limit) return null
-  const extra = s.task.mate ? MATES[s.task.mate].battery : 0 // la ingeniera en el rover: batería que dura más
+  const extra = s.task.mate ? MATES[s.task.mate].battery : 0 // el ingeniero en el rover: batería que dura más
   return (s.easy ? d.limitCadet : d.limit) + extra
 }
 /** Dónde espera el compañero en cada tarea (la obra depende de cuál se está construyendo). */
@@ -205,7 +205,7 @@ export const KIT = [
   { id: 'sun', icon: '🧴' },
   { id: 'brush', icon: '🪥' },
 ]
-/** Capas de cada obra, de abajo hacia arriba (para armarla con la ingeniera). */
+/** Capas de cada obra, de abajo hacia arriba (para armarla con el ingeniero). */
 export const LAYERS = {
   shelter: ['floor', 'wall', 'bags', 'roof'],
   farm: ['floor', 'beds', 'frame', 'glass'],

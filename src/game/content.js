@@ -197,35 +197,35 @@ export const EVENTS = [
  */
 export const HELP_EVENTS = [
   {
-    id: 'help_water', direct: true, good: true, crew: 'botanist', requires: 'seeds', emoji: '💧', title: 'El botánico pide ayuda', scene: 'greenhouse', incident: 'help',
+    id: 'help_water', direct: true, good: true, crew: 'botanist', requires: 'seeds', emoji: '💧', title: 'La botánica pide ayuda', scene: 'greenhouse', incident: 'help',
     text: 'Se desajustó el riego del invernadero hidropónico.',
     ask: '¡Comandante! ¿Me ayudás con el riego?',
     talk: 'Cada bandeja necesita la cantidad justa de agua: que llegue a la franja verde. Si te pasás, se rebalsa y las raíces se ahogan. ¿Me das una mano?',
     fact: 'En hidroponía las plantas crecen sin tierra: las raíces toman el agua y los nutrientes de un líquido. Así se ahorra agua, algo muy valioso en Marte.',
     choices: [
       { label: '¡Dale, te ayudo!', task: 'water', effects: {}, fx: 'watered', outcome: '💧🌱 ¡Riego ajustado!' },
-      { label: 'Ahora no', effects: { food: 2 }, fx: 'rest', outcome: '🌱 Lo arregló solo, más despacio (+2 🥔).' },
+      { label: 'Ahora no', effects: { food: 2 }, fx: 'rest', outcome: '🌱 Lo arregló sola, más despacio (+2 🥔).' },
     ],
   },
   {
-    id: 'help_antenna', direct: true, good: true, crew: 'engineer', emoji: '📡', title: 'La ingeniera pide ayuda', scene: 'antenna', incident: 'help',
+    id: 'help_antenna', direct: true, good: true, crew: 'engineer', emoji: '📡', title: 'El ingeniero pide ayuda', scene: 'antenna', incident: 'help',
     text: 'La antena perdió la señal con la Tierra.',
     ask: '¡Comandante! Perdimos la señal con la Tierra',
     talk: 'Hay que volver a apuntar la antena. Girala despacio hasta que la señal llegue al máximo y quedate ahí. ¿Me ayudás?',
     fact: 'La NASA habla con sus naves con la Red de Espacio Profundo: antenas gigantes en California, España y Australia. Como la Tierra gira, siempre hay una mirando hacia Marte.',
     choices: [
       { label: '¡Dale, te ayudo!', task: 'aim', effects: {}, fx: 'reply', outcome: '📡✅ ¡Señal con la Tierra!' },
-      { label: 'Ahora no', effects: { science: 1 }, fx: 'rest', outcome: '📡 La ingeniera la apuntó sola; tardó toda la tarde (+1 🔬).' },
+      { label: 'Ahora no', effects: { science: 1 }, fx: 'rest', outcome: '📡 El ingeniero la apuntó solo; tardó toda la tarde (+1 🔬).' },
     ],
   },
 ]
 
 /**
- * 🏗️ La ingeniera pide ayuda con la obra que se está construyendo (no está en el mazo: aparece
+ * 🏗️ El ingeniero pide ayuda con la obra que se está construyendo (no está en el mazo: aparece
  * algunas mañanas mientras hay una obra a medio hacer). Si se la ayuda bien, la obra avanza sin gastar energía.
  */
 export const BUILD_HELP_EVENT = {
-  id: 'help_build', direct: true, good: true, crew: 'engineer', emoji: '🏗️', title: 'La ingeniera pide ayuda', scene: 'dome', incident: 'help',
+  id: 'help_build', direct: true, good: true, crew: 'engineer', emoji: '🏗️', title: 'El ingeniero pide ayuda', scene: 'dome', incident: 'help',
   text: 'La obra necesita otro par de manos.',
   ask: '¡Comandante! ¿Me das una mano con la obra?',
   talk: 'Hoy podemos adelantar la obra sin gastar energía. Hay que poner las piezas en orden, de abajo hacia arriba: mirá el plano y elegí la que va en cada piso.',

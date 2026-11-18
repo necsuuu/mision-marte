@@ -61,7 +61,7 @@ Desde los **10 años** la base consume más aire y comida (27 y 13 por sol, cont
 - 🗣️ **Lectura en voz alta** (voz del navegador, sin internet): se prende sola en modo cadete y se puede prender o apagar en cualquier momento con el botón de abajo a la izquierda. Lee los avisos, las decisiones, el plan, los resultados y las preguntas de repaso.
 - 🔊 **Sonido:** efectos (agarrar, guardar, alarma, despegue, resultado bueno o malo) y ambiente (zumbido de la nave, viento de Marte). No hay archivos de audio: todo se genera con código (Web Audio). Se apaga con el botón 🔊 y se frena con la pausa.
 - ✋ **Botón de acción en pantalla** (igual que la tecla E) para jugar en tablets o con un solo dedo.
-- ✨/🐢 **Gráficos livianos** para compus viejas: sin sombras y con menos resolución. Además, si el juego anda lento, baja la resolución solo.
+- ✨/🐢 **Gráficos livianos** para compus viejas: sin sombras, sin texturas de superficie y con menos resolución. Además, si el juego anda lento, baja la calidad solo, de a un escalón (ver Rendimiento).
 - Textos grandes en todo el juego.
 - **Texturas realistas:** el suelo de Marte tiene relieve, ondas de arena y piedritas; los metales están cepillados y rayados; la pintura tiene mugre, chorreaduras y saltaduras; el domo y el paracaídas tienen trama de tela. Todo se calcula en la placa de video, sin descargar imágenes. En modo liviano 🐢 se apagan.
 - **Se adapta a cualquier pantalla:** compu, tablet o celular acostado. El tamaño de todo se calcula según la pantalla y los textos de la computadora del juego nunca quedan ilegibles. Si el celular está parado, el juego se pausa y pide girarlo.
@@ -143,7 +143,7 @@ Cada sol tiene este ciclo:
 | 🪨 Roca rara (ir a buscarla) | Salir con el traje, agarrar la roca y volver a la puerta del domo | Mientras se está afuera se gasta aire: de −4 a −10 🫁 según lo que se tarde |
 | 🧊 Hielo (construir la mina) | Ir hasta el hielo y frenar la mecha en la zona verde, 3 intentos | 3 aciertos: la mina cuesta −1 ⚡ hoy; 2: −2; menos: −3 |
 
-- **Compañeros que ayudan:** la ingeniera 🔧 o el botánico 🌱 (según el problema) va al lugar y le habla al comandante: primero avisa qué pasó, cuando llega le explica qué hacer y, si tarda, le indica el camino.
+- **Compañeros que ayudan:** el ingeniero 🔧 o la botánica 🌱 (según el problema) va al lugar y le habla al comandante: primero avisa qué pasó, cuando llega le explica qué hacer y, si tarda, le indica el camino.
 - **Controles:** tocar o hacer clic en el piso para caminar, W A S D o flechas, y E (o el botón ✋, o tocar el ícono del lugar) para usar. Tocar el ícono hace que el comandante vaya solo y lo use al llegar.
 - **"Que lo haga la tripulación":** siempre está el botón para que la haga el equipo sola (nadie se queda trabado), pero sale peor que hacerla uno: más aire perdido, menos paneles limpios, un chispazo o plantas de más.
 - La computadora avisa en el papel cuáles opciones se hacen a mano, y el resultado y la bitácora dicen cómo salió (por ejemplo "Sellaste la grieta en 12 s: se escaparon 4 de aire").
@@ -153,12 +153,12 @@ Cada sol tiene este ciclo:
 
 | Pedido | Qué hay que hacer | Qué cambia |
 |---|---|---|
-| 💧 El botánico: el riego se desajustó | Llenar 3 bandejas hasta la franja verde; cada manguera da distinta cantidad y si se pasa se rebalsa | +3 🥔 por bandeja en su punto, −2 por cada una rebalsada (si no se ayuda: +2 🥔) |
-| 📡 La ingeniera: se perdió la señal con la Tierra | Girar la antena (arrastrando el dial, con ◀ ▶ o las flechas) hasta que la señal llegue al máximo y quedarse ahí | +2 🔬, +3 si se encuentra en 12 s o menos (si no se ayuda: +1 🔬) |
+| 💧 La botánica: el riego se desajustó | Llenar 3 bandejas hasta la franja verde; cada manguera da distinta cantidad y si se pasa se rebalsa | +3 🥔 por bandeja en su punto, −2 por cada una rebalsada (si no se ayuda: +2 🥔) |
+| 📡 El ingeniero: se perdió la señal con la Tierra | Girar la antena (arrastrando el dial, con ◀ ▶ o las flechas) hasta que la señal llegue al máximo y quedarse ahí | +2 🔬, +3 si se encuentra en 12 s o menos (si no se ayuda: +1 🔬) |
 
-**🏗️ Construir con la ingeniera.** Mientras hay una obra a medio hacer, algunas mañanas la ingeniera pide ayuda. En la obra se abre el plano y hay que poner las piezas en orden, de abajo hacia arriba (los cadetes ven el dibujo de cada piso; los mayores, solo el nombre). Sin errores la obra avanza 2 pasos sin gastar energía; con 1 o 2 errores, 1 paso. El último paso siempre se hace de noche con la energía del plan, para que el festejo de obra terminada siga en el reporte.
+**🏗️ Construir con el ingeniero.** Mientras hay una obra a medio hacer, algunas mañanas el ingeniero pide ayuda. En la obra se abre el plano y hay que poner las piezas en orden, de abajo hacia arriba (los cadetes ven el dibujo de cada piso; los mayores, solo el nombre). Sin errores la obra avanza 2 pasos sin gastar energía; con 1 o 2 errores, 1 paso. El último paso siempre se hace de noche con la energía del plan, para que el festejo de obra terminada siga en el reporte.
 
-**🚙 Expediciones manejando el rover.** Antes de salir se elige quién acompaña: la ingeniera cuida la batería (+30 s para manejar) y el botánico sabe elegir muestras (cada una suma 12% en vez de 8%, y en el cerro con una sola ya hay ciencia extra). Después el jugador maneja el rover hasta ahí siguiendo la flecha, antes de que se acabe la batería (60 s; 90 s para cadetes). Al llegar aparecen 3 muestras brillantes: pasar por arriba las junta. Cada muestra sube un 8% la chance de que la expedición salga bien (en el cerro, que es seguro, juntar 2 o más da +1 🔬). El "Piloto automático" llega solo pero junta una sola muestra, y si se acaba la batería antes de llegar no se explora.
+**🚙 Expediciones manejando el rover.** Antes de salir se elige quién acompaña: el ingeniero cuida la batería (+30 s para manejar) y la botánica sabe elegir muestras (cada una suma 12% en vez de 8%, y en el cerro con una sola ya hay ciencia extra). Después el jugador maneja el rover hasta ahí siguiendo la flecha, antes de que se acabe la batería (60 s; 90 s para cadetes). Al llegar aparecen 3 muestras brillantes: pasar por arriba las junta. Cada muestra sube un 8% la chance de que la expedición salga bien (en el cerro, que es seguro, juntar 2 o más da +1 🔬). El "Piloto automático" llega solo pero junta una sola muestra, y si se acaba la batería antes de llegar no se explora.
 
 **Para que cada sol sea distinto** (los tres sistemas se suman al plan de energía de siempre):
 
@@ -306,6 +306,18 @@ Abrí **http://localhost:5173** en el navegador.
 - **El título carga rápido:** el motor 3D (three.js y las escenas) va en un archivo aparte que se descarga mientras se ve el título, y las imágenes del resto del juego se precargan en segundo plano. La primera carga pasó de 2,4 MB a unos 0,5 MB.
 - **No se dibuja lo que no se ve:** cuando la computadora del juego tapa toda la pantalla, la escena 3D de atrás casi no se dibuja (las animaciones siguen corriendo, así que al volver todo está en su lugar).
 - **Texturas más baratas:** el ruido de las superficies se lee de una textura 3D chiquita generada una sola vez, en vez de calcularse píxel por píxel; y de lejos, el detalle fino no se calcula.
+- **Calidad en escalones** (`src/three/Quality.jsx`): si la compu no llega a buen ritmo de cuadros, el juego baja un escalón solo y lo recuerda para la próxima visita. Celulares y compus con 4 núcleos o menos (o 4 GB de memoria o menos) arrancan en el escalón 1.
+
+  | Escalón | Qué cambia | Tiempo por cuadro (medido) |
+  |---|---|---|
+  | Antes de v1.4 | Resolución hasta 1,75×, sombras, texturas, desenfoque CSS | 100% |
+  | 0 | Resolución hasta 1,5× | 78% |
+  | 1 | Resolución 1×, sin desenfoque CSS detrás de los paneles | 40% |
+  | 2 | Sin texturas de superficie, sombras a medio ritmo | 25% |
+  | 3 (✨ gráficos livianos) | Sin sombras, resolución 0,85× | 15% |
+
+  (Medido dibujando 10 veces el mismo cuadro de la base en una pantalla 2×.) El desenfoque CSS (`backdrop-filter`) se saca desde el escalón 1 porque el navegador tiene que re-desenfocar el 3D en cada cuadro.
+- **Hasta 60 cuadros por segundo:** en pantallas de 120/144 Hz se dibuja un cuadro sí y uno no (sería el doble de trabajo sin diferencia visible).
 - **Caché:** `vercel.json` marca los archivos de `assets/` como permanentes, así la segunda visita no descarga nada.
 - `npm run build` genera la versión para hosting. `npm run build:single` genera una versión con todo en un solo archivo JS (carpeta `dist-single`).
 

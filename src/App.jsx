@@ -13,6 +13,7 @@ import End from './ui/End'
 import DataPanel from './ui/DataPanel'
 import PauseMenu from './ui/PauseMenu'
 import { Toolbar, RotateHint } from './ui/common'
+import charBg from './assets/title/char_bg.webp'
 
 // El motor 3D (three.js y las escenas) se descarga aparte: el título aparece enseguida y el 3D llega mientras tanto.
 const Stage = lazy(() => import('./three/Stage'))
@@ -31,6 +32,10 @@ export default function App() {
       <div className="canvas-wrap">
         <Suspense fallback={null}><Stage /></Suspense>
       </div>
+
+      {/* Fondo fijo de la selección de personaje y de modos: queda quieto mientras las pantallas
+          se desvanecen, así no se ve lo que hay detrás en el cambio */}
+      {(screen === 'character' || screen === 'mode') && <div className="char-backdrop" style={{ '--char-bg': `url(${charBg})` }} />}
 
       <div className="ui">
         <AnimatePresence mode="wait">

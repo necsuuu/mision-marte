@@ -6,6 +6,7 @@ import {
 import { loadSpaceWeather, buildSolWeather } from '../data/donki'
 import { taskEffects, taskSpots } from './tasks'
 import { randomLayout } from './shipLayout'
+import { startGfxTier } from './device'
 
 // El juego arranca en inglés; si alguien eligió otro idioma con el botón ES / EN, se respeta.
 // (La clave cambió de 'mm-lang' a 'mm-lang2' para que quienes ya lo jugaron en español también arranquen en inglés.)
@@ -222,7 +223,7 @@ function handsOnFirst(deck) {
 }
 
 /** Lo que se conserva al volver a jugar: idioma, jugador y preferencias. */
-const keep = (s) => ({ lang: s.lang, player: s.player, voice: s.voice, lite: s.lite, sound: s.sound, seenIntro: s.seenIntro })
+const keep = (s) => ({ lang: s.lang, player: s.player, voice: s.voice, lite: s.lite, gfxAuto: s.gfxAuto, sound: s.sound, seenIntro: s.seenIntro })
 
 // Estado físico de la base: cambia con las decisiones y se ve en 3D
 const freshBase = () => ({
@@ -242,6 +243,7 @@ const initialState = {
   lang: savedLang,
   voice: null, // 🔊 null = automático (prendida en modo cadete); true/false si el jugador la tocó
   lite: savedLite, // ⚙️ gráficos livianos para compus viejas
+  gfxAuto: startGfxTier(), // escalón de calidad que eligió el juego solo según el ritmo de cuadros (ver three/Quality.jsx)
   sound: savedSound, // 🎵 efectos de sonido y ambiente
   seenIntro: false, // este comandante ya vio el despegue y el tutorial: al volver a jugar va directo a la nave
   paused: false, // ⏸️ menú de pausa (tecla Esc)
@@ -276,7 +278,7 @@ const initialState = {
   plan: [],
   alloc: { ...emptyAlloc },
   today: { chipsPenalty: 0, blockScience: false, bonus: 0 },
-  lastBuildHelp: 0, // último sol en que la ingeniera pidió ayuda con la obra
+  lastBuildHelp: 0, // último sol en que el ingeniero pidió ayuda con la obra
   build: { active: null, progress: {}, done: [] }, // 🏗️ obra elegida, avance de cada una y las terminadas
   mission: null, // 🎯 misión de hoy: { id }
   medals: 0, // 🏅 misiones cumplidas
@@ -297,6 +299,9 @@ const initialState = {
 
 export const BAD_FX = new Set(['leaking', 'dusty', 'worse', 'panelbroken', 'nothing'])
 const phaseFor = (card) => (!card ? 'plan' : card.type === 'event' ? 'incident' : 'event')
+
+/** Escalón de calidad gráfica en uso (0 = máxima, 3 = gráficos livianos). */
+export const gfxTier = (s) => (s.lite ? 3 : s.gfxAuto)
 
 export const useGame = create((set, get) => ({
   ...initialState,
@@ -333,6 +338,12 @@ export const useGame = create((set, get) => ({
     const lite = !get().lite
     try { localStorage.setItem('mm-lite', lite ? '1' : '0') } catch { /* nada */ }
     set({ lite })
+  },
+  /** La compu no llega a buen ritmo: un escalón menos de calidad (hasta el 2; el 3 es el botón ✨). */
+  gfxDown: () => {
+    const n = Math.min(2, get().gfxAuto + 1)
+    try { localStorage.setItem('mm-tier', String(n)) } catch { /* nada */ }
+    set({ gfxAuto: n })
   },
   /** 🎬 Demo rápida: salta el quiz, el despegue, la carga y el aterrizaje, con una carga razonable. Ideal para mostrar al jurado. */
   quickStart: async (mode = 'may2024') => {
@@ -450,7 +461,7 @@ export const useGame = create((set, get) => ({
       cards.push({ type: 'event', event: EXPEDITION_EVENT, sites: shuffle(sites).slice(0, 2) })
       lastExpedition = s.sol
     } else if (s.build.active && buildLeft(s, s.build.active) >= 2 && s.sol - s.lastBuildHelp >= 3 && Math.random() < 0.5) {
-      // 🏗️ hay una obra a medio hacer: la ingeniera pide una mano
+      // 🏗️ hay una obra a medio hacer: el ingeniero pide una mano
       cards.push({ type: 'event', event: BUILD_HELP_EVENT })
       lastBuildHelp = s.sol
     } else if (Math.random() < eventChance) {

@@ -812,7 +812,11 @@ p { margin: 0 0 0.8em; line-height: 1.5; }
 .term-pop::after { content: ''; position: absolute; left: var(--arrow, 50%); top: 100%; margin-left: -7px; border: 7px solid transparent; border-top-color: var(--teal); }
 .term-pop.below::after { top: auto; bottom: 100%; border-top-color: transparent; border-bottom-color: var(--teal); }
 /* Selección de personaje: ilustración de Marte borrosa y oscurecida atrás (queda quieta aunque se deslice el contenido) */
-.char-screen, .mode-screen { background: radial-gradient(ellipse at 50% 45%, rgba(10, 8, 14, 0.2), rgba(10, 8, 14, 0.68)), var(--char-bg) center 70% / cover no-repeat, #1a0d0a; }
+/* Rendimiento: sin desenfoque detrás de los paneles (cada cuadro del 3D obligaba a re-desenfocarlo). Los paneles quedan un poco más opacos. */
+html.no-blur { --panel: rgba(14, 16, 28, 0.86); }
+html.no-blur *, html.no-blur *::before, html.no-blur *::after { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+.char-backdrop { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.char-backdrop, .char-screen, .mode-screen { background: radial-gradient(ellipse at 50% 45%, rgba(10, 8, 14, 0.2), rgba(10, 8, 14, 0.68)), var(--char-bg) center 70% / cover no-repeat, #1a0d0a; }
 
 /* 🎯 misión del día */
 .crt-mission { font-size: max(1.5cqw, 10.5px); line-height: 1.3; color: #ffd166; border: 1px solid rgba(255, 209, 102, 0.55); border-radius: 0.5cqw; padding: 0.5cqw 0.9cqw; background: rgba(255, 209, 102, 0.07); }

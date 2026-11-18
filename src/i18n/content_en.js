@@ -171,7 +171,7 @@ export const CONTENT_EN = {
       fact: 'In hydroponics plants grow without soil: the roots take water and nutrients from a liquid. It saves water, which is very precious on Mars.',
       choices: [
         { label: 'Sure, I\'ll help!', outcome: '💧🌱 Watering fixed!' },
-        { label: 'Not now', outcome: '🌱 He fixed it alone, more slowly (+2 🥔).' },
+        { label: 'Not now', outcome: '🌱 She fixed it alone, more slowly (+2 🥔).' },
       ],
     },
     help_antenna: {

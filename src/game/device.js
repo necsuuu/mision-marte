@@ -25,3 +25,17 @@ export async function enterFullscreen() {
 export async function exitFullscreen() {
   try { await (document.exitFullscreen || document.webkitExitFullscreen).call(document) } catch { /* nada */ }
 }
+
+/**
+ * Escalón de calidad gráfica con el que se arranca (ver three/Quality.jsx): el que se aprendió la vez anterior,
+ * o, la primera vez, uno más abajo en celulares y en compus con pocos núcleos o poca memoria.
+ */
+export function startGfxTier() {
+  try {
+    const saved = localStorage.getItem('mm-tier')
+    if (saved !== null && !Number.isNaN(+saved)) return Math.max(0, Math.min(2, +saved))
+  } catch { /* sin almacenamiento */ }
+  const cores = (typeof navigator !== 'undefined' && navigator.hardwareConcurrency) || 8
+  const mem = (typeof navigator !== 'undefined' && navigator.deviceMemory) || 8
+  return isTouch || cores <= 4 || mem <= 4 ? 1 : 0
+}
